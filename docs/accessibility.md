@@ -70,7 +70,7 @@ This document covers accessibility considerations, keyboard navigation, and scre
 
 - [ ] Navigate entire app using keyboard only (no mouse)
 - [ ] Test with screen reader (NVDA, VoiceOver, or JAWS)
-- [ ] Verify all form inputs have associated labels
+- [x] Verify all form inputs have associated labels
 - [ ] Check color contrast ratios with axe DevTools
 - [ ] Test with browser zoom at 200%
 - [ ] Verify focus indicators are visible on all interactive elements

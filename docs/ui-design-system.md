@@ -21,6 +21,19 @@ The visual foundations are centralized in a robust CSS Custom Property system, e
 
 ---
 
+## CSS Architecture & Utility Classes
+
+To maintain a clean and scalable DOM, Inkflow avoids inline styles. All layout, spacing, and component styling rules are abstracted into utility and component classes inside `index.css`. 
+
+Key utility categories include:
+- **Layout & Spacing**: `.flex-center`, `.margin-top-sm`, `.gap-md`
+- **Component Modules**: `.file-upload-wrapper`, `.action-buttons-row`, `.template-upload-icon`
+- **Typography Helpers**: `.font-caveat`, `.font-roboto`, etc.
+
+This utility-first approach ensures strong separation of concerns between structure (HTML) and presentation (CSS).
+
+---
+
 ## Layout Grid Structure
 
 The interface uses a **two-column CSS Grid** layout:

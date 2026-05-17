@@ -4,7 +4,7 @@
 const S = {
   text: '',
   font: 'Caveat',
-  fontSize: 16,
+  fontSize: 22,
   lineHeight: 1.5,
   wordSpacing: 1,
   margin: 80,
@@ -323,17 +323,21 @@ function drawPaperBackground(ctx, style) {
 
 /* ───────────────────────────────────────────
    PHASE 4.3 — PER-CHARACTER VARIATION ENGINE
+   All offsets scale proportionally with fontSize
+   so the handwriting looks natural at any size.
 ─────────────────────────────────────────── */
-function getCharVariation(rotMax, pressure) {
+function getCharVariation(rotMax, pressure, fontSize) {
   const rand = (min, max) => min + Math.random() * (max - min);
+  // Scale factor: at 22px baseline, factors equal ~1.0
+  const k = (fontSize || 22) / 22;
   return {
     tiltDeg: rand(-rotMax, rotMax),
-    scaleY: rand(0.88, 1.12),
-    scaleX: rand(0.94, 1.06),
-    baselineOff: rand(-2.2, 2.2),
-    spacingExtra: rand(-1.2, 2.4),
-    pressureMod: 1 - (Math.random() * pressure * 2),  // stroke weight variation
-    opacity: rand(0.82, 1.0),
+    scaleY: rand(0.95, 1.05),
+    scaleX: rand(0.97, 1.03),
+    baselineOff: rand(-1.5, 1.5) * k,
+    spacingExtra: rand(-0.6, 1.0) * k,
+    pressureMod: 1 - (Math.random() * pressure * 1.4),  // stroke weight variation
+    opacity: rand(0.88, 1.0),
   };
 }
 
@@ -372,8 +376,32 @@ function getGraphemes(text) {
   return [...text];
 }
 
-function containsDevanagari(text) {
-  return /[\u0900-\u097F]/.test(text);
+/* Detect text that requires word-level shaped rendering.
+   Covers: Devanagari, Devanagari Extended, Vedic Extensions,
+   Bengali, Gurmukhi, Gujarati, Oriya, Tamil, Telugu, Kannada,
+   Malayalam, Sinhala — all scripts that use combining marks,
+   matras, half-letters, and conjunct ligatures. */
+function isIndicScript(text) {
+  return /[\u0900-\u097F\uA8E0-\uA8FF\u1CD0-\u1CFF\u0980-\u09FF\u0A00-\u0A7F\u0A80-\u0AFF\u0B00-\u0B7F\u0B80-\u0BFF\u0C00-\u0C7F\u0C80-\u0CFF\u0D00-\u0D7F\u0D80-\u0DFF]/.test(text);
+}
+// Backward-compatible alias
+const containsDevanagari = isIndicScript;
+
+/* Fonts known to include Devanagari glyphs */
+const DEVANAGARI_FONTS = new Set([
+  'Kalam', 'Amita', 'Noto Sans Devanagari', 'Noto Serif Devanagari',
+  'Hind', 'Tiro Devanagari Hindi', 'Baloo 2', 'Martel'
+]);
+
+/* Build a font-family string that guarantees proper Devanagari rendering.
+   If the currently selected font doesn't support Devanagari, we append
+   Noto Sans Devanagari as a fallback so the browser shaper uses it
+   instead of the OS's generic serif/sans-serif Devanagari fallback. */
+function getFontStack(isIndic) {
+  if (!isIndic || DEVANAGARI_FONTS.has(S.font)) {
+    return `"${S.font}"`;
+  }
+  return `"${S.font}", "Noto Sans Devanagari", "Hind", sans-serif`;
 }
 
 function renderText(text) {
@@ -422,8 +450,11 @@ function renderText(text) {
       const lineWord = lines[li];
       if (!lineWord) continue;
 
-      // Measure word width using current font
-      ctx.font = `${S.fontSize}px "${S.font}"`;
+      const wordIsIndic = containsDevanagari(lineWord);
+      const fontStack = getFontStack(wordIsIndic);
+
+      // Measure word width using appropriate font stack
+      ctx.font = `${S.fontSize}px ${fontStack}`;
       const wordWidth = ctx.measureText(lineWord).width + S.wordSpacing;
 
       // Word wrap
@@ -439,22 +470,23 @@ function renderText(text) {
         }
       }
 
-      if (containsDevanagari(lineWord)) {
-        // Render Hindi / Devanagari words as single shaped block to preserve combining marks & conjunct ligatures
-        const v = getCharVariation(S.rotationMax, S.pressure);
+      if (wordIsIndic) {
+        // Render Indic words as single shaped block to preserve combining marks & conjunct ligatures
+        const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
 
-        // Baseline wobble
-        const wobble = Math.sin(charIndex * 0.18) * 1.8;
-        const cy = y + v.baselineOff + wobble;
+        // Baseline wobble (reduced for Indic — heavy wobble breaks the shirorekha)
+        const wobble = Math.sin(charIndex * 0.18) * 0.4 * (S.fontSize / 22);
+        const cy = y + (v.baselineOff * 0.4) + wobble;
 
         ctx.save();
         ctx.translate(x, cy);
-        ctx.rotate((v.tiltDeg * Math.PI) / 180);
+        // Reduce rotation for Indic scripts — the headline bar (shirorekha) looks broken when rotated
+        ctx.rotate((v.tiltDeg * 0.3 * Math.PI) / 180);
         ctx.scale(v.scaleX, v.scaleY);
 
         // Pressure variation
         const pxSize = S.fontSize * v.pressureMod;
-        ctx.font = `${Math.max(10, pxSize)}px "${S.font}"`;
+        ctx.font = `${Math.max(10, pxSize)}px ${fontStack}`;
         ctx.globalAlpha = v.opacity;
 
         // Ink bleed
@@ -470,7 +502,7 @@ function renderText(text) {
         ctx.restore();
 
         // Advance cursor
-        ctx.font = `${S.fontSize}px "${S.font}"`;
+        ctx.font = `${S.fontSize}px ${fontStack}`;
         x += ctx.measureText(lineWord).width + v.spacingExtra;
         charIndex += lineWord.length;
       } else {
@@ -478,10 +510,10 @@ function renderText(text) {
         const graphemes = getGraphemes(lineWord);
         for (let ci = 0; ci < graphemes.length; ci++) {
           const ch = graphemes[ci];
-          const v = getCharVariation(S.rotationMax, S.pressure);
+          const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
 
-          // Baseline wobble
-          const wobble = Math.sin(charIndex * 0.18) * 1.8;
+          // Baseline wobble — proportional to font size
+          const wobble = Math.sin(charIndex * 0.18) * 0.8 * (S.fontSize / 22);
           const cy = y + v.baselineOff + wobble;
 
           ctx.save();
@@ -491,7 +523,7 @@ function renderText(text) {
 
           // Pressure / font-size variation
           const pxSize = S.fontSize * v.pressureMod;
-          ctx.font = `${Math.max(10, pxSize)}px "${S.font}"`;
+          ctx.font = `${Math.max(10, pxSize)}px ${fontStack}`;
           ctx.globalAlpha = v.opacity;
 
           // Ink bleed
@@ -507,7 +539,7 @@ function renderText(text) {
           ctx.restore();
 
           // Advance cursor
-          ctx.font = `${S.fontSize}px "${S.font}"`;
+          ctx.font = `${S.fontSize}px ${fontStack}`;
           x += ctx.measureText(ch).width + v.spacingExtra;
           charIndex++;
         }
@@ -515,7 +547,7 @@ function renderText(text) {
 
       // Space after word (not on last word of line)
       if (li === lines.length - 1) {
-        ctx.font = `${S.fontSize}px "${S.font}"`;
+        ctx.font = `${S.fontSize}px ${fontStack}`;
         x += ctx.measureText(' ').width + S.wordSpacing;
       }
     }
@@ -574,33 +606,35 @@ function buildCharQueue(text) {
       }
       const lineWord = lines[li];
       if (!lineWord) continue;
-      ctx.font = `${S.fontSize}px "${S.font}"`;
+      const wordIsIndic = containsDevanagari(lineWord);
+      const fontStack = getFontStack(wordIsIndic);
+      ctx.font = `${S.fontSize}px ${fontStack}`;
       const wordWidth = ctx.measureText(lineWord).width + S.wordSpacing;
       if (x + wordWidth > rightMargin && x > margin) {
         x = margin; y += lineH;
         if (y + lineH > PAGE_H - margin) { pageIdx++; y = margin + S.fontSize; }
       }
-      if (containsDevanagari(lineWord)) {
-        const v = getCharVariation(S.rotationMax, S.pressure);
-        const wobble = Math.sin(charIndex * 0.18) * 1.8;
-        queue.push({ ch: lineWord, x, y: y + v.baselineOff + wobble, v, pageIdx });
-        ctx.font = `${S.fontSize}px "${S.font}"`;
+      if (wordIsIndic) {
+        const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
+        const wobble = Math.sin(charIndex * 0.18) * 0.4 * (S.fontSize / 22);
+        queue.push({ ch: lineWord, x, y: y + (v.baselineOff * 0.4) + wobble, v, pageIdx, isIndic: true });
+        ctx.font = `${S.fontSize}px ${fontStack}`;
         x += ctx.measureText(lineWord).width + v.spacingExtra;
         charIndex += lineWord.length;
       } else {
         const graphemes = getGraphemes(lineWord);
         for (let ci = 0; ci < graphemes.length; ci++) {
           const ch = graphemes[ci];
-          const v = getCharVariation(S.rotationMax, S.pressure);
-          const wobble = Math.sin(charIndex * 0.18) * 1.8;
-          queue.push({ ch, x, y: y + v.baselineOff + wobble, v, pageIdx });
-          ctx.font = `${S.fontSize}px "${S.font}"`;
+          const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
+          const wobble = Math.sin(charIndex * 0.18) * 0.8 * (S.fontSize / 22);
+          queue.push({ ch, x, y: y + v.baselineOff + wobble, v, pageIdx, isIndic: false });
+          ctx.font = `${S.fontSize}px ${fontStack}`;
           x += ctx.measureText(ch).width + v.spacingExtra;
           charIndex++;
         }
       }
       if (li === lines.length - 1) {
-        ctx.font = `${S.fontSize}px "${S.font}"`;
+        ctx.font = `${S.fontSize}px ${fontStack}`;
         x += ctx.measureText(' ').width + S.wordSpacing;
       }
     }
@@ -649,10 +683,11 @@ function startAnimation() {
       const v = item.v;
       ctx.save();
       ctx.translate(item.x, item.y);
-      ctx.rotate((v.tiltDeg * Math.PI) / 180);
+      ctx.rotate((v.tiltDeg * (item.isIndic ? 0.3 : 1) * Math.PI) / 180);
       ctx.scale(v.scaleX, v.scaleY);
       const pxSize = S.fontSize * v.pressureMod;
-      ctx.font = `${Math.max(10, pxSize)}px "${S.font}"`;
+      const fontStack = getFontStack(item.isIndic);
+      ctx.font = `${Math.max(10, pxSize)}px ${fontStack}`;
       ctx.globalAlpha = v.opacity;
       if (S.bleed > 0.05) { ctx.shadowColor = S.inkColor; ctx.shadowBlur = S.bleed * 1.4; }
       ctx.fillStyle = S.inkColor;

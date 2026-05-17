@@ -4,6 +4,17 @@ All notable changes to Inkflow are documented in this file.
 
 ---
 
+## [1.1.0] — 2026-05-17
+
+### Added
+- **Clean Fallback Fonts**: Added `Roboto` and `Arial` to the font options for users who require cleaner, non-handwriting typography to avoid rendering artifacts.
+
+### Changed
+- **CSS Architecture**: Migrated hundreds of inline styles into external `index.css` utility classes for better maintainability and cleaner DOM structure.
+- **Accessibility Improvements**: Added descriptive `title` attributes and accessible labels to all form inputs, selects, and controls, resolving numerous screen-reader compliance warnings.
+
+---
+
 ## [1.0.0] — 2026-05-17
 
 ### 🎉 Initial Release

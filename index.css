@@ -1104,4 +1104,155 @@ html.dark .drop-zone {
   border-color: rgba(255,255,255,0.15) !important;
 }
 
+/* ───────────────────────────────────────────
+   ACCESSIBILITY & CLEANUP STYLES
+─────────────────────────────────────────── */
+#page-indicator-toolbar {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.action-buttons-row {
+  margin-top: 8px;
+  display: flex;
+  gap: 6px;
+}
+.btn-render, .btn-start {
+  flex: 1;
+}
+.file-upload-wrapper {
+  margin-top: 12px;
+}
+#file-upload, #template-image-input {
+  display: none;
+}
+#upload-status {
+  display: none;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+.status-text-row {
+  display: flex;
+  align-items: center;
+}
+#progress-container {
+  display: none;
+  width: 100%;
+  height: 4px;
+  background: rgba(0,0,0,0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+#progress-bar {
+  width: 0%;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.2s ease;
+}
+.font-caveat { font-family: Caveat; }
+.font-indie-flower { font-family: 'Indie Flower'; }
+.font-shadows-into-light { font-family: 'Shadows Into Light'; }
+.font-patrick-hand { font-family: 'Patrick Hand'; }
+.font-kalam { font-family: 'Kalam'; }
+.font-amita { font-family: 'Amita'; }
+.font-noto-sans-devanagari { font-family: 'Noto Sans Devanagari'; }
+.font-noto-serif-devanagari { font-family: 'Noto Serif Devanagari'; }
+.font-hind { font-family: 'Hind'; }
+.font-tiro-devanagari { font-family: 'Tiro Devanagari Hindi'; }
+.font-baloo-2 { font-family: 'Baloo 2'; }
+.font-martel { font-family: 'Martel'; }
+.font-roboto { font-family: 'Roboto', sans-serif; }
+.font-arial { font-family: 'Arial', sans-serif; }
 
+#font-upload {
+  font-size: 11px;
+  color: var(--text-secondary);
+  width: 100%;
+}
+#btn-handfonted-studio, #btn-reset-defaults {
+  width: 100%;
+  font-size: 11px;
+}
+#btn-handfonted-studio {
+  margin-top: 10px;
+}
+#btn-reset-defaults {
+  margin-top: 14px;
+}
+.ink-presets-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.sb-label-mt { margin-top: 12px; }
+.sb-label-sm { margin-top: 8px; }
+.animation-buttons-row {
+  margin-top: 10px;
+  display: flex;
+  gap: 6px;
+}
+.sketch-actions, .template-actions {
+  display: flex;
+  gap: 10px;
+}
+.sketch-actions {
+  margin-top: 12px;
+}
+.template-actions {
+  margin-bottom: 12px;
+}
+#btn-save-char {
+  flex: 1;
+}
+.template-upload-icon {
+  font-size: 24px;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+#template-aligner-container {
+  margin-top: 16px;
+}
+.modal-footer-styled {
+  margin-top: 20px;
+  border-top: 1px solid rgba(0,0,0,0.1);
+  padding-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.font-name-input-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.font-name-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+#custom-font-name {
+  width: 140px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(0,0,0,0.15);
+  background: rgba(255,255,255,0.7);
+}
+#font-build-progress {
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 6px;
+  background: rgba(230,100,50,0.1);
+  text-align: center;
+}
+.spinner-inline {
+  display: inline-block;
+  margin-right: 8px;
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+  border-top-color: var(--accent);
+}
+#font-build-status-text {
+  font-size: 12px;
+  color: var(--accent);
+}

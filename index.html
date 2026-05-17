@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Delius&family=Homemade+Apple&family=Shadows+Into+Light&family=architects-daughter&family=gochi-hand&family=just-another-hand&family=nanum-pen-script&family=pangolin&family=reey:wght@400&family=Kalam:wght@300;400;700&family=Amita:wght@400;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Delius&family=Homemade+Apple&family=Shadows+Into+Light&family=architects-daughter&family=gochi-hand&family=just-another-hand&family=nanum-pen-script&family=pangolin&family=reey:wght@400&family=Kalam:wght@300;400;700&family=Amita:wght@400;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Serif+Devanagari:wght@400;500;600;700&family=Hind:wght@300;400;500;600;700&family=Tiro+Devanagari+Hindi:ital@0;1&family=Baloo+2:wght@400;500;600;700;800&family=Martel:wght@200;300;400;600;700;800;900&display=swap"
     rel="stylesheet" />
 
   <!-- html2canvas for image export -->
@@ -43,7 +43,7 @@
     <div class="toolbar-spacer"></div>
 
     <div class="toolbar-group">
-      <span id="page-indicator-toolbar" style="font-size:12px;color:var(--text-muted);">Page 1 of 1</span>
+      <span id="page-indicator-toolbar">Page 1 of 1</span>
       <button class="dark-toggle" id="dark-toggle" aria-label="Toggle dark mode">
         <span id="dark-icon">☀️</span>
       </button>
@@ -70,24 +70,24 @@
 The handwriting engine will render each character with natural variation, baseline wobble, and ink effects.
 
 Try pasting a paragraph of lecture notes!"></textarea>
-          <div style="margin-top:8px;display:flex;gap:6px;">
-            <button class="btn accent" style="flex:1" onclick="triggerRender()">✦ Render</button>
+          <div class="action-buttons-row">
+            <button class="btn accent btn-render" onclick="triggerRender()">✦ Render</button>
             <button class="btn" onclick="clearText()" title="Clear text">✕</button>
           </div>
 
-          <div class="file-upload-wrapper" style="margin-top:12px;">
+          <div class="file-upload-wrapper">
             <div id="drop-zone" class="drop-zone">
               <i class="fa-solid fa-cloud-arrow-up drop-icon"></i>
               <span class="drop-text">Drag & drop or <span class="browse-link">browse</span></span>
               <span class="drop-formats">Supports PDF, TXT, MD</span>
-              <input type="file" id="file-upload" accept=".pdf,.txt,.md" style="display:none;" />
+              <input type="file" id="file-upload" accept=".pdf,.txt,.md" title="Upload Note Content" />
             </div>
-            <div id="upload-status" class="upload-status" style="display:none; flex-direction: column; align-items: stretch; gap: 8px;">
-              <div style="display:flex; align-items:center;">
+            <div id="upload-status" class="upload-status">
+              <div class="status-text-row">
                 <span id="status-text">Processing...</span>
               </div>
-              <div id="progress-container" style="display:none; width:100%; height:4px; background:rgba(0,0,0,0.1); border-radius:2px; overflow:hidden;">
-                <div id="progress-bar" style="width:0%; height:100%; background:var(--accent); transition:width 0.2s ease;"></div>
+              <div id="progress-container">
+                <div id="progress-bar"></div>
               </div>
             </div>
           </div>
@@ -103,48 +103,60 @@ Try pasting a paragraph of lecture notes!"></textarea>
         <div class="sb-body">
           <!-- Phase 3.1 — Font selector -->
           <div class="sb-label">Handwriting Font</div>
-          <select id="font-select">
-            <option value="Caveat" style="font-family:Caveat">Caveat</option>
-            <option value="Indie Flower" style="font-family:'Indie Flower'">Indie Flower</option>
-            <option value="Shadows Into Light" style="font-family:'Shadows Into Light'">Shadows Into Light</option>
-            <option value="Patrick Hand" style="font-family:'Patrick Hand'">Patrick Hand</option>
-            <option value="Kalam" style="font-family:'Kalam'">Kalam (Hindi/Latin)</option>
-            <option value="Amita" style="font-family:'Amita'">Amita (Hindi/Latin)</option>
+          <select id="font-select" title="Handwriting Font">
+            <optgroup label="English Handwriting">
+              <option value="Caveat" class="font-caveat">Caveat</option>
+              <option value="Indie Flower" class="font-indie-flower">Indie Flower</option>
+              <option value="Shadows Into Light" class="font-shadows-into-light">Shadows Into Light</option>
+              <option value="Patrick Hand" class="font-patrick-hand">Patrick Hand</option>
+            </optgroup>
+            <optgroup label="हिंदी / Devanagari">
+              <option value="Kalam" class="font-kalam">Kalam — कलम (Handwriting)</option>
+              <option value="Amita" class="font-amita">Amita — अमिता (Calligraphic)</option>
+              <option value="Noto Sans Devanagari" class="font-noto-sans-devanagari">Noto Sans Devanagari — नोटो (Clean)</option>
+              <option value="Noto Serif Devanagari" class="font-noto-serif-devanagari">Noto Serif Devanagari — नोटो सेरिफ़ (Formal)</option>
+              <option value="Hind" class="font-hind">Hind — हिन्द (Readable)</option>
+              <option value="Tiro Devanagari Hindi" class="font-tiro-devanagari">Tiro Devanagari — टीरो (Typographic)</option>
+              <option value="Baloo 2" class="font-baloo-2">Baloo 2 — बालू (Friendly)</option>
+              <option value="Martel" class="font-martel">Martel — मार्टेल (Elegant Serif)</option>
+            </optgroup>
+            <optgroup label="Clean / Non-Handwriting">
+              <option value="Roboto" class="font-roboto">Roboto</option>
+              <option value="Arial" class="font-arial">Arial</option>
+            </optgroup>
           </select>
 
           <!-- Phase 3.3 — Custom font upload -->
           <div class="sb-label" style="margin-top:10px;">Upload Custom Font</div>
-          <input type="file" id="font-upload" accept=".ttf,.otf"
-            style="font-size:11px;color:var(--text-secondary);width:100%" />
+          <input type="file" id="font-upload" accept=".ttf,.otf" title="Upload Custom Font" />
 
           <!-- Create Own Font Button -->
-          <button class="btn sm primary" id="btn-handfonted-studio" style="margin-top:10px;width:100%;font-size:11px;">
+          <button class="btn sm primary" id="btn-handfonted-studio">
             ✨ Create Your Own Font
           </button>
 
           <!-- Phase 5.1 — Font size -->
-          <div class="sb-label">Font Size <span class="val" id="fs-val">16</span></div>
-          <input type="range" id="font-size-slider" min="14" max="52" value="16" step="1" />
+          <div class="sb-label">Font Size <span class="val" id="fs-val">22</span></div>
+          <input type="range" id="font-size-slider" min="14" max="52" value="22" step="1" title="Font Size" />
 
           <!-- Phase 5.2 — Line spacing -->
           <div class="sb-label">Line Spacing <span class="val" id="ls-val">1.5</span></div>
-          <input type="range" id="line-spacing" min="1.2" max="3.0" step="0.1" value="1.5" />
+          <input type="range" id="line-spacing" min="1.2" max="3.0" step="0.1" value="1.5" title="Line Spacing" />
 
           <!-- Phase 5.3 — Word spacing -->
           <div class="sb-label">Word Spacing <span class="val" id="ws-val">1</span></div>
-          <input type="range" id="word-spacing" min="-2" max="14" step="1" value="1" />
+          <input type="range" id="word-spacing" min="-2" max="14" step="1" value="1" title="Word Spacing" />
 
           <!-- Phase 5.4 — Margin -->
           <div class="sb-label">Margin <span class="val" id="mg-val">80</span></div>
-          <input type="range" id="margin-slider" min="20" max="100" step="2" value="80" />
+          <input type="range" id="margin-slider" min="20" max="100" step="2" value="80" title="Margin" />
 
           <!-- Phase 5.5 — Rotation randomness -->
           <div class="sb-label">Rotation Chaos <span class="val" id="rot-val">1</span></div>
-          <input type="range" id="rotation-slider" min="0" max="12" step="0.5" value="1" />
+          <input type="range" id="rotation-slider" min="0" max="12" step="0.5" value="1" title="Rotation Chaos" />
 
           <!-- Reset Defaults Button -->
-          <button class="btn sm" id="btn-reset-defaults" style="margin-top:14px;width:100%;font-size:11px;"
-            onclick="resetToDefaults()">
+          <button class="btn sm" id="btn-reset-defaults" onclick="resetToDefaults()">
             <i class="fa-solid fa-rotate-left"></i> &nbsp;Reset Defaults
           </button>
         </div>
@@ -178,10 +190,10 @@ Try pasting a paragraph of lecture notes!"></textarea>
           <!-- Phase 5.6 — Ink color picker -->
           <div class="sb-label">Ink Color</div>
           <div class="color-row">
-            <input type="color" id="ink-color" value="#1c2340" />
+            <input type="color" id="ink-color" value="#1c2340" title="Ink Color" />
             <span id="ink-color-label">#1c2340 — Navy</span>
           </div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
+          <div class="ink-presets-row">
             <button class="btn sm" onclick="setInkPreset('#1c2340','Navy')" title="Navy">🔵</button>
             <button class="btn sm" onclick="setInkPreset('#1a1a1a','Black')" title="Black">⚫</button>
             <button class="btn sm" onclick="setInkPreset('#0a3d62','Blue')" title="Blue Ink">💙</button>
@@ -190,11 +202,11 @@ Try pasting a paragraph of lecture notes!"></textarea>
             <button class="btn sm" onclick="setInkPreset('#2d6a4f','Green')" title="Green">🟢</button>
           </div>
 
-          <div class="sb-label" style="margin-top:12px;">Ink Bleed <span class="val" id="bleed-val">0.5</span></div>
-          <input type="range" id="bleed-slider" min="0" max="2.5" step="0.1" value="0.5" />
+          <div class="sb-label sb-label-mt">Ink Bleed <span class="val" id="bleed-val">0.5</span></div>
+          <input type="range" id="bleed-slider" min="0" max="2.5" step="0.1" value="0.5" title="Ink Bleed" />
 
           <div class="sb-label">Pressure Variation <span class="val" id="pressure-val">0.12</span></div>
-          <input type="range" id="pressure-slider" min="0" max="0.3" step="0.01" value="0.12" />
+          <input type="range" id="pressure-slider" min="0" max="0.3" step="0.01" value="0.12" title="Pressure Variation" />
         </div>
       </div>
 
@@ -207,25 +219,25 @@ Try pasting a paragraph of lecture notes!"></textarea>
         <div class="sb-body">
           <!-- Provider selector -->
           <div class="sb-label">AI Provider</div>
-          <select id="ai-provider" onchange="onProviderChange()">
+          <select id="ai-provider" onchange="onProviderChange()" title="AI Provider">
             <option value="openrouter" selected>🌐 OpenRouter</option>
             <option value="anthropic">🔑 Anthropic (Direct)</option>
           </select>
 
           <!-- Model selector -->
-          <div class="sb-label" style="margin-top:8px;">Model</div>
-          <select id="ai-model"></select>
+          <div class="sb-label sb-label-sm">Model</div>
+          <select id="ai-model" title="AI Model"></select>
 
           <!-- API Key input -->
-          <div class="sb-label" style="margin-top:8px;" id="api-key-label">OpenRouter API Key</div>
-          <input type="password" id="api-key" placeholder="sk-or-v1-…" autocomplete="off" />
+          <div class="sb-label sb-label-sm" id="api-key-label">OpenRouter API Key</div>
+          <input type="password" id="api-key" placeholder="sk-or-v1-…" autocomplete="off" title="OpenRouter API Key" />
           <div id="ai-status"></div>
 
           <div class="sb-divider"></div>
 
           <!-- Assignment generator topic -->
           <div class="sb-label">Topic (for assignment)</div>
-          <input type="text" id="ai-topic" placeholder="e.g. Photosynthesis" />
+          <input type="text" id="ai-topic" placeholder="e.g. Photosynthesis" title="Topic (for assignment)" />
 
           <!-- AI action buttons -->
           <div class="ai-btn-group">
@@ -265,9 +277,9 @@ Try pasting a paragraph of lecture notes!"></textarea>
         </div>
         <div class="sb-body">
           <div class="sb-label">Writing Speed <span class="val" id="spd-val">8</span></div>
-          <input type="range" id="speed-slider" min="1" max="30" step="1" value="8" />
-          <div style="margin-top:10px;display:flex;gap:6px;">
-            <button class="btn accent" style="flex:1" onclick="startAnimation()">▶ Start</button>
+          <input type="range" id="speed-slider" min="1" max="30" step="1" value="8" title="Writing Speed" />
+          <div class="animation-buttons-row">
+            <button class="btn accent btn-start" onclick="startAnimation()">▶ Start</button>
             <button class="btn" onclick="stopAnimation()">■ Stop</button>
           </div>
         </div>
@@ -330,8 +342,8 @@ Try pasting a paragraph of lecture notes!"></textarea>
               <!-- Grey letter guide inside canvas -->
               <div id="canvas-guide-letter">A</div>
             </div>
-            <div class="sketch-actions" style="margin-top:12px; display:flex; gap:10px;">
-              <button class="btn primary" id="btn-save-char" onclick="saveActiveCharacter()" style="flex:1;">
+            <div class="sketch-actions">
+              <button class="btn primary" id="btn-save-char" onclick="saveActiveCharacter()">
                 💾 Save Character
               </button>
               <button class="btn secondary" id="btn-next-char" onclick="advanceActiveCharacter()">
@@ -345,16 +357,16 @@ Try pasting a paragraph of lecture notes!"></textarea>
       <!-- Upload Template Panel -->
       <div id="panel-template" class="tab-panel hidden">
         <p class="modal-desc">Download the 8x8 grid sheet, write your letters clearly, take a photo or scan of it, and align the grid overlay below.</p>
-        <div class="template-actions" style="margin-bottom:12px; display:flex; gap:10px;">
+        <div class="template-actions">
           <button class="btn sm" onclick="generateDownloadTemplate()">📥 Download Blank Template Grid</button>
         </div>
         <div class="template-upload-zone" id="template-dropzone">
-          <i class="fa-solid fa-cloud-arrow-up" style="font-size:24px;color:var(--accent);margin-bottom:8px;"></i>
+          <i class="fa-solid fa-cloud-arrow-up template-upload-icon"></i>
           <span>Drag & Drop filled template image or click to select</span>
-          <input type="file" id="template-image-input" accept="image/*" style="display:none;" />
+          <input type="file" id="template-image-input" accept="image/*" title="Upload Template Image" />
         </div>
 
-        <div id="template-aligner-container" class="hidden" style="margin-top:16px;">
+        <div id="template-aligner-container" class="hidden">
           <div class="aligner-layout">
             <div class="aligner-canvas-wrapper">
               <canvas id="aligner-canvas" width="360" height="360"></canvas>
@@ -364,22 +376,22 @@ Try pasting a paragraph of lecture notes!"></textarea>
               
               <div class="control-group">
                 <label>Grid X Offset <span class="val" id="val-grid-x">22</span>px</label>
-                <input type="range" id="slider-grid-x" min="-100" max="200" value="22" oninput="updateAlignerGrid()" />
+                <input type="range" id="slider-grid-x" min="-100" max="200" value="22" oninput="updateAlignerGrid()" title="Grid X Offset" />
               </div>
 
               <div class="control-group">
                 <label>Grid Y Offset <span class="val" id="val-grid-y">36</span>px</label>
-                <input type="range" id="slider-grid-y" min="-100" max="200" value="36" oninput="updateAlignerGrid()" />
+                <input type="range" id="slider-grid-y" min="-100" max="200" value="36" oninput="updateAlignerGrid()" title="Grid Y Offset" />
               </div>
 
               <div class="control-group">
                 <label>Grid Width <span class="val" id="val-grid-w">315</span>px</label>
-                <input type="range" id="slider-grid-w" min="100" max="800" value="315" oninput="updateAlignerGrid()" />
+                <input type="range" id="slider-grid-w" min="100" max="800" value="315" oninput="updateAlignerGrid()" title="Grid Width" />
               </div>
 
               <div class="control-group">
                 <label>Grid Height <span class="val" id="val-grid-h">315</span>px</label>
-                <input type="range" id="slider-grid-h" min="100" max="800" value="315" oninput="updateAlignerGrid()" />
+                <input type="range" id="slider-grid-h" min="100" max="800" value="315" oninput="updateAlignerGrid()" title="Grid Height" />
               </div>
             </div>
           </div>
@@ -387,19 +399,19 @@ Try pasting a paragraph of lecture notes!"></textarea>
       </div>
 
       <!-- Common Modal Footer Actions -->
-      <div class="modal-footer" style="margin-top:20px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 14px; display: flex; align-items: center; justify-content: space-between;">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <span style="font-size:12px;color:var(--text-secondary);">Font Name:</span>
-          <input type="text" id="custom-font-name" value="MyHandwriting" style="width:140px;padding:4px 8px;border-radius:4px;border:1px solid rgba(0,0,0,0.15);background:rgba(255,255,255,0.7);" />
+      <div class="modal-footer modal-footer-styled">
+        <div class="font-name-input-group">
+          <span class="font-name-label">Font Name:</span>
+          <input type="text" id="custom-font-name" value="MyHandwriting" title="Custom Font Name" />
         </div>
         <button class="btn primary" id="btn-build-font" onclick="buildCustomFont()">
           🚀 Generate & Apply Font
         </button>
       </div>
 
-      <div id="font-build-progress" class="hidden" style="margin-top:12px; padding:10px; border-radius:6px; background:rgba(230,100,50,0.1); text-align:center;">
-        <div class="spinner" style="display:inline-block; margin-right:8px; width:16px; height:16px; border-width:2px; border-top-color:var(--accent);"></div>
-        <span id="font-build-status-text" style="font-size:12px; color:var(--accent);">Processing contours...</span>
+      <div id="font-build-progress" class="hidden">
+        <div class="spinner spinner-inline"></div>
+        <span id="font-build-status-text">Processing contours...</span>
       </div>
     </div>
   </div>

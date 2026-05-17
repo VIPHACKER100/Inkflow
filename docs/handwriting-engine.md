@@ -14,17 +14,18 @@ Inkflow uses a character-by-character render loop on standard 2D canvas contexts
 
 The mathematical core of character rendering computes randomized transforms, baselines, and stroke properties for every individual glyph:
 
+$$k = \text{FontSize} / 22$$
 $$Tilt = \text{random}(-\text{rotMax}, \text{rotMax})$$
-$$\text{Scale}_X = \text{random}(0.94, 1.06)$$
-$$\text{Scale}_Y = \text{random}(0.88, 1.12)$$
-$$\text{Baseline Offset} = \text{random}(-2.2, 2.2)$$
-$$\text{Spacing Adjust} = \text{random}(-1.2, 2.4)$$
+$$\text{Scale}_X = \text{random}(0.97, 1.03)$$
+$$\text{Scale}_Y = \text{random}(0.95, 1.05)$$
+$$\text{Baseline Offset} = \text{random}(-1.5, 1.5) \times k$$
+$$\text{Spacing Adjust} = \text{random}(-0.6, 1.0) \times k$$
 
 These transforms are compiled within the character rendering matrix:
 
 ```javascript
-const v = getCharVariation(S.rotationMax, S.pressure);
-const wobble = Math.sin(charIndex * 0.18) * 1.8; // Sinusoidal drift representing hand drift
+const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
+const wobble = Math.sin(charIndex * 0.18) * 0.8 * (S.fontSize / 22); // Proportional sinusoidal hand drift
 const cy = y + v.baselineOff + wobble;
 
 ctx.save();
@@ -88,5 +89,7 @@ flowchart TD
 ## Key Design Decisions
 
 - **Individual character rendering** (vs. full-word rendering) creates far more realistic handwriting at the cost of slightly more computation.
-- **Sinusoidal wobble** (`Math.sin(charIndex * 0.18) * 1.8`) adds a natural hand-drift pattern that repeats subtly across lines.
+- **Proportional Scaling**: The engine scales baseline variation, spacing variations, and sinusoidal wobble based on `FontSize / 22`. This eliminates jagged "zigzag/typewriter" artifacts at larger font sizes and provides a uniform handwritten look.
+- **Sinusoidal wobble** (`Math.sin(charIndex * 0.18) * 0.8 * k`) adds a natural hand-drift pattern that repeats subtly across lines.
+- **Clean Font Fallbacks**: Standard fonts like Roboto and Arial are included as fallbacks and bypass certain rendering passes (like wobble and baseline offset) if desired by the user.
 - **Drop shadow ink bleed** is computationally inexpensive via the canvas shadow API and avoids complex pixel-level blending.
