@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inkflow — AI Handwritten Notes Generator</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Delius&family=Homemade+Apple&family=Shadows+Into+Light&family=architects-daughter&family=gochi-hand&family=just-another-hand&family=nanum-pen-script&family=pangolin&family=reey:wght@400&display=swap"
+    rel="stylesheet" />
+
+  <!-- html2canvas for image export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <!-- jsPDF for PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="index.css" />
+</head>
+
+<body>
+
+  <!-- ════════════════════════════════════════
+     PHASE 2.5 — TOP TOOLBAR
+════════════════════════════════════════ -->
+  <header id="toolbar">
+    <button id="hamburger" class="btn icon-btn" aria-label="Toggle sidebar">☰</button>
+    <div class="logo">Ink<span>flow</span></div>
+
+    <div class="toolbar-group">
+      <button class="btn sm" id="btn-animate" title="Watch notes write themselves">✍ Animate</button>
+      <button class="btn sm" id="btn-clear" title="Clear all pages">✕ Clear</button>
+    </div>
+
+    <div class="toolbar-spacer"></div>
+
+    <div class="toolbar-group">
+      <span id="page-indicator-toolbar" style="font-size:12px;color:var(--text-muted);">Page 1 of 1</span>
+      <button class="dark-toggle" id="dark-toggle" aria-label="Toggle dark mode">
+        <span id="dark-icon">☀️</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ════════════════════════════════════════
+     PHASE 2.1 — APP LAYOUT
+════════════════════════════════════════ -->
+  <div id="app">
+
+    <!-- PHASE 2.2 — GLASSMORPHISM SIDEBAR -->
+    <aside id="sidebar">
+
+      <!-- ── TEXT INPUT SECTION ── -->
+      <div class="sb-section" id="sec-text">
+        <div class="sb-section-header" onclick="toggleSection('sec-text')">
+          ✏️ &nbsp;Text Input
+          <span class="sb-arrow">▾</span>
+        </div>
+        <div class="sb-body">
+          <textarea id="text-input" placeholder="Start typing your notes here…
+
+The handwriting engine will render each character with natural variation, baseline wobble, and ink effects.
+
+Try pasting a paragraph of lecture notes!"></textarea>
+          <div style="margin-top:8px;display:flex;gap:6px;">
+            <button class="btn accent" style="flex:1" onclick="triggerRender()">✦ Render</button>
+            <button class="btn" onclick="clearText()" title="Clear text">✕</button>
+          </div>
+
+          <div class="file-upload-wrapper" style="margin-top:12px;">
+            <div id="drop-zone" class="drop-zone">
+              <i class="fa-solid fa-cloud-arrow-up drop-icon"></i>
+              <span class="drop-text">Drag & drop or <span class="browse-link">browse</span></span>
+              <span class="drop-formats">Supports PDF, TXT, MD</span>
+              <input type="file" id="file-upload" accept=".pdf,.txt,.md" style="display:none;" />
+            </div>
+            <div id="upload-status" class="upload-status" style="display:none; flex-direction: column; align-items: stretch; gap: 8px;">
+              <div style="display:flex; align-items:center;">
+                <span id="status-text">Processing...</span>
+              </div>
+              <div id="progress-container" style="display:none; width:100%; height:4px; background:rgba(0,0,0,0.1); border-radius:2px; overflow:hidden;">
+                <div id="progress-bar" style="width:0%; height:100%; background:var(--accent); transition:width 0.2s ease;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── FONT SETTINGS SECTION ── -->
+      <div class="sb-section" id="sec-font">
+        <div class="sb-section-header" onclick="toggleSection('sec-font')">
+          𝒜 &nbsp;Font &amp; Style
+          <span class="sb-arrow">▾</span>
+        </div>
+        <div class="sb-body">
+          <!-- Phase 3.1 — Font selector -->
+          <div class="sb-label">Handwriting Font</div>
+          <select id="font-select">
+            <option value="Caveat" style="font-family:Caveat">Caveat</option>
+            <option value="Indie Flower" style="font-family:'Indie Flower'">Indie Flower</option>
+            <option value="Shadows Into Light" style="font-family:'Shadows Into Light'">Shadows Into Light</option>
+            <option value="Patrick Hand" style="font-family:'Patrick Hand'">Patrick Hand</option>
+          </select>
+
+          <!-- Phase 3.3 — Custom font upload -->
+          <div class="sb-label" style="margin-top:10px;">Upload Custom Font</div>
+          <input type="file" id="font-upload" accept=".ttf,.otf"
+            style="font-size:11px;color:var(--text-secondary);width:100%" />
+
+          <!-- Create Own Font Button -->
+          <button class="btn sm primary" id="btn-handfonted-studio" style="margin-top:10px;width:100%;font-size:11px;">
+            ✨ Create Your Own Font
+          </button>
+
+          <!-- Phase 5.1 — Font size -->
+          <div class="sb-label">Font Size <span class="val" id="fs-val">16</span></div>
+          <input type="range" id="font-size-slider" min="14" max="52" value="16" step="1" />
+
+          <!-- Phase 5.2 — Line spacing -->
+          <div class="sb-label">Line Spacing <span class="val" id="ls-val">1.5</span></div>
+          <input type="range" id="line-spacing" min="1.2" max="3.0" step="0.1" value="1.5" />
+
+          <!-- Phase 5.3 — Word spacing -->
+          <div class="sb-label">Word Spacing <span class="val" id="ws-val">1</span></div>
+          <input type="range" id="word-spacing" min="-2" max="14" step="1" value="1" />
+
+          <!-- Phase 5.4 — Margin -->
+          <div class="sb-label">Margin <span class="val" id="mg-val">80</span></div>
+          <input type="range" id="margin-slider" min="20" max="100" step="2" value="80" />
+
+          <!-- Phase 5.5 — Rotation randomness -->
+          <div class="sb-label">Rotation Chaos <span class="val" id="rot-val">1</span></div>
+          <input type="range" id="rotation-slider" min="0" max="12" step="0.5" value="1" />
+
+          <!-- Reset Defaults Button -->
+          <button class="btn sm" id="btn-reset-defaults" style="margin-top:14px;width:100%;font-size:11px;"
+            onclick="resetToDefaults()">
+            <i class="fa-solid fa-rotate-left"></i> &nbsp;Reset Defaults
+          </button>
+        </div>
+      </div>
+
+      <!-- ── PAPER STYLE SECTION ── -->
+      <div class="sb-section" id="sec-paper">
+        <div class="sb-section-header" onclick="toggleSection('sec-paper')">
+          📄 &nbsp;Paper Style
+          <span class="sb-arrow">▾</span>
+        </div>
+        <div class="sb-body">
+          <div class="paper-grid">
+            <button class="paper-btn active" data-style="ruled" onclick="setPaper(this)">📏 Ruled</button>
+            <button class="paper-btn" data-style="plain" onclick="setPaper(this)">⬜ Plain</button>
+            <button class="paper-btn" data-style="grid" onclick="setPaper(this)">⊞ Grid</button>
+            <button class="paper-btn" data-style="legal" onclick="setPaper(this)">🟡 Legal Pad</button>
+            <button class="paper-btn" data-style="vintage" onclick="setPaper(this)">📜 Vintage</button>
+            <button class="paper-btn" data-style="dark" onclick="setPaper(this)">🌙 Dark</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── EFFECTS SECTION ── -->
+      <div class="sb-section" id="sec-effects">
+        <div class="sb-section-header" onclick="toggleSection('sec-effects')">
+          🎨 &nbsp;Ink Effects
+          <span class="sb-arrow">▾</span>
+        </div>
+        <div class="sb-body">
+          <!-- Phase 5.6 — Ink color picker -->
+          <div class="sb-label">Ink Color</div>
+          <div class="color-row">
+            <input type="color" id="ink-color" value="#1c2340" />
+            <span id="ink-color-label">#1c2340 — Navy</span>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
+            <button class="btn sm" onclick="setInkPreset('#1c2340','Navy')" title="Navy">🔵</button>
+            <button class="btn sm" onclick="setInkPreset('#1a1a1a','Black')" title="Black">⚫</button>
+            <button class="btn sm" onclick="setInkPreset('#0a3d62','Blue')" title="Blue Ink">💙</button>
+            <button class="btn sm" onclick="setInkPreset('#6d2177','Purple')" title="Purple">🟣</button>
+            <button class="btn sm" onclick="setInkPreset('#8b0000','Red')" title="Red">🔴</button>
+            <button class="btn sm" onclick="setInkPreset('#2d6a4f','Green')" title="Green">🟢</button>
+          </div>
+
+          <div class="sb-label" style="margin-top:12px;">Ink Bleed <span class="val" id="bleed-val">0.5</span></div>
+          <input type="range" id="bleed-slider" min="0" max="2.5" step="0.1" value="0.5" />
+
+          <div class="sb-label">Pressure Variation <span class="val" id="pressure-val">0.12</span></div>
+          <input type="range" id="pressure-slider" min="0" max="0.3" step="0.01" value="0.12" />
+        </div>
+      </div>
+
+      <!-- ── AI TOOLS SECTION ── -->
+      <div class="sb-section" id="sec-ai">
+        <div class="sb-section-header" onclick="toggleSection('sec-ai')">
+          ✦ &nbsp;AI Features
+          <span class="sb-arrow">▾</span>
+        </div>
+        <div class="sb-body">
+          <!-- Provider selector -->
+          <div class="sb-label">AI Provider</div>
+          <select id="ai-provider" onchange="onProviderChange()">
+            <option value="openrouter" selected>🌐 OpenRouter</option>
+            <option value="anthropic">🔑 Anthropic (Direct)</option>
+          </select>
+
+          <!-- Model selector -->
+          <div class="sb-label" style="margin-top:8px;">Model</div>
+          <select id="ai-model"></select>
+
+          <!-- API Key input -->
+          <div class="sb-label" style="margin-top:8px;" id="api-key-label">OpenRouter API Key</div>
+          <input type="password" id="api-key" placeholder="sk-or-v1-…" autocomplete="off" />
+          <div id="ai-status"></div>
+
+          <div class="sb-divider"></div>
+
+          <!-- Assignment generator topic -->
+          <div class="sb-label">Topic (for assignment)</div>
+          <input type="text" id="ai-topic" placeholder="e.g. Photosynthesis" />
+
+          <!-- AI action buttons -->
+          <div class="ai-btn-group">
+            <button class="btn" onclick="aiAction('summarize')">📋 Summarize Notes</button>
+            <button class="btn" onclick="aiAction('grammar')">✏️ Improve Grammar</button>
+            <button class="btn" onclick="aiAction('lecture')">🎓 Lecture → Notes</button>
+            <button class="btn" onclick="aiAction('assignment')">📝 Generate Assignment</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── EXPORT SECTION ── -->
+      <div class="sb-section" id="sec-export">
+        <div class="sb-section-header" onclick="toggleSection('sec-export')">
+          ⬇ &nbsp;Export
+          <span class="sb-arrow">▾</span>
+        </div>
+        <div class="sb-body">
+          <div class="export-grid">
+            <!-- Phase 8.1 — PNG -->
+            <button class="btn" onclick="exportImage('png')">🖼 PNG</button>
+            <!-- Phase 8.2 — JPG -->
+            <button class="btn" onclick="exportImage('jpg')">📷 JPG</button>
+            <!-- Phase 8.3/8.4 — PDF -->
+            <button class="btn" onclick="exportPDF()">📄 PDF</button>
+            <!-- Phase 8.5 — Print -->
+            <button class="btn" onclick="window.print()">🖨 Print</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ANIMATION SECTION ── -->
+      <div class="sb-section" id="sec-anim">
+        <div class="sb-section-header" onclick="toggleSection('sec-anim')">
+          ▶ &nbsp;Animation
+          <span class="sb-arrow">▾</span>
+        </div>
+        <div class="sb-body">
+          <div class="sb-label">Writing Speed <span class="val" id="spd-val">8</span></div>
+          <input type="range" id="speed-slider" min="1" max="30" step="1" value="8" />
+          <div style="margin-top:10px;display:flex;gap:6px;">
+            <button class="btn accent" style="flex:1" onclick="startAnimation()">▶ Start</button>
+            <button class="btn" onclick="stopAnimation()">■ Stop</button>
+          </div>
+        </div>
+      </div>
+
+    </aside><!-- /sidebar -->
+
+    <!-- PHASE 2.4 — CANVAS AREA -->
+    <main id="canvas-area">
+      <div id="page-container"></div>
+    </main>
+
+  </div><!-- /app -->
+
+  <!-- Pen cursor SVG overlay -->
+  <svg id="pen-cursor" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" stroke="var(--accent)" stroke-width="1.8"
+      stroke-linecap="round" stroke-linejoin="round" />
+  </svg>
+
+  <!-- ════════════════════════════════════════
+     PHASE 8.8 — PAGE NAVIGATION BAR
+════════════════════════════════════════ -->
+  <div id="page-nav">
+    <button class="btn sm icon-btn" id="nav-prev" onclick="navigatePage(-1)">◀</button>
+    <span id="page-indicator">Page 1 of 1</span>
+    <button class="btn sm icon-btn" id="nav-next" onclick="navigatePage(1)">▶</button>
+  </div>
+
+  <!-- ════════════════════════════════════════
+     HANDFONTED STUDIO — OWN FONT CREATOR
+  ════════════════════════════════════════ -->
+  <div id="handfonted-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>✨ HandFonted Studio</h3>
+        <button class="modal-close" onclick="closeHandFontedModal()">✕</button>
+      </div>
+      
+      <div class="modal-tabs">
+        <button class="tab-btn active" id="tab-btn-sketchpad" onclick="switchFontTab('sketchpad')">🎨 Live Sketchpad</button>
+        <button class="tab-btn" id="tab-btn-template" onclick="switchFontTab('template')">📸 Upload Template</button>
+      </div>
+
+      <!-- Live Sketchpad Panel -->
+      <div id="panel-sketchpad" class="tab-panel">
+        <p class="modal-desc">Draw letters one-by-one to generate a high-fidelity vector font.</p>
+        <div class="sketch-container">
+          <div class="sketch-sidebar">
+            <div class="sb-label">Select Character</div>
+            <div class="char-grid" id="sketch-char-grid"></div>
+          </div>
+          <div class="sketch-main">
+            <div class="sketch-header">
+              <span class="active-char-label">Current: <strong id="current-char-display">A</strong></span>
+              <button class="btn sm" onclick="clearSketchCanvas()">🗑️ Clear</button>
+            </div>
+            <div class="canvas-wrapper">
+              <canvas id="sketch-canvas" width="256" height="256"></canvas>
+              <!-- Grey letter guide inside canvas -->
+              <div id="canvas-guide-letter">A</div>
+            </div>
+            <div class="sketch-actions" style="margin-top:12px; display:flex; gap:10px;">
+              <button class="btn primary" id="btn-save-char" onclick="saveActiveCharacter()" style="flex:1;">
+                💾 Save Character
+              </button>
+              <button class="btn secondary" id="btn-next-char" onclick="advanceActiveCharacter()">
+                Next ➡️
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upload Template Panel -->
+      <div id="panel-template" class="tab-panel hidden">
+        <p class="modal-desc">Download the 8x8 grid sheet, write your letters clearly, take a photo or scan of it, and align the grid overlay below.</p>
+        <div class="template-actions" style="margin-bottom:12px; display:flex; gap:10px;">
+          <button class="btn sm" onclick="generateDownloadTemplate()">📥 Download Blank Template Grid</button>
+        </div>
+        <div class="template-upload-zone" id="template-dropzone">
+          <i class="fa-solid fa-cloud-arrow-up" style="font-size:24px;color:var(--accent);margin-bottom:8px;"></i>
+          <span>Drag & Drop filled template image or click to select</span>
+          <input type="file" id="template-image-input" accept="image/*" style="display:none;" />
+        </div>
+
+        <div id="template-aligner-container" class="hidden" style="margin-top:16px;">
+          <div class="aligner-layout">
+            <div class="aligner-canvas-wrapper">
+              <canvas id="aligner-canvas" width="360" height="360"></canvas>
+            </div>
+            <div class="aligner-controls">
+              <div class="sb-label">Align Grid Overlay</div>
+              
+              <div class="control-group">
+                <label>Grid X Offset <span class="val" id="val-grid-x">22</span>px</label>
+                <input type="range" id="slider-grid-x" min="-100" max="200" value="22" oninput="updateAlignerGrid()" />
+              </div>
+
+              <div class="control-group">
+                <label>Grid Y Offset <span class="val" id="val-grid-y">36</span>px</label>
+                <input type="range" id="slider-grid-y" min="-100" max="200" value="36" oninput="updateAlignerGrid()" />
+              </div>
+
+              <div class="control-group">
+                <label>Grid Width <span class="val" id="val-grid-w">315</span>px</label>
+                <input type="range" id="slider-grid-w" min="100" max="800" value="315" oninput="updateAlignerGrid()" />
+              </div>
+
+              <div class="control-group">
+                <label>Grid Height <span class="val" id="val-grid-h">315</span>px</label>
+                <input type="range" id="slider-grid-h" min="100" max="800" value="315" oninput="updateAlignerGrid()" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Common Modal Footer Actions -->
+      <div class="modal-footer" style="margin-top:20px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:12px;color:var(--text-secondary);">Font Name:</span>
+          <input type="text" id="custom-font-name" value="MyHandwriting" style="width:140px;padding:4px 8px;border-radius:4px;border:1px solid rgba(0,0,0,0.15);background:rgba(255,255,255,0.7);" />
+        </div>
+        <button class="btn primary" id="btn-build-font" onclick="buildCustomFont()">
+          🚀 Generate & Apply Font
+        </button>
+      </div>
+
+      <div id="font-build-progress" class="hidden" style="margin-top:12px; padding:10px; border-radius:6px; background:rgba(230,100,50,0.1); text-align:center;">
+        <div class="spinner" style="display:inline-block; margin-right:8px; width:16px; height:16px; border-width:2px; border-top-color:var(--accent);"></div>
+        <span id="font-build-status-text" style="font-size:12px; color:var(--accent);">Processing contours...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Script -->
+  <script src="index.js"></script>
+</body>
+
+</html>
