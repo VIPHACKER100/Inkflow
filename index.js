@@ -79,9 +79,23 @@ const fontSelect = document.getElementById('font-select');
 fontSelect.addEventListener('change', () => {
   S.font = fontSelect.value;
   fontSelect.style.fontFamily = S.font;
-  debounceRender();
+  if (document.fonts) {
+    document.fonts.load(`${S.fontSize}px "${S.font}"`).then(() => {
+      debounceRender();
+    }).catch(() => {
+      debounceRender();
+    });
+  } else {
+    debounceRender();
+  }
 });
 fontSelect.style.fontFamily = S.font;
+
+if (document.fonts) {
+  document.fonts.ready.then(() => {
+    debounceRender();
+  });
+}
 
 /* Phase 3.3 — Custom font upload */
 document.getElementById('font-upload').addEventListener('change', async function () {
@@ -344,7 +358,26 @@ function clearText() {
 /* ───────────────────────────────────────────
    PHASE 4.4–4.8 — TEXT-TO-CANVAS RENDERER
 ─────────────────────────────────────────── */
+function sanitizeText(str) {
+  if (!str) return '';
+  return str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\uE000-\uF8FF]/g, '');
+}
+
+function getGraphemes(text) {
+  if (!text) return [];
+  if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+    const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+    return Array.from(segmenter.segment(text)).map(s => s.segment);
+  }
+  return [...text];
+}
+
+function containsDevanagari(text) {
+  return /[\u0900-\u097F]/.test(text);
+}
+
 function renderText(text) {
+  text = sanitizeText(text);
   clearPages();
   if (!text.trim()) {
     createPage(1);
@@ -406,12 +439,11 @@ function renderText(text) {
         }
       }
 
-      // Render each character of the word
-      for (let ci = 0; ci < lineWord.length; ci++) {
-        const ch = lineWord[ci];
+      if (containsDevanagari(lineWord)) {
+        // Render Hindi / Devanagari words as single shaped block to preserve combining marks & conjunct ligatures
         const v = getCharVariation(S.rotationMax, S.pressure);
 
-        // Phase 4.6 — Baseline wobble
+        // Baseline wobble
         const wobble = Math.sin(charIndex * 0.18) * 1.8;
         const cy = y + v.baselineOff + wobble;
 
@@ -420,12 +452,12 @@ function renderText(text) {
         ctx.rotate((v.tiltDeg * Math.PI) / 180);
         ctx.scale(v.scaleX, v.scaleY);
 
-        // Phase 4.8 — Pressure / font-size variation
+        // Pressure variation
         const pxSize = S.fontSize * v.pressureMod;
         ctx.font = `${Math.max(10, pxSize)}px "${S.font}"`;
         ctx.globalAlpha = v.opacity;
 
-        // Phase 4.7 — Ink bleed
+        // Ink bleed
         if (S.bleed > 0.05) {
           ctx.shadowColor = S.inkColor;
           ctx.shadowBlur = S.bleed * 1.4;
@@ -434,13 +466,51 @@ function renderText(text) {
         }
 
         ctx.fillStyle = S.inkColor;
-        ctx.fillText(ch, 0, 0);
+        ctx.fillText(lineWord, 0, 0);
         ctx.restore();
 
         // Advance cursor
         ctx.font = `${S.fontSize}px "${S.font}"`;
-        x += ctx.measureText(ch).width + v.spacingExtra;
-        charIndex++;
+        x += ctx.measureText(lineWord).width + v.spacingExtra;
+        charIndex += lineWord.length;
+      } else {
+        // Render each character of the word (using grapheme clusters for Latin/ASCII/emojis)
+        const graphemes = getGraphemes(lineWord);
+        for (let ci = 0; ci < graphemes.length; ci++) {
+          const ch = graphemes[ci];
+          const v = getCharVariation(S.rotationMax, S.pressure);
+
+          // Baseline wobble
+          const wobble = Math.sin(charIndex * 0.18) * 1.8;
+          const cy = y + v.baselineOff + wobble;
+
+          ctx.save();
+          ctx.translate(x, cy);
+          ctx.rotate((v.tiltDeg * Math.PI) / 180);
+          ctx.scale(v.scaleX, v.scaleY);
+
+          // Pressure / font-size variation
+          const pxSize = S.fontSize * v.pressureMod;
+          ctx.font = `${Math.max(10, pxSize)}px "${S.font}"`;
+          ctx.globalAlpha = v.opacity;
+
+          // Ink bleed
+          if (S.bleed > 0.05) {
+            ctx.shadowColor = S.inkColor;
+            ctx.shadowBlur = S.bleed * 1.4;
+          } else {
+            ctx.shadowBlur = 0;
+          }
+
+          ctx.fillStyle = S.inkColor;
+          ctx.fillText(ch, 0, 0);
+          ctx.restore();
+
+          // Advance cursor
+          ctx.font = `${S.fontSize}px "${S.font}"`;
+          x += ctx.measureText(ch).width + v.spacingExtra;
+          charIndex++;
+        }
       }
 
       // Space after word (not on last word of line)
@@ -475,6 +545,7 @@ function triggerRender() {
    PHASE 6.1–6.4 — WRITING ANIMATION
 ─────────────────────────────────────────── */
 function buildCharQueue(text) {
+  text = sanitizeText(text);
   const queue = [];
   if (!text.trim()) return queue;
 
@@ -509,14 +580,24 @@ function buildCharQueue(text) {
         x = margin; y += lineH;
         if (y + lineH > PAGE_H - margin) { pageIdx++; y = margin + S.fontSize; }
       }
-      for (let ci = 0; ci < lineWord.length; ci++) {
-        const ch = lineWord[ci];
+      if (containsDevanagari(lineWord)) {
         const v = getCharVariation(S.rotationMax, S.pressure);
         const wobble = Math.sin(charIndex * 0.18) * 1.8;
-        queue.push({ ch, x, y: y + v.baselineOff + wobble, v, pageIdx });
+        queue.push({ ch: lineWord, x, y: y + v.baselineOff + wobble, v, pageIdx });
         ctx.font = `${S.fontSize}px "${S.font}"`;
-        x += ctx.measureText(ch).width + v.spacingExtra;
-        charIndex++;
+        x += ctx.measureText(lineWord).width + v.spacingExtra;
+        charIndex += lineWord.length;
+      } else {
+        const graphemes = getGraphemes(lineWord);
+        for (let ci = 0; ci < graphemes.length; ci++) {
+          const ch = graphemes[ci];
+          const v = getCharVariation(S.rotationMax, S.pressure);
+          const wobble = Math.sin(charIndex * 0.18) * 1.8;
+          queue.push({ ch, x, y: y + v.baselineOff + wobble, v, pageIdx });
+          ctx.font = `${S.fontSize}px "${S.font}"`;
+          x += ctx.measureText(ch).width + v.spacingExtra;
+          charIndex++;
+        }
       }
       if (li === lines.length - 1) {
         ctx.font = `${S.fontSize}px "${S.font}"`;
