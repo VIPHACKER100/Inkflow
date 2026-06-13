@@ -2,6 +2,8 @@
 
 Welcome to the **Inkflow** documentation hub. This folder contains all technical, design, and operational documentation for the project.
 
+**Current Version**: 1.2.0 — Unified Layout Engine, Blob Exports, SSE AI Streaming, Inline Page Editing
+
 ---
 
 ## 📂 Documentation Index
@@ -10,18 +12,18 @@ Welcome to the **Inkflow** documentation hub. This folder contains all technical
 
 | Document | Description |
 | :--- | :--- |
-| [System Architecture](./system-architecture.md) | High-level component map, data flow, and layer separation |
-| [State Management](./state-management.md) | Global config schema, hydration loop, localStorage persistence |
-| [Handwriting Engine](./handwriting-engine.md) | Per-character transforms, glyph variation, ink bleed simulation |
+| [System Architecture](./system-architecture.md) | High-level component map, data flow, rendering pipeline |
+| [State Management](./state-management.md) | Global config schema, dual input paths, hydration loop, localStorage |
+| [Handwriting Engine](./handwriting-engine.md) | Unified `layoutText()`, per-character transforms, Indic script support |
 | [Paper Rendering](./paper-rendering.md) | Background styles, grain texture shader, ruling/grid math |
-| [Animation Engine](./animation-engine.md) | Live writing animation, viewport calibration, pen tracking |
-| [Export Pipelines](./export-pipelines.md) | PNG/JPG image, multi-page PDF, and system print workflows |
+| [Animation Engine](./animation-engine.md) | Live writing animation, auto-scroll, pen tracking |
+| [Export Pipelines](./export-pipelines.md) | Blob-based PNG/JPG/SVG, PDF, clipboard copy, toast notifications |
 
 ### 🤖 Integrations
 
 | Document | Description |
 | :--- | :--- |
-| [AI Integration](./ai-integration.md) | Anthropic Claude API setup, prompt templates, response handling |
+| [AI Integration](./ai-integration.md) | OpenRouter + Anthropic multi-provider, SSE streaming, dynamic models |
 | [Custom Font Suite](./custom-font-suite.md) | HandFonted Studio: tracing, RDP smoothing, OpenType compilation |
 
 ### 🎨 Design & UX
@@ -29,7 +31,7 @@ Welcome to the **Inkflow** documentation hub. This folder contains all technical
 | Document | Description |
 | :--- | :--- |
 | [UI Design System](./ui-design-system.md) | CSS custom properties, theme tokens, layout grid structure |
-| [UX Interactions](./ux-interactions.md) | Responsive layout, collapsible panels, debounced rendering |
+| [UX Interactions](./ux-interactions.md) | Responsive layout, inline editing, collapsible panels, debounced rendering |
 
 ### 📘 Guides & References
 

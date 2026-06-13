@@ -1,6 +1,6 @@
 # 🧠 UX Interactions
 
-This document describes Inkflow's user experience design — responsive layouts, collapsible panels, debounced rendering, and interaction patterns.
+This document describes Inkflow's user experience design — responsive layouts, inline page editing, collapsible panels, debounced rendering, and interaction patterns.
 
 ---
 
@@ -13,44 +13,54 @@ This document describes Inkflow's user experience design — responsive layouts,
 
 ### Mobile (< 768px)
 - Single-column layout with collapsible sidebar drawer
-- Sidebar slides in/out via CSS transform:
-  ```css
-  transform: translateX(-100%); /* Hidden */
-  transform: translateX(0);     /* Visible */
-  ```
+- Sidebar slides in/out via CSS transform
 - Hamburger menu button (`#hamburger`) toggles the drawer
 - Canvas auto-scales using `Math.min(PAGE_W, 720)` for fit
 
 ### Canvas Auto-Scaling
-Rather than rendering canvases at tiny viewports, the app retains the high-density print size ($794 \times 1123\text{px}$) but dynamically scales the DOM representation, maintaining razor-sharp rendering on Retina displays.
+The app retains the high-density print size ($794 \times 1123\text{px}$) but dynamically scales the DOM representation, maintaining razor-sharp rendering on Retina displays.
+
+---
+
+## Inline Page Editing (v1.2.0)
+
+Each canvas page has a transparent `contenteditable` overlay (`.page-editor`) that enables direct on-page text editing:
+
+### Interaction Flow
+1. **Click on a page**: Editor gains focus, text becomes visible in ink color
+2. **Type/edit**: Changes sync to `S.text` and the sidebar textarea via `getGlobalTextFromEditors()`
+3. **Click away (blur)**: Editor text becomes transparent, canvas re-renders with handwriting
+
+### Style Synchronization
+`updateEditorStyles(editor, canvas)` keeps the overlay aligned with canvas settings:
+- Font family (including Devanagari fallbacks)
+- Font size scaled to canvas display dimensions
+- Padding matching the configured margins
+- Caret color matching the ink color
 
 ---
 
 ## Collapsible Sections
 
-Control configurations are segmented into logical, collapsible cards. Toggling a panel uses a smooth cubic-bezier transition:
+Control configurations are segmented into logical, collapsible cards:
 
 ```css
 transition: max-height 0.3s cubic-bezier(.4, 0, .2, 1), padding 0.22s ease;
 ```
 
-This produces an organic fluid-accordion motion, keeping complex configurations out of sight until needed.
-
 ### Section Categories
-1. **📝 Text Input** — Textarea for manual entry
+1. **📝 Text Input** — Textarea for manual entry + file upload zone
 2. **🔤 Typography** — Font, size, line height, word spacing
 3. **📄 Paper Style** — Ruled, plain, grid, legal, vintage, dark
 4. **✒️ Ink & Impression** — Color, rotation, bleed, pressure, margin
-5. **🤖 AI Assistant** — API key, AI workflow buttons
-6. **🎬 Animation** — Speed control, start/stop
-7. **📤 Export** — PNG, JPG, PDF, Print buttons
+5. **🤖 AI Assistant** — Provider, model, API key, workflow buttons
+6. **📤 Export** — PNG, JPG, SVG, PDF, Copy, Print
+7. **🎬 Animation** — Speed control, start/stop
 8. **🔤 Custom Font** — HandFonted Studio launcher
 
 ---
 
 ## Debounced Rendering
-
-To guarantee immediate visual feedback without stalling browser threads:
 
 ```javascript
 function debounceRender() {
@@ -69,12 +79,13 @@ function debounceRender() {
 
 ### Slider Controls
 - Real-time value preview labels update on `oninput`
-- Values displayed next to each slider label (e.g., "Font Size **24**px")
+- Values displayed next to each slider label
 - Immediate canvas re-render via debouncer
 
 ### Color Picker
 - Native `<input type="color">` for ink color selection
-- Instant preview on canvas without page reload
+- Preset color buttons for quick access (Navy, Blue, Green, Red, Graphite)
+- Instant preview on canvas
 
 ### Paper Style Selector
 - Visual radio-button cards with active state highlighting
@@ -84,9 +95,20 @@ function debounceRender() {
 - Bottom-center floating pill with left/right arrows
 - Page counter display: "Page 1 of 3"
 - Smooth scroll-into-view on page change
+- Also displayed in the top toolbar
 
 ### Modal Overlays
 - HandFonted Studio opens as a centered glassmorphism modal
-- Ambient radial backdrop filter dims background content
 - Tabbed navigation between "Live Sketchpad" and "Upload Template"
 - ESC key or overlay click to dismiss
+
+### File Upload
+- Drag-and-drop zone with visual dragover feedback
+- Click to browse files
+- Supports TXT, MD, and PDF with progress bar for PDF extraction
+- Upload status shown inline with success/error feedback
+
+### Export Toast Notifications
+- Non-blocking overlay in the bottom-right corner
+- Color-coded by type: info (blue), success (green), warn (yellow), error (red)
+- Auto-dismiss after 3 seconds for non-info types

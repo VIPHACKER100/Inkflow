@@ -4,6 +4,37 @@ All notable changes to Inkflow are documented in this file.
 
 ---
 
+## [1.2.0] — 2026-06-14
+
+### 🛠️ Fixed
+- **Critical Syntax Errors**: Resolved a corrupted merge that caused `clearText` and `layoutText` to be concatenated into a single broken function declaration, crashing all text rendering.
+- **Duplicate Layout Code**: Removed a leftover copy of the manual word-wrap loop that had been incorrectly embedded inside `buildCharQueue`, causing parse failures.
+- **Orphaned Function Fragments**: Cleaned up residual code (`ment.createElement('canvas')...`) left by failed paste operations near line 649.
+
+### ✨ Added
+- **Unified `layoutText()` Engine**: Centralized all word-wrap, line-break, and page-break calculations into a single `layoutText(text)` function. Both `renderText()` and `buildCharQueue()` now share this function, eliminating duplicate logic and ensuring consistent layout between static rendering and animation playback.
+- **Restored Helper Functions**: Re-integrated `sanitizeText()`, `getGraphemes()`, `isIndicScript()`, `containsDevanagari()`, `DEVANAGARI_FONTS`, and `getFontStack()` — all of which were accidentally removed during a previous refactoring session.
+- **Indic/Devanagari Script Support**: Fully restored multi-script rendering pipeline for Hindi and other Indic languages with proper Unicode range detection and automatic `Noto Sans Devanagari` font fallbacks.
+- **`lineCharIndex` Tracking**: Added per-line character index tracking so sinusoidal baseline wobble resets at each new line, preventing runaway drift across long passages.
+- **Page Editor Inline Editing**: Each canvas page now has a transparent overlay `<div contenteditable>` (`.page-editor`) allowing users to directly click and edit handwriting text on the page. Blur triggers a full canvas redraw.
+- **`getGlobalTextFromEditors()`**: New function that reads all page editors and concatenates their text, keeping the sidebar textarea in sync with in-page edits.
+- **Blob-based Export Downloads**: All exports (PNG, JPG, PDF, SVG) now use `URL.createObjectURL(blob)` instead of DataURL strings, resolving Chrome download tray invisibility for files over 2MB.
+- **SVG Export**: New `exportSVG()` function that generates an SVG file wrapping a full-resolution PNG image of each page.
+- **Copy to Clipboard**: New `copyToClipboard()` function using the Clipboard API to copy the current page as a PNG image.
+- **`showExportToast()`**: Non-blocking toast notification system for real-time export progress feedback (`info`, `success`, `warn`, `error` types with auto-dismiss).
+- **`triggerDownload()`**: Shared helper function for all download operations, correctly attaching and removing anchor elements from the DOM.
+- **SSE AI Streaming**: `callClaude()` upgraded to use Server-Sent Events (SSE) streaming via `ReadableStream` and `TextDecoder`. Text renders word-by-word onto the canvas as the AI generates it, eliminating UI freezing during generation.
+- **Auto-scroll During Animation**: The viewport now automatically scrolls to keep the pen cursor visible during animation playback.
+
+### ♻️ Changed
+- **`buildCharQueue(text)`**: Simplified to a thin wrapper (`return layoutText(text).queue`), delegating all coordinate computation to `layoutText()`.
+- **`renderText()`**: Updated to use `layoutText()` for all layout computation, then render the returned `queue` and sync `pageTexts` to editors.
+- **`clearText()`**: Restored and fully implemented: clears textarea, resets `S.text`, creates a blank canvas page with paper background, clears all page editors, and calls `autosave()`.
+- **Export pipeline**: Migrated from `html2canvas` (screenshot-based) to native `canvas.toBlob()` / `canvas.toDataURL()` methods, removing the html2canvas dependency for exports and improving accuracy.
+- **`updateEditorStyles(editor, canvas)`**: New helper to keep page editor styles (font, padding, size) in sync whenever the canvas is resized or settings change.
+
+---
+
 ## [1.1.0] — 2026-05-17
 
 ### Added
@@ -54,18 +85,14 @@ All notable changes to Inkflow are documented in this file.
 - **Collapsible Sections** — Smooth cubic-bezier accordion panels
 - **State Persistence** — Auto-save to localStorage with debounced serialization
 
-#### Documentation
-- **18 documentation files** covering architecture, engines, guides, and references
-- **Mermaid diagrams** for system architecture and data flow visualization
-- **Mathematical specifications** for rendering algorithms
-
 ---
 
 ## [Unreleased]
 
 ### Planned
 - Extended character sets (diacritics, special symbols)
-- LocalStorage glyph persistence for custom font drafts
+- IndexedDB migration for glyph storage (replacing localStorage for large datasets)
 - Multi-sheet handwriting templates (separate upper/lowercase)
 - Additional paper styles (dot grid, engineering, music staff)
 - Localization support (i18n)
+- Note Style Selector (Cornell / Bullet / Mind-map templates for AI output)

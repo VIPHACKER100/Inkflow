@@ -23,14 +23,15 @@ The visual foundations are centralized in a robust CSS Custom Property system, e
 
 ## CSS Architecture & Utility Classes
 
-To maintain a clean and scalable DOM, Inkflow avoids inline styles. All layout, spacing, and component styling rules are abstracted into utility and component classes inside `index.css`. 
+Inkflow avoids inline styles. All layout, spacing, and component styling rules are abstracted into utility and component classes inside `index.css`.
 
 Key utility categories include:
 - **Layout & Spacing**: `.flex-center`, `.margin-top-sm`, `.gap-md`
 - **Component Modules**: `.file-upload-wrapper`, `.action-buttons-row`, `.template-upload-icon`
 - **Typography Helpers**: `.font-caveat`, `.font-roboto`, etc.
-
-This utility-first approach ensures strong separation of concerns between structure (HTML) and presentation (CSS).
+- **Export Toast**: `.export-toast`, `.export-toast--success`, `.export-toast--error`
+- **Page Editor**: `.page-editor`, `.canvas-container`
+- **Print Overrides**: `@media print` rules
 
 ---
 
@@ -40,22 +41,23 @@ The interface uses a **two-column CSS Grid** layout:
 
 ### Control Console (`#sidebar` — 300px)
 A glassmorphic control dock featuring stacked, collapsible sections for:
-- Text entry
+- Text entry + file upload zone
 - Typography options
 - Paper styles
 - Ink characteristics
-- AI functions
+- AI functions (provider, model, API key, actions)
+- Export options (PNG, JPG, SVG, PDF, Copy, Print)
 - Animation controls
-- Export options
+- Reset to defaults
 
 ### Canvas Viewport (`#canvas-area`)
 A neutral, spacious preview environment with:
 - Subtle radial-gradient micro-dot pattern
-- Centered virtual A4 pages
+- Centered virtual A4 pages with inline `contenteditable` editor overlays
 - Depth shadows via `--paper-shadow`
 
 ### Floating Header (56px fixed)
-Top toolbar on a saturated frosted backdrop (`backdrop-filter: blur(20px)`) containing the app logo, theme toggle, and primary action buttons.
+Top toolbar on a saturated frosted backdrop (`backdrop-filter: blur(20px)`) containing the app logo, theme toggle, page indicator, and primary action buttons (Animate, Clear).
 
 ### Floating Pagination
 Bottom pill-style navigation for multi-page A4 transitions.
@@ -65,7 +67,9 @@ Bottom pill-style navigation for multi-page A4 transitions.
 ## Typography
 
 - **Primary Font**: `'Outfit'`, `'Inter'` — Modern, clean UI typography
-- **Handwriting Fonts**: Google Fonts (Caveat, Patrick Hand, Indie Flower, etc.) + custom user fonts
+- **Handwriting Fonts**: Google Fonts (Caveat, Patrick Hand, Indie Flower, Kalam, etc.) + custom user fonts
+- **Indic Fallbacks**: Noto Sans Devanagari, Hind — automatic for Devanagari/Hindi text
+- **Clean Fallbacks**: Roboto, Arial — for users preferring non-handwriting rendering
 - **Monospace**: System monospace for code snippets and technical labels
 
 ---
@@ -103,7 +107,9 @@ Bottom pill-style navigation for multi-page A4 transitions.
 ### Paper Backgrounds
 | Style | Color | Description |
 | :--- | :--- | :--- |
-| Ruled | `#f7f3ea` | Warm cream notebook |
-| Legal | `#fff8cc` | Bright yellow legal pad |
-| Vintage | `#e8dcc4` | Aged parchment |
-| Dark | `#1e1e2e` | Indigo slate dark mode |
+| Ruled | `#f8f4ea` | Warm cream notebook |
+| Plain | `#faf7f0` | Clean ivory |
+| Grid | `#f6f2ec` | Light grid paper |
+| Legal | `#fef9c3` | Bright yellow legal pad |
+| Vintage | `#f2e8ce` | Aged parchment |
+| Dark | `#1a1a2e` | Indigo slate dark mode |

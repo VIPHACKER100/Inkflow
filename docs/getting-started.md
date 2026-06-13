@@ -8,7 +8,7 @@ This guide covers everything you need to set up and run Inkflow locally.
 
 - A modern web browser (Chrome 90+, Firefox 88+, Safari 15+, Edge 90+)
 - No server, Node.js, or package manager required
-- Optional: Anthropic API key for AI features
+- Optional: OpenRouter or Anthropic API key for AI features
 
 ---
 
@@ -16,7 +16,7 @@ This guide covers everything you need to set up and run Inkflow locally.
 
 ### 1. Download or Clone
 ```bash
-git clone https://github.com/your-username/inkflow.git
+git clone https://github.com/VIPHACKER100/inkflow.git
 cd inkflow
 ```
 
@@ -29,7 +29,7 @@ File → Open → index.html
 ```
 
 ### 3. Use a Local Dev Server (Recommended)
-For the best experience (especially for font loading and file uploads), use a local HTTP server:
+For the best experience (especially for font loading, file uploads, and clipboard copy), use a local HTTP server:
 
 **VS Code Live Server:**
 1. Install the "Live Server" extension
@@ -43,7 +43,7 @@ python -m http.server 5500
 
 **Node.js:**
 ```bash
-npx serve .
+npx -y http-server -p 8000
 ```
 
 ---
@@ -55,6 +55,7 @@ inkflow/
 ├── index.html          # Main HTML structure and CDN imports
 ├── index.css           # Complete stylesheet with design tokens
 ├── index.js            # All application logic and engines
+├── LICENSE             # Project license
 └── docs/               # Documentation (you are here)
     ├── README.md           # Documentation index
     ├── system-architecture.md
@@ -83,29 +84,34 @@ inkflow/
 
 | Library | Version | Purpose |
 | :--- | :--- | :--- |
-| Google Fonts | — | Caveat, Patrick Hand, Indie Flower, etc. |
+| Google Fonts | — | Caveat, Patrick Hand, Indie Flower, Kalam, etc. |
+| Noto Sans Devanagari | — | Devanagari/Indic script fallback |
 | Font Awesome | 6.x | UI icons |
-| html2canvas | 1.4.1 | Screenshot/image export |
 | jsPDF | 2.5.1 | Multi-page PDF generation |
-| opentype.js | 1.3.4 | Custom font compilation |
+| opentype.js | 1.3.4 | Custom font compilation (lazy-loaded) |
+| pdf.js | 3.4.120 | PDF text extraction for file upload (lazy-loaded) |
 
-All dependencies are loaded via CDN — no `npm install` required.
+All dependencies are loaded via CDN — no `npm install` required. `html2canvas` is no longer required as of v1.2.0.
 
 ---
 
 ## First Steps
 
-1. **Type or paste text** into the textarea on the left sidebar
+1. **Type or paste text** into the textarea on the left sidebar, or **click directly on the page** to edit inline
 2. **Choose a paper style** — ruled, grid, plain, legal, vintage, or dark
 3. **Adjust typography** — font family, size, line height
 4. **Tune handwriting style** — rotation, ink bleed, pen pressure
-5. **Export** — download as PNG, JPG, PDF, or print directly
+5. **Export** — download as PNG, JPG, SVG, PDF, copy to clipboard, or print directly
 
 ### Optional: AI Features
-1. Enter your Anthropic API key in the AI section
+1. Select your AI provider (OpenRouter or Anthropic) and enter your API key
 2. Paste source text (lecture notes, essays, etc.)
 3. Click an AI action: Summarize, Fix Grammar, Convert to Notes, or Generate Assignment
-4. The AI output renders automatically as handwritten notes
+4. The AI output streams in real-time as handwritten notes
+
+### Optional: File Upload
+1. Click the upload zone or drag-and-drop a `.txt`, `.md`, or `.pdf` file
+2. Text is extracted and rendered as handwriting automatically
 
 ### Optional: Custom Font
 1. Click "✨ Create Your Own Font" in the sidebar
