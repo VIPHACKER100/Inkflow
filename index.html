@@ -258,16 +258,21 @@ Try pasting a paragraph of lecture notes!"></textarea>
         <div class="sb-body">
           <div class="export-grid">
             <!-- Phase 8.1 — PNG -->
-            <button class="btn" onclick="exportImage('png')">🖼 PNG</button>
+            <button class="btn" onclick="exportImage('png')" aria-label="Export as PNG image">🖼 PNG</button>
             <!-- Phase 8.2 — JPG -->
-            <button class="btn" onclick="exportImage('jpg')">📷 JPG</button>
+            <button class="btn" onclick="exportImage('jpg')" aria-label="Export as JPG image">📷 JPG</button>
             <!-- Phase 8.3/8.4 — PDF -->
-            <button class="btn" onclick="exportPDF()">📄 PDF</button>
-            <!-- Phase 8.5 — Print -->
-            <button class="btn" onclick="window.print()">🖨 Print</button>
+            <button class="btn" onclick="exportPDF()" aria-label="Export as PDF document">📄 PDF</button>
+            <!-- Phase 8.5 — SVG -->
+            <button class="btn" onclick="exportSVG()" aria-label="Export as SVG vector">🎨 SVG</button>
+            <!-- Phase 8.6 — Copy -->
+            <button class="btn" onclick="copyToClipboard()" aria-label="Copy current page to clipboard">📋 Copy</button>
+            <!-- Phase 8.7 — Print -->
+            <button class="btn" onclick="window.print()" aria-label="Print notes">🖨 Print</button>
           </div>
         </div>
       </div>
+
 
       <!-- ── ANIMATION SECTION ── -->
       <div class="sb-section" id="sec-anim">

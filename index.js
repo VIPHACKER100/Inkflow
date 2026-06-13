@@ -183,6 +183,9 @@ function createPage(pageNum) {
   label.className = 'page-label';
   label.textContent = 'Page ' + pageNum;
 
+  const container = document.createElement('div');
+  container.className = 'canvas-container';
+
   const canvas = document.createElement('canvas');
   canvas.className = 'canvas-page';
   canvas.width = PAGE_W;
@@ -191,13 +194,91 @@ function createPage(pageNum) {
   canvas.style.width = Math.min(PAGE_W, 720) + 'px';
   canvas.style.height = Math.min(PAGE_H, 720 * PAGE_H / PAGE_W) + 'px';
 
+  const editor = document.createElement('div');
+  editor.className = 'page-editor';
+  editor.id = 'editor-' + pageNum;
+  editor.contentEditable = 'true';
+  editor.setAttribute('aria-label', 'Edit Page ' + pageNum);
+
+  // Focus: clear canvas text (draw only background) and show overlay text
+  editor.addEventListener('focus', () => {
+    const ctx = canvas.getContext('2d');
+    drawPaperBackground(ctx, S.paperStyle);
+    editor.style.color = S.inkColor;
+  });
+
+  // Blur: hide overlay text and redraw handwriting to canvas
+  editor.addEventListener('blur', () => {
+    editor.style.color = 'transparent';
+    renderText(S.text);
+  });
+
+  // Input: concatenate all editor contents, sync to sidebar, and autosave
+  editor.addEventListener('input', () => {
+    const globalText = getGlobalTextFromEditors();
+    S.text = globalText;
+    document.getElementById('text-input').value = globalText;
+    autosave();
+    // Re-evaluate font family stack dynamically in case Indic characters were typed
+    editor.style.fontFamily = getFontStack(containsDevanagari(editor.innerText));
+  });
+
+  container.appendChild(canvas);
+  container.appendChild(editor);
   wrapper.appendChild(label);
-  wrapper.appendChild(canvas);
+  wrapper.appendChild(container);
+
   document.getElementById('page-container').appendChild(wrapper);
   pages.push(canvas);
   updatePageNav();
+
+  updateEditorStyles(editor, canvas);
+
   return canvas;
 }
+
+function updateEditorStyles(editor, canvas) {
+  if (!editor || !canvas) return;
+  const actualWidth = canvas.offsetWidth || parseFloat(canvas.style.width) || PAGE_W;
+  const scale = actualWidth / PAGE_W;
+  editor.style.fontFamily = getFontStack(containsDevanagari(editor.innerText));
+  editor.style.fontSize = (S.fontSize * scale) + 'px';
+  editor.style.lineHeight = S.lineHeight;
+  editor.style.paddingTop = (S.margin * scale) + 'px';
+  editor.style.paddingLeft = (S.margin * scale) + 'px';
+  editor.style.paddingRight = (S.margin * scale) + 'px';
+  editor.style.paddingBottom = (S.margin * scale) + 'px';
+
+  if (document.activeElement === editor) {
+    editor.style.color = S.inkColor;
+  } else {
+    editor.style.color = 'transparent';
+  }
+  editor.style.caretColor = S.inkColor;
+}
+
+function getGlobalTextFromEditors() {
+  const editors = document.querySelectorAll('.page-editor');
+  let text = '';
+  editors.forEach((editor) => {
+    let t = editor.innerText;
+    if (t.endsWith('\n')) {
+      t = t.slice(0, -1);
+    }
+    text += t;
+  });
+  return text;
+}
+
+window.addEventListener('resize', () => {
+  pages.forEach((c, idx) => {
+    const editor = document.getElementById('editor-' + (idx + 1));
+    if (editor) {
+      updateEditorStyles(editor, c);
+    }
+  });
+});
+
 
 /* ───────────────────────────────────────────
    PHASE 4.2 — PAPER BACKGROUND RENDERER
@@ -332,12 +413,12 @@ function getCharVariation(rotMax, pressure, fontSize) {
   const k = (fontSize || 22) / 22;
   return {
     tiltDeg: rand(-rotMax, rotMax),
-    scaleY: rand(0.95, 1.05),
-    scaleX: rand(0.97, 1.03),
-    baselineOff: rand(-1.5, 1.5) * k,
-    spacingExtra: rand(-0.6, 1.0) * k,
+    scaleY: rand(0.97, 1.03),
+    scaleX: rand(0.98, 1.02),
+    baselineOff: rand(-0.4, 0.4) * k,
+    spacingExtra: rand(-0.4, 0.6) * k,
     pressureMod: 1 - (Math.random() * pressure * 1.4),  // stroke weight variation
-    opacity: rand(0.88, 1.0),
+    opacity: rand(0.92, 1.0),
   };
 }
 
@@ -355,12 +436,18 @@ function clearText() {
   document.getElementById('text-input').value = '';
   S.text = '';
   clearPages();
-  createPage(1);
-  drawPaperBackground(pages[0].getContext('2d'), S.paperStyle);
+  const canvas = createPage(1);
+  drawPaperBackground(canvas.getContext('2d'), S.paperStyle);
+  const editor = document.getElementById('editor-1');
+  if (editor) {
+    editor.innerText = '';
+    updateEditorStyles(editor, canvas);
+  }
+  autosave();
 }
 
 /* ───────────────────────────────────────────
-   PHASE 4.4–4.8 — TEXT-TO-CANVAS RENDERER
+   PHASE 4.4 — HELPER FUNCTIONS
 ─────────────────────────────────────────── */
 function sanitizeText(str) {
   if (!str) return '';
@@ -373,18 +460,13 @@ function getGraphemes(text) {
     const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
     return Array.from(segmenter.segment(text)).map(s => s.segment);
   }
-  return [...text];
+  return Array.from(text);
 }
 
-/* Detect text that requires word-level shaped rendering.
-   Covers: Devanagari, Devanagari Extended, Vedic Extensions,
-   Bengali, Gurmukhi, Gujarati, Oriya, Tamil, Telugu, Kannada,
-   Malayalam, Sinhala — all scripts that use combining marks,
-   matras, half-letters, and conjunct ligatures. */
 function isIndicScript(text) {
   return /[\u0900-\u097F\uA8E0-\uA8FF\u1CD0-\u1CFF\u0980-\u09FF\u0A00-\u0A7F\u0A80-\u0AFF\u0B00-\u0B7F\u0B80-\u0BFF\u0C00-\u0C7F\u0C80-\u0CFF\u0D00-\u0D7F\u0D80-\u0DFF]/.test(text);
 }
-// Backward-compatible alias
+
 const containsDevanagari = isIndicScript;
 
 /* Fonts known to include Devanagari glyphs */
@@ -393,10 +475,7 @@ const DEVANAGARI_FONTS = new Set([
   'Hind', 'Tiro Devanagari Hindi', 'Baloo 2', 'Martel'
 ]);
 
-/* Build a font-family string that guarantees proper Devanagari rendering.
-   If the currently selected font doesn't support Devanagari, we append
-   Noto Sans Devanagari as a fallback so the browser shaper uses it
-   instead of the OS's generic serif/sans-serif Devanagari fallback. */
+/* Build a font-family string that guarantees proper Devanagari rendering. */
 function getFontStack(isIndic) {
   if (!isIndic || DEVANAGARI_FONTS.has(S.font)) {
     return `"${S.font}"`;
@@ -404,19 +483,21 @@ function getFontStack(isIndic) {
   return `"${S.font}", "Noto Sans Devanagari", "Hind", sans-serif`;
 }
 
-function renderText(text) {
+function layoutText(text) {
   text = sanitizeText(text);
-  clearPages();
+  const queue = [];
+  const pageTexts = [];
+  let currentPageText = '';
+
   if (!text.trim()) {
-    createPage(1);
-    drawPaperBackground(pages[0].getContext('2d'), S.paperStyle);
-    return;
+    return { queue, pageTexts, pageCount: 1 };
   }
 
-  let pageIdx = 0;
-  let canvas = createPage(1);
-  let ctx = canvas.getContext('2d');
-  drawPaperBackground(ctx, S.paperStyle);
+  // Use a temporary canvas context to measure text sizes properly
+  const tmpCanvas = document.createElement('canvas');
+  tmpCanvas.width = PAGE_W;
+  tmpCanvas.height = PAGE_H;
+  const ctx = tmpCanvas.getContext('2d');
 
   const margin = S.margin;
   const rightMargin = PAGE_W - margin;
@@ -424,9 +505,9 @@ function renderText(text) {
   let y = margin + S.fontSize;
   const lineH = S.fontSize * S.lineHeight;
 
-  ctx.textBaseline = 'alphabetic';
-
+  let pageIdx = 0;
   let charIndex = 0;
+  let lineCharIndex = 0;
   const words = text.split(' ');
 
   for (let wi = 0; wi < words.length; wi++) {
@@ -438,13 +519,14 @@ function renderText(text) {
         // Explicit newline
         x = margin;
         y += lineH;
+        lineCharIndex = 0;
         if (y + lineH > PAGE_H - margin) {
+          pageTexts.push(currentPageText);
+          currentPageText = '';
           pageIdx++;
-          canvas = createPage(pageIdx + 1);
-          ctx = canvas.getContext('2d');
-          drawPaperBackground(ctx, S.paperStyle);
           y = margin + S.fontSize;
         }
+        currentPageText += '\n';
       }
 
       const lineWord = lines[li];
@@ -453,7 +535,7 @@ function renderText(text) {
       const wordIsIndic = containsDevanagari(lineWord);
       const fontStack = getFontStack(wordIsIndic);
 
-      // Measure word width using appropriate font stack
+      // Measure word width
       ctx.font = `${S.fontSize}px ${fontStack}`;
       const wordWidth = ctx.measureText(lineWord).width + S.wordSpacing;
 
@@ -461,87 +543,56 @@ function renderText(text) {
       if (x + wordWidth > rightMargin && x > margin) {
         x = margin;
         y += lineH;
+        lineCharIndex = 0;
         if (y + lineH > PAGE_H - margin) {
+          pageTexts.push(currentPageText);
+          currentPageText = '';
           pageIdx++;
-          canvas = createPage(pageIdx + 1);
-          ctx = canvas.getContext('2d');
-          drawPaperBackground(ctx, S.paperStyle);
           y = margin + S.fontSize;
         }
       }
 
       if (wordIsIndic) {
-        // Render Indic words as single shaped block to preserve combining marks & conjunct ligatures
         const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
-
-        // Baseline wobble (reduced for Indic — heavy wobble breaks the shirorekha)
-        const wobble = Math.sin(charIndex * 0.18) * 0.4 * (S.fontSize / 22);
+        const wobble = Math.sin(lineCharIndex * 0.04) * 0.4 * (S.fontSize / 22);
         const cy = y + (v.baselineOff * 0.4) + wobble;
 
-        ctx.save();
-        ctx.translate(x, cy);
-        // Reduce rotation for Indic scripts — the headline bar (shirorekha) looks broken when rotated
-        ctx.rotate((v.tiltDeg * 0.3 * Math.PI) / 180);
-        ctx.scale(v.scaleX, v.scaleY);
+        queue.push({
+          ch: lineWord,
+          x,
+          y: cy,
+          v,
+          pageIdx,
+          isIndic: true,
+          fontStack
+        });
 
-        // Pressure variation
-        const pxSize = S.fontSize * v.pressureMod;
-        ctx.font = `${Math.max(10, pxSize)}px ${fontStack}`;
-        ctx.globalAlpha = v.opacity;
-
-        // Ink bleed
-        if (S.bleed > 0.05) {
-          ctx.shadowColor = S.inkColor;
-          ctx.shadowBlur = S.bleed * 1.4;
-        } else {
-          ctx.shadowBlur = 0;
-        }
-
-        ctx.fillStyle = S.inkColor;
-        ctx.fillText(lineWord, 0, 0);
-        ctx.restore();
-
-        // Advance cursor
-        ctx.font = `${S.fontSize}px ${fontStack}`;
         x += ctx.measureText(lineWord).width + v.spacingExtra;
         charIndex += lineWord.length;
+        lineCharIndex += lineWord.length;
+        currentPageText += lineWord;
       } else {
-        // Render each character of the word (using grapheme clusters for Latin/ASCII/emojis)
         const graphemes = getGraphemes(lineWord);
         for (let ci = 0; ci < graphemes.length; ci++) {
           const ch = graphemes[ci];
           const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
-
-          // Baseline wobble — proportional to font size
-          const wobble = Math.sin(charIndex * 0.18) * 0.8 * (S.fontSize / 22);
+          const wobble = Math.sin(lineCharIndex * 0.04) * 0.8 * (S.fontSize / 22);
           const cy = y + v.baselineOff + wobble;
 
-          ctx.save();
-          ctx.translate(x, cy);
-          ctx.rotate((v.tiltDeg * Math.PI) / 180);
-          ctx.scale(v.scaleX, v.scaleY);
+          queue.push({
+            ch,
+            x,
+            y: cy,
+            v,
+            pageIdx,
+            isIndic: false,
+            fontStack
+          });
 
-          // Pressure / font-size variation
-          const pxSize = S.fontSize * v.pressureMod;
-          ctx.font = `${Math.max(10, pxSize)}px ${fontStack}`;
-          ctx.globalAlpha = v.opacity;
-
-          // Ink bleed
-          if (S.bleed > 0.05) {
-            ctx.shadowColor = S.inkColor;
-            ctx.shadowBlur = S.bleed * 1.4;
-          } else {
-            ctx.shadowBlur = 0;
-          }
-
-          ctx.fillStyle = S.inkColor;
-          ctx.fillText(ch, 0, 0);
-          ctx.restore();
-
-          // Advance cursor
-          ctx.font = `${S.fontSize}px ${fontStack}`;
           x += ctx.measureText(ch).width + v.spacingExtra;
           charIndex++;
+          lineCharIndex++;
+          currentPageText += ch;
         }
       }
 
@@ -549,14 +600,83 @@ function renderText(text) {
       if (li === lines.length - 1) {
         ctx.font = `${S.fontSize}px ${fontStack}`;
         x += ctx.measureText(' ').width + S.wordSpacing;
+        if (wi < words.length - 1) {
+          currentPageText += ' ';
+        }
       }
     }
   }
+
+  pageTexts.push(currentPageText);
+
+  return { queue, pageTexts, pageCount: pageIdx + 1 };
 }
 
-/* ───────────────────────────────────────────
-   PHASE 4.9 — DEBOUNCE RENDER ON INPUT
-─────────────────────────────────────────── */
+function renderText(text) {
+  text = sanitizeText(text);
+  clearPages();
+  if (!text.trim()) {
+    const canvas = createPage(1);
+    drawPaperBackground(canvas.getContext('2d'), S.paperStyle);
+    const editor = document.getElementById('editor-1');
+    if (editor) {
+      editor.innerText = '';
+      updateEditorStyles(editor, canvas);
+    }
+    return;
+  }
+
+  const { queue, pageTexts, pageCount } = layoutText(text);
+
+  for (let i = 0; i < pageCount; i++) {
+    const canvas = createPage(i + 1);
+    const ctx = canvas.getContext('2d');
+    drawPaperBackground(ctx, S.paperStyle);
+  }
+
+  queue.forEach((item) => {
+    const canvas = pages[item.pageIdx];
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const v = item.v;
+
+    ctx.save();
+    ctx.translate(item.x, item.y);
+    ctx.rotate((v.tiltDeg * (item.isIndic ? 0.3 : 1) * Math.PI) / 180);
+    ctx.scale(v.scaleX, v.scaleY);
+
+    const pxSize = S.fontSize * v.pressureMod;
+    ctx.font = `${Math.max(10, pxSize)}px ${item.fontStack}`;
+    ctx.globalAlpha = v.opacity;
+
+    if (S.bleed > 0.05) {
+      ctx.shadowColor = S.shadowColor || S.inkColor;
+      ctx.shadowBlur = S.bleed * 1.4;
+    } else {
+      ctx.shadowBlur = 0;
+    }
+
+    ctx.fillStyle = S.inkColor;
+    
+    const activeEditor = document.getElementById('editor-' + (item.pageIdx + 1));
+    if (document.activeElement !== activeEditor) {
+      ctx.fillText(item.ch, 0, 0);
+    }
+    ctx.restore();
+  });
+
+  pages.forEach((c, idx) => {
+    const editor = document.getElementById('editor-' + (idx + 1));
+    if (editor) {
+      if (document.activeElement !== editor) {
+        editor.innerText = pageTexts[idx] || '';
+      }
+      c.dataset.text = pageTexts[idx] || '';
+      updateEditorStyles(editor, c);
+    }
+  });
+}
+
 document.getElementById('text-input').addEventListener('input', function () {
   S.text = this.value;
   debounceRender();
@@ -573,72 +693,8 @@ function triggerRender() {
   renderText(S.text);
 }
 
-/* ───────────────────────────────────────────
-   PHASE 6.1–6.4 — WRITING ANIMATION
-─────────────────────────────────────────── */
 function buildCharQueue(text) {
-  text = sanitizeText(text);
-  const queue = [];
-  if (!text.trim()) return queue;
-
-  // Temporary off-screen canvas for measurement
-  const tmpCanvas = document.createElement('canvas');
-  tmpCanvas.width = PAGE_W; tmpCanvas.height = PAGE_H;
-  const ctx = tmpCanvas.getContext('2d');
-
-  const margin = S.margin;
-  const rightMargin = PAGE_W - margin;
-  let x = margin;
-  let y = margin + S.fontSize;
-  const lineH = S.fontSize * S.lineHeight;
-  let pageIdx = 0;
-  let charIndex = 0;
-  const words = text.split(' ');
-
-  for (let wi = 0; wi < words.length; wi++) {
-    const word = words[wi];
-    const lines = word.split('\n');
-    for (let li = 0; li < lines.length; li++) {
-      if (li > 0) {
-        x = margin;
-        y += lineH;
-        if (y + lineH > PAGE_H - margin) { pageIdx++; y = margin + S.fontSize; }
-      }
-      const lineWord = lines[li];
-      if (!lineWord) continue;
-      const wordIsIndic = containsDevanagari(lineWord);
-      const fontStack = getFontStack(wordIsIndic);
-      ctx.font = `${S.fontSize}px ${fontStack}`;
-      const wordWidth = ctx.measureText(lineWord).width + S.wordSpacing;
-      if (x + wordWidth > rightMargin && x > margin) {
-        x = margin; y += lineH;
-        if (y + lineH > PAGE_H - margin) { pageIdx++; y = margin + S.fontSize; }
-      }
-      if (wordIsIndic) {
-        const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
-        const wobble = Math.sin(charIndex * 0.18) * 0.4 * (S.fontSize / 22);
-        queue.push({ ch: lineWord, x, y: y + (v.baselineOff * 0.4) + wobble, v, pageIdx, isIndic: true });
-        ctx.font = `${S.fontSize}px ${fontStack}`;
-        x += ctx.measureText(lineWord).width + v.spacingExtra;
-        charIndex += lineWord.length;
-      } else {
-        const graphemes = getGraphemes(lineWord);
-        for (let ci = 0; ci < graphemes.length; ci++) {
-          const ch = graphemes[ci];
-          const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
-          const wobble = Math.sin(charIndex * 0.18) * 0.8 * (S.fontSize / 22);
-          queue.push({ ch, x, y: y + v.baselineOff + wobble, v, pageIdx, isIndic: false });
-          ctx.font = `${S.fontSize}px ${fontStack}`;
-          x += ctx.measureText(ch).width + v.spacingExtra;
-          charIndex++;
-        }
-      }
-      if (li === lines.length - 1) {
-        ctx.font = `${S.fontSize}px ${fontStack}`;
-        x += ctx.measureText(' ').width + S.wordSpacing;
-      }
-    }
-  }
+  const { queue } = layoutText(text);
   return queue;
 }
 
@@ -657,13 +713,12 @@ function startAnimation() {
 
   // Clear and recreate pages with backgrounds
   clearPages();
-  const pagesNeeded = Math.ceil(text.length / 600) + 1;
-  for (let i = 0; i < pagesNeeded; i++) {
+  const { queue, pageTexts, pageCount } = layoutText(text);
+  for (let i = 0; i < pageCount; i++) {
     const c = createPage(i + 1);
     drawPaperBackground(c.getContext('2d'), S.paperStyle);
   }
 
-  const queue = buildCharQueue(text);
   let idx = 0;
   const penEl = document.getElementById('pen-cursor');
   penEl.style.display = 'block';
@@ -672,6 +727,7 @@ function startAnimation() {
     if (!isAnimating || idx >= queue.length) {
       penEl.style.display = 'none';
       isAnimating = false;
+      renderText(S.text);
       return;
     }
     const charsPerFrame = S.animSpeed;
@@ -686,22 +742,31 @@ function startAnimation() {
       ctx.rotate((v.tiltDeg * (item.isIndic ? 0.3 : 1) * Math.PI) / 180);
       ctx.scale(v.scaleX, v.scaleY);
       const pxSize = S.fontSize * v.pressureMod;
-      const fontStack = getFontStack(item.isIndic);
-      ctx.font = `${Math.max(10, pxSize)}px ${fontStack}`;
+      ctx.font = `${Math.max(10, pxSize)}px ${item.fontStack}`;
       ctx.globalAlpha = v.opacity;
       if (S.bleed > 0.05) { ctx.shadowColor = S.inkColor; ctx.shadowBlur = S.bleed * 1.4; }
       ctx.fillStyle = S.inkColor;
       ctx.fillText(item.ch, 0, 0);
       ctx.restore();
 
-      // Move pen cursor to current char screen position (Phase 6.3)
+      // Move pen cursor to current char screen position
       if (i === charsPerFrame - 1 || idx === queue.length - 1) {
-        const canvasEl = canvas;
-        const rect = canvasEl.getBoundingClientRect();
+        const rect = canvas.getBoundingClientRect();
         const scaleX = rect.width / PAGE_W;
         const scaleY = rect.height / PAGE_H;
-        penEl.style.left = (rect.left + item.x * scaleX) + 'px';
-        penEl.style.top = (rect.top + item.y * scaleY + window.scrollY) + 'px';
+        const penLeft = rect.left + item.x * scaleX;
+        const penTop = rect.top + item.y * scaleY + window.scrollY;
+        penEl.style.left = penLeft + 'px';
+        penEl.style.top = penTop + 'px';
+
+        // Auto-scroll viewport if the pen is near the edges of screen
+        const targetScroll = rect.top + item.y * scaleY + window.scrollY - window.innerHeight / 2;
+        if (rect.top + item.y * scaleY < 120 || rect.top + item.y * scaleY > window.innerHeight - 120) {
+          window.scrollTo({
+            top: Math.max(0, targetScroll),
+            behavior: 'smooth'
+          });
+        }
       }
     }
     animFrameId = requestAnimationFrame(step);
@@ -866,7 +931,7 @@ function onProviderChange() {
 onProviderChange();
 fetchOpenRouterModels();
 
-async function callClaude(prompt, systemPrompt) {
+async function callClaude(prompt, systemPrompt, onChunk) {
   const provider = document.getElementById('ai-provider').value;
   const model = document.getElementById('ai-model').value;
   const key = document.getElementById('api-key').value.trim();
@@ -879,10 +944,9 @@ async function callClaude(prompt, systemPrompt) {
   setAiStatus('✦ Generating via ' + (provider === 'openrouter' ? 'OpenRouter' : 'Anthropic') + '…');
 
   try {
-    let res, data, text;
+    let res;
 
     if (provider === 'openrouter') {
-      // ── OpenRouter API (OpenAI-compatible format) ──
       res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -894,24 +958,14 @@ async function callClaude(prompt, systemPrompt) {
         body: JSON.stringify({
           model: model,
           max_tokens: 1500,
+          stream: true,
           messages: [
             { role: 'system', content: systemPrompt || 'You are a helpful assistant for a handwritten notes app.' },
             { role: 'user', content: prompt },
           ],
         }),
       });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setAiStatus('✕ API Error: ' + (err.error?.message || res.status));
-        return null;
-      }
-
-      data = await res.json();
-      text = data.choices?.[0]?.message?.content || '';
-
     } else {
-      // ── Anthropic Direct API ──
       res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -923,24 +977,64 @@ async function callClaude(prompt, systemPrompt) {
         body: JSON.stringify({
           model: model,
           max_tokens: 1500,
+          stream: true,
           system: systemPrompt || 'You are a helpful assistant for a handwritten notes app.',
           messages: [{ role: 'user', content: prompt }],
         }),
       });
+    }
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setAiStatus('✕ API Error: ' + (err.error?.message || res.status));
-        return null;
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      setAiStatus('✕ API Error: ' + (err.error?.message || res.status));
+      return null;
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let textContent = '';
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        const cleaned = line.trim();
+        if (!cleaned) continue;
+        if (cleaned.startsWith('data: ')) {
+          const dataStr = cleaned.slice(6);
+          if (dataStr === '[DONE]') continue;
+          try {
+            const dataObj = JSON.parse(dataStr);
+            if (provider === 'openrouter') {
+              const delta = dataObj.choices?.[0]?.delta?.content || '';
+              if (delta) {
+                textContent += delta;
+                if (onChunk) onChunk(textContent);
+              }
+            } else {
+              if (dataObj.type === 'content_block_delta') {
+                const delta = dataObj.delta?.text || '';
+                if (delta) {
+                  textContent += delta;
+                  if (onChunk) onChunk(textContent);
+                }
+              }
+            }
+          } catch (err) {
+            // Ignore incomplete chunks
+          }
+        }
       }
-
-      data = await res.json();
-      text = data.content?.find(b => b.type === 'text')?.text || '';
     }
 
     setAiStatus('✓ Done — ' + model.split('/').pop());
     setTimeout(() => setAiStatus(''), 3000);
-    return text;
+    return textContent;
 
   } catch (e) {
     setAiStatus('✕ Network error: ' + e.message);
@@ -963,12 +1057,24 @@ async function aiAction(type) {
   btns.forEach(b => b.disabled = true);
 
   let result = null;
+  let lastRenderTime = 0;
+
+  const onChunk = (text) => {
+    textarea.value = text;
+    S.text = text;
+    const now = Date.now();
+    if (now - lastRenderTime > 200) {
+      renderText(text);
+      lastRenderTime = now;
+    }
+  };
 
   if (type === 'summarize') {
     if (!currentText) { setAiStatus('⚠ Add some text first.'); btns.forEach(b => b.disabled = false); return; }
     result = await callClaude(
       currentText,
-      'Summarize the following text into clear, concise bullet-point notes. Use short sentences. No markdown formatting — plain text only.'
+      'Summarize the following text into clear, concise bullet-point notes. Use short sentences. No markdown formatting — plain text only.',
+      onChunk
     );
   }
 
@@ -976,7 +1082,8 @@ async function aiAction(type) {
     if (!currentText) { setAiStatus('⚠ Add some text first.'); btns.forEach(b => b.disabled = false); return; }
     result = await callClaude(
       currentText,
-      'Fix the grammar, spelling, and phrasing of this text. Keep the content and meaning identical. Return plain text only, no markdown.'
+      'Fix the grammar, spelling, and phrasing of this text. Keep the content and meaning identical. Return plain text only, no markdown.',
+      onChunk
     );
   }
 
@@ -984,7 +1091,8 @@ async function aiAction(type) {
     if (!currentText) { setAiStatus('⚠ Paste lecture text first.'); btns.forEach(b => b.disabled = false); return; }
     result = await callClaude(
       currentText,
-      'Convert this raw lecture transcript into clean, well-structured handwritten-style notes. Use headings, bullet points, and numbered lists where appropriate. Plain text only, no markdown symbols.'
+      'Convert this raw lecture transcript into clean, well-structured handwritten-style notes. Use headings, bullet points, and numbered lists where appropriate. Plain text only, no markdown symbols.',
+      onChunk
     );
   }
 
@@ -993,11 +1101,12 @@ async function aiAction(type) {
     if (!topic) { setAiStatus('⚠ Enter a topic first.'); btns.forEach(b => b.disabled = false); return; }
     result = await callClaude(
       'Write a detailed, well-structured academic assignment on the topic: ' + topic,
-      'Generate a complete handwritten-style assignment with an introduction, body paragraphs, and conclusion. Use plain text only. No markdown. Write naturally as someone would write in a notebook.'
+      'Generate a complete handwritten-style assignment with an introduction, body paragraphs, and conclusion. Use plain text only. No markdown. Write naturally as someone would write in a notebook.',
+      onChunk
     );
   }
 
-  if (result) {
+  if (result !== null) {
     textarea.value = result;
     S.text = result;
     renderText(S.text);
@@ -1007,45 +1116,193 @@ async function aiAction(type) {
   btns.forEach(b => b.disabled = false);
 }
 
+
 /* ───────────────────────────────────────────
-   PHASE 8.1–8.2 — IMAGE EXPORT
+   PHASE 8.1–8.2 — IMAGE EXPORT (PNG / JPG)
+   Reads directly from the canvas elements at full native resolution.
+   For single-page docs: one file. For multi-page: one file per page.
 ─────────────────────────────────────────── */
 async function exportImage(format) {
-  const container = document.getElementById('page-container');
+  if (!pages || pages.length === 0) {
+    showExportToast('Nothing to export — add some text first.', 'warn');
+    return;
+  }
+
+  if (document.activeElement && document.activeElement.classList.contains('page-editor')) {
+    document.activeElement.blur();
+    await new Promise(r => setTimeout(r, 320));
+  }
+
+  const mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
+  const quality  = format === 'png' ? 1.0 : 0.93;
+  const ext      = format === 'png' ? 'png' : 'jpg';
+
   try {
-    const canvas = await html2canvas(container, {
-      backgroundColor: null,
-      scale: 1.5,
-      useCORS: true,
-      allowTaint: true,
-    });
-    const mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
-    const quality = format === 'png' ? 1 : 0.92;
-    const a = document.createElement('a');
-    a.href = canvas.toDataURL(mimeType, quality);
-    a.download = 'inkflow-notes.' + format;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    if (pages.length === 1) {
+      showExportToast('Exporting ' + ext.toUpperCase() + '…', 'info');
+      pages[0].toBlob((blob) => {
+        if (!blob) {
+          showExportToast('Export failed: Blob generation failed', 'error');
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        triggerDownload(url, 'inkflow-notes.' + ext);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        showExportToast('✓ ' + ext.toUpperCase() + ' saved!', 'success');
+      }, mimeType, quality);
+    } else {
+      for (let i = 0; i < pages.length; i++) {
+        showExportToast(`Exporting ${ext.toUpperCase()} (Page ${i + 1}/${pages.length})…`, 'info');
+        await new Promise((resolve) => {
+          pages[i].toBlob((blob) => {
+            if (!blob) {
+              resolve();
+              return;
+            }
+            const url = URL.createObjectURL(blob);
+            triggerDownload(url, `inkflow-notes-page${i + 1}.${ext}`);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            resolve();
+          }, mimeType, quality);
+        });
+        await new Promise(r => setTimeout(r, 120));
+      }
+      showExportToast('✓ ' + ext.toUpperCase() + ' pages saved!', 'success');
+    }
   } catch (e) {
-    alert('Export failed: ' + e.message);
+    showExportToast('Export failed: ' + e.message, 'error');
+    console.error('[Inkflow] exportImage error:', e);
+  }
+}
+
+async function exportPDF() {
+  if (!pages || pages.length === 0) {
+    showExportToast('Nothing to export — add some text first.', 'warn');
+    return;
+  }
+
+  if (typeof window.jspdf === 'undefined' || typeof window.jspdf.jsPDF === 'undefined') {
+    showExportToast('PDF library not loaded. Check your internet connection.', 'error');
+    return;
+  }
+
+  if (document.activeElement && document.activeElement.classList.contains('page-editor')) {
+    document.activeElement.blur();
+    await new Promise(r => setTimeout(r, 320));
+  }
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+      compress: true,
+    });
+
+    for (let i = 0; i < pages.length; i++) {
+      showExportToast(`Building PDF (Page ${i + 1}/${pages.length})…`, 'info');
+      await new Promise(r => setTimeout(r, 60));
+      if (i > 0) doc.addPage();
+      const imgData = pages[i].toDataURL('image/jpeg', 0.93);
+      doc.addImage(imgData, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+    }
+
+    doc.save('inkflow-notes.pdf');
+    showExportToast('✓ PDF saved!', 'success');
+  } catch (e) {
+    showExportToast('PDF export failed: ' + e.message, 'error');
+    console.error('[Inkflow] exportPDF error:', e);
+  }
+}
+
+async function exportSVG() {
+  if (!pages || pages.length === 0) {
+    showExportToast('Nothing to export — add some text first.', 'warn');
+    return;
+  }
+
+  if (document.activeElement && document.activeElement.classList.contains('page-editor')) {
+    document.activeElement.blur();
+    await new Promise(r => setTimeout(r, 320));
+  }
+
+  try {
+    for (let i = 0; i < pages.length; i++) {
+      showExportToast(`Building SVG (Page ${i + 1}/${pages.length})…`, 'info');
+      await new Promise(r => setTimeout(r, 60));
+      const imgData = pages[i].toDataURL('image/png', 1.0);
+      const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="${PAGE_W}" height="${PAGE_H}" viewBox="0 0 ${PAGE_W} ${PAGE_H}">
+  <image href="${imgData}" x="0" y="0" width="${PAGE_W}" height="${PAGE_H}"/>
+</svg>`;
+      const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const suffix = pages.length > 1 ? `-page${i + 1}` : '';
+      triggerDownload(url, `inkflow-notes${suffix}.svg`);
+      URL.revokeObjectURL(url);
+      await new Promise(r => setTimeout(r, 120));
+    }
+    showExportToast('✓ SVG saved!', 'success');
+  } catch (e) {
+    showExportToast('SVG export failed: ' + e.message, 'error');
+    console.error('[Inkflow] exportSVG error:', e);
+  }
+}
+
+async function copyToClipboard() {
+  if (!pages || pages.length === 0) {
+    showExportToast('Nothing to copy — add some text first.', 'warn');
+    return;
+  }
+  try {
+    const canvas = pages[S.currentPage] || pages[0];
+    canvas.toBlob(async (blob) => {
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': blob })
+        ]);
+        showExportToast('✓ Copied to clipboard!', 'success');
+      } catch (e) {
+        showExportToast('Clipboard copy failed: ' + e.message, 'error');
+      }
+    }, 'image/png', 1.0);
+  } catch (e) {
+    showExportToast('Copy failed: ' + e.message, 'error');
   }
 }
 
 /* ───────────────────────────────────────────
-   PHASE 8.3–8.4 — PDF EXPORT (MULTI-PAGE)
+   SHARED EXPORT HELPERS
 ─────────────────────────────────────────── */
-async function exportPDF() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  for (let i = 0; i < pages.length; i++) {
-    if (i > 0) doc.addPage();
-    const canvas = pages[i];
-    const imgData = canvas.toDataURL('image/jpeg', 0.92);
-    doc.addImage(imgData, 'JPEG', 0, 0, 210, 297);
-  }
-  doc.save('inkflow-notes.pdf');
+function triggerDownload(url, filename) {
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
+
+let exportToastTimer = null;
+function showExportToast(msg, type = 'info') {
+  let toast = document.getElementById('export-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'export-toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.className = 'export-toast export-toast--' + type;
+  toast.style.opacity = '1';
+  clearTimeout(exportToastTimer);
+  if (type !== 'info') {
+    exportToastTimer = setTimeout(() => { toast.style.opacity = '0'; }, 3000);
+  }
+}
+
 
 /* ───────────────────────────────────────────
    PHASE 8.6–8.7 — AUTOSAVE & STATE RESTORE
