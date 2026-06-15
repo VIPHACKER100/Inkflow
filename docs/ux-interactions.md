@@ -51,12 +51,13 @@ transition: max-height 0.3s cubic-bezier(.4, 0, .2, 1), padding 0.22s ease;
 ### Section Categories
 1. **📝 Text Input** — Textarea for manual entry + file upload zone
 2. **🔤 Typography** — Font, size, line height, word spacing
-3. **📄 Paper Style** — Ruled, plain, grid, legal, vintage, dark
-4. **✒️ Ink & Impression** — Color, rotation, bleed, pressure, margin
-5. **🤖 AI Assistant** — Provider, model, API key, workflow buttons
-6. **📤 Export** — PNG, JPG, SVG, PDF, Copy, Print
-7. **🎬 Animation** — Speed control, start/stop
-8. **🔤 Custom Font** — HandFonted Studio launcher
+3. **📋 Page Layout** — Standard (flowing), Two-Column Grid, and Cornell Study Notes templates
+4. **📄 Paper Style** — Ruled, plain, grid, legal, vintage, dark, dot grid, engineering grid, music staff
+5. **✒️ Ink & Impression** — Color, rotation, bleed, pressure, margin
+6. **🤖 AI Assistant** — Provider, model, API key, workflow buttons
+7. **📤 Export** — PNG, JPG, SVG, PDF, Copy, Print
+8. **🎬 Animation** — Speed control, start/stop
+9. **🔤 Custom Font** — HandFonted Studio launcher
 
 ---
 
@@ -91,6 +92,10 @@ function debounceRender() {
 - Visual radio-button cards with active state highlighting
 - Click triggers immediate background + ruling redraw
 
+### Note Layout Selector
+- Dropdown selector for choosing layout templates (Standard, Two-Column, Cornell)
+- Triggers instant recalculation and re-layout via `layoutText()`
+
 ### Pagination
 - Bottom-center floating pill with left/right arrows
 - Page counter display: "Page 1 of 3"
@@ -100,6 +105,8 @@ function debounceRender() {
 ### Modal Overlays
 - HandFonted Studio opens as a centered glassmorphism modal
 - Tabbed navigation between "Live Sketchpad" and "Upload Template"
+- Sheet tabs inside Live Sketchpad to toggle between **Letters** (A-Z, a-z) and **Symbols** (numbers and punctuation) sheets
+- Dropdown selector inside Upload Template to select template sheet type, allowing independent grid calibration slider states and scanned uploads per sheet
 - ESC key or overlay click to dismiss
 
 ### File Upload

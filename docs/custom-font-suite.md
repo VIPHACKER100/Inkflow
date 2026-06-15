@@ -30,11 +30,12 @@ flowchart TD
 
 **Function**: `generateDownloadTemplate()`
 
-- Renders a 1600×1600px canvas with an 8×8 grid (64 characters)
-- Each cell is 175×175px with a dotted baseline helper at 70% height
-- Small label tags in the top-left corner identify each character
-- Writing area is kept completely blank for noise-free tracing
-- Characters: `A-Z`, `a-z`, `0-9`, `.`, `,`
+* **Dynamic Sheet Rendering**: Renders a 1600×1600px canvas with an 8×8 grid mapping to the active template sheet.
+* **Letters Sheet**: Contains 52 characters (`A–Z` and `a–z`).
+* **Numbers & Symbols Sheet**: Contains 32 characters (`0–9` and standard symbols/punctuation: `. , ? ! @ # $ % ^ & * ( ) - _ + = / : ; ' "`).
+* Each cell is 175×175px with a dotted baseline helper at 70% height.
+* Small label tags in the top-left corner identify each character.
+* Writing area is kept completely blank for noise-free tracing.
 
 ---
 
@@ -61,7 +62,7 @@ Recursively smooths pixel contours using the Ramer-Douglas-Peucker algorithm:
 
 - Coordinates scaled to 1000 units Em-square (advance width 500 units)
 - Instantiates `opentype.Glyph` and `opentype.Path` elements
-- Bundles all 64 glyphs inside an `opentype.Font` instance
+- Bundles all drafted glyphs across both sheets inside an `opentype.Font` instance
 - Generates TrueType Font byte array → Blob URL → CSS FontFace:
 
 ```javascript
@@ -75,11 +76,12 @@ document.fonts.add(font);
 ## Two Input Modes
 
 ### Live Sketchpad
-Draw characters one-by-one on an interactive canvas with customizable pen settings. Each character is saved to the glyph tray independently.
+Draw characters sheet-by-sheet on an interactive canvas. Each character is saved to the glyph tray and persisted asynchronously in **IndexedDB** (`InkflowDB` -> `draftedGlyphs` store), bypassing the 5MB browser `localStorage` limit.
 
 ### Upload Template
-1. Download the blank 8×8 template grid
-2. Print it, write all characters with a real pen
-3. Scan or photograph the filled sheet
-4. Upload and align using the interactive grid overlay sliders (X, Y, W, H)
-5. The engine automatically slices and traces all 64 characters
+1. Select the sheet tab (`Letters` or `Symbols`) and click **Download Blank Template Grid**.
+2. Print it, write all characters with a real pen.
+3. Scan or photograph the filled sheet.
+4. Upload and align using the interactive grid overlay sliders. Independent images and grid offsets (`X, Y, W, H`) are stored for each sheet.
+5. The engine automatically slices, traces, and compiles characters from both uploaded sheets.
+

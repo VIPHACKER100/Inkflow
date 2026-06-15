@@ -176,7 +176,26 @@ Try pasting a paragraph of lecture notes!"></textarea>
             <button class="paper-btn" data-style="legal" onclick="setPaper(this)">🟡 Legal Pad</button>
             <button class="paper-btn" data-style="vintage" onclick="setPaper(this)">📜 Vintage</button>
             <button class="paper-btn" data-style="dark" onclick="setPaper(this)">🌙 Dark</button>
+            <button class="paper-btn" data-style="dot_grid" onclick="setPaper(this)">🟢 Dot Grid</button>
+            <button class="paper-btn" data-style="engineering" onclick="setPaper(this)">📐 Engineering</button>
+            <button class="paper-btn" data-style="music" onclick="setPaper(this)">🎼 Music Staff</button>
           </div>
+        </div>
+      </div>
+
+      <!-- ── NOTE LAYOUT SECTION ── -->
+      <div class="sb-section" id="sec-layout">
+        <div class="sb-section-header" onclick="toggleSection('sec-layout')">
+          📋 &nbsp;Page Layout
+          <span class="sb-arrow">▾</span>
+        </div>
+        <div class="sb-body">
+          <div class="sb-label">Note Layout Template</div>
+          <select id="layout-select" title="Note Layout Template">
+            <option value="standard">Standard (Flowing)</option>
+            <option value="twocolumn">Two-Column Grid</option>
+            <option value="cornell">Cornell Study Notes</option>
+          </select>
         </div>
       </div>
 
@@ -335,6 +354,10 @@ Try pasting a paragraph of lecture notes!"></textarea>
         <div class="sketch-container">
           <div class="sketch-sidebar">
             <div class="sb-label">Select Character</div>
+            <div class="sheet-tabs">
+              <button class="sheet-tab active" id="sheet-tab-letters" onclick="switchSheet('letters')">Letters</button>
+              <button class="sheet-tab" id="sheet-tab-symbols" onclick="switchSheet('symbols')">Symbols</button>
+            </div>
             <div class="char-grid" id="sketch-char-grid"></div>
           </div>
           <div class="sketch-main">
@@ -362,8 +385,15 @@ Try pasting a paragraph of lecture notes!"></textarea>
       <!-- Upload Template Panel -->
       <div id="panel-template" class="tab-panel hidden">
         <p class="modal-desc">Download the 8x8 grid sheet, write your letters clearly, take a photo or scan of it, and align the grid overlay below.</p>
-        <div class="template-actions">
+        <div class="template-actions" style="margin-top: 8px; justify-content: center; gap: 8px;">
           <button class="btn sm" onclick="generateDownloadTemplate()">📥 Download Blank Template Grid</button>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="sb-label" style="margin: 0; font-size: 12px; color: var(--text-secondary);">Template Sheet:</span>
+            <select id="upload-template-sheet-select" style="font-size: 12px; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--btn-border); background: var(--btn-bg); color: var(--text-primary); outline: none;" title="Select template sheet type">
+              <option value="letters">Letters (A-Z, a-z)</option>
+              <option value="symbols">Numbers &amp; Symbols</option>
+            </select>
+          </div>
         </div>
         <div class="template-upload-zone" id="template-dropzone">
           <i class="fa-solid fa-cloud-arrow-up template-upload-icon"></i>

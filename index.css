@@ -391,15 +391,15 @@ select:focus {
 /* Paper style buttons grid */
 .paper-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 6px;
   margin-top: 4px;
 }
 
 .paper-btn {
   font-family: var(--font-ui);
-  font-size: 12px;
-  padding: 8px 6px;
+  font-size: 11px;
+  padding: 6px 4px;
   background: var(--btn-bg);
   border: 1px solid var(--btn-border);
   border-radius: 8px;
@@ -956,6 +956,33 @@ html.dark .drop-zone {
   color: var(--accent);
   border-bottom-color: var(--accent);
   font-weight: 600;
+}
+
+.sheet-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.sheet-tab {
+  flex: 1;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  padding: 6px 4px;
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-border);
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: var(--transition);
+  text-align: center;
+}
+
+.sheet-tab:hover,
+.sheet-tab.active {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .tab-panel.hidden {

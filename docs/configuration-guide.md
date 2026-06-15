@@ -25,6 +25,19 @@ Complete reference for all user-configurable controls in Inkflow.
 | **Legal** | Yellow background, dense ruled lines | Legal documents, formal notes |
 | **Vintage** | Aged parchment with vignette | Creative writing, journals |
 | **Dark** | Indigo slate, neon guide lines | Dark mode, presentations |
+| **Dot Grid** | Dotted background at 28px intervals | Technical sketches, diagrams, bullet journaling |
+| **Engineering** | Pale green grid (10px minor / 50px major lines) with reddish margins | Math calculations, structural designs, graphing |
+| **Music Staff** | Sets of 5-line staffs, vertical bracket endpoints | Writing sheet music, music notation |
+
+---
+
+## Note Layout Templates
+
+| Layout | Description | Formatting / Syntax |
+| :--- | :--- | :--- |
+| **Standard (Flowing)** | Default single-column layout where text flows naturally and wraps. | Standard text |
+| **Two-Column Grid** | Splits the page into two equal-width columns. Text fills the left column first, then the right column, before breaking to the next page. | Standard text |
+| **Cornell Study Notes** | Divides the page into three areas: "Cues / Questions" (left column), "Main Notes" (right column), and "Summary" (bottom footer). | Prefix a line with `? ` or `cue:` to place it in the Cues column.<br>Prefix a line with `== ` or `summary:` to place it in the bottom Summary area.<br>All other lines automatically flow into the Main Notes area. |
 
 ---
 

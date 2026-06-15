@@ -15,6 +15,7 @@ const S = {
   paperStyle: 'ruled',
   animSpeed: 8,
   currentPage: 0,
+  noteLayout: 'standard',
 };
 
 /* Canvas pages array */
@@ -23,14 +24,30 @@ let animFrameId = null;
 let isAnimating = false;
 let renderTimeout = null;
 
-const TEMPLATE_CHARS = [
-  'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
-  'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
-  '0','1','2','3','4','5','6','7','8','9','.',','
+const TEMPLATE_SHEETS = {
+  letters: [
+    'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
+    'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'
+  ],
+  symbols: [
+    '0','1','2','3','4','5','6','7','8','9',
+    '.',',','?','!','@','#','$','%','^','&','*',
+    '(',')','-','_','+','=','/',':',';','\'','"'
+  ]
+};
+const ALL_TEMPLATE_CHARS = [
+  ...TEMPLATE_SHEETS.letters,
+  ...TEMPLATE_SHEETS.symbols
 ];
 let activeChar = 'A';
+let activeSheet = 'letters';
+let activeUploadSheet = 'letters';
 const draftedGlyphs = {};
-let alignerImage = null;
+const alignerImages = { letters: null, symbols: null };
+const gridConfigs = {
+  letters: { gridX: 22, gridY: 36, gridW: 315, gridH: 315 },
+  symbols: { gridX: 22, gridY: 36, gridW: 315, gridH: 315 }
+};
 let gridX = 22;
 let gridY = 36;
 let gridW = 315;
@@ -90,6 +107,15 @@ fontSelect.addEventListener('change', () => {
   }
 });
 fontSelect.style.fontFamily = S.font;
+
+const layoutSelect = document.getElementById('layout-select');
+if (layoutSelect) {
+  layoutSelect.addEventListener('change', () => {
+    S.noteLayout = layoutSelect.value;
+    autosave();
+    debounceRender();
+  });
+}
 
 if (document.fonts) {
   document.fonts.ready.then(() => {
@@ -283,6 +309,37 @@ window.addEventListener('resize', () => {
 /* ───────────────────────────────────────────
    PHASE 4.2 — PAPER BACKGROUND RENDERER
 ─────────────────────────────────────────── */
+function drawLayoutDecorations(ctx, noteLayout) {
+  if (noteLayout !== 'cornell') return;
+  const w = PAGE_W, h = PAGE_H;
+  ctx.save();
+  ctx.strokeStyle = S.inkColor;
+  ctx.lineWidth = 1.0;
+  ctx.globalAlpha = 0.35; // Faint divider line
+
+  // Vertical line at x = 230px
+  ctx.beginPath();
+  ctx.moveTo(230, S.margin - 20);
+  ctx.lineTo(230, h - 190);
+  ctx.stroke();
+
+  // Horizontal line at y = h - 190px
+  ctx.beginPath();
+  ctx.moveTo(S.margin - 20, h - 190);
+  ctx.lineTo(w - S.margin + 20, h - 190);
+  ctx.stroke();
+
+  // Section titles: "Cues", "Notes", "Summary"
+  ctx.fillStyle = S.inkColor;
+  ctx.globalAlpha = 0.5;
+  ctx.font = `italic bold 11px sans-serif`;
+  ctx.fillText('Cues / Questions', S.margin, S.margin - 10);
+  ctx.fillText('Main Notes', 250, S.margin - 10);
+  ctx.fillText('Summary', S.margin, h - 200);
+
+  ctx.restore();
+}
+
 function drawPaperBackground(ctx, style) {
   const w = PAGE_W, h = PAGE_H;
   ctx.clearRect(0, 0, w, h);
@@ -295,6 +352,9 @@ function drawPaperBackground(ctx, style) {
     legal: { bg: '#fef9c3', lineColor: '#c8b820', lineOpacity: 0.45, redLine: '#e07070' },
     vintage: { bg: '#f2e8ce', lineColor: '#b8a080', lineOpacity: 0.4 },
     dark: { bg: '#1a1a2e', lineColor: '#3a3a5e', lineOpacity: 0.7 },
+    dot_grid: { bg: '#f6f2ec', lineColor: '#c0b49a', lineOpacity: 0.35 },
+    engineering: { bg: '#eef6ed', lineColor: '#78a67d', lineOpacity: 0.4 },
+    music: { bg: '#faf7f0', lineColor: '#4a4a4a', lineOpacity: 0.55 },
   };
 
   const c = configs[style] || configs.ruled;
@@ -393,6 +453,88 @@ function drawPaperBackground(ctx, style) {
     ctx.restore();
   }
 
+  if (style === 'dot_grid') {
+    ctx.save();
+    ctx.fillStyle = c.lineColor || '#c0b49a';
+    ctx.globalAlpha = c.lineOpacity;
+    const dotSz = 28;
+    for (let x = dotSz; x < w; x += dotSz) {
+      for (let y = dotSz; y < h; y += dotSz) {
+        ctx.beginPath();
+        ctx.arc(x, y, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+
+  if (style === 'engineering') {
+    ctx.save();
+    ctx.strokeStyle = c.lineColor || '#78a67d';
+    const minorSize = 10;
+    const majorSize = 50;
+
+    // Draw minor lines
+    ctx.globalAlpha = 0.18;
+    ctx.lineWidth = 0.4;
+    for (let x = 0; x < w; x += minorSize) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+    }
+    for (let y = 0; y < h; y += minorSize) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+
+    // Draw major lines
+    ctx.globalAlpha = 0.4;
+    ctx.lineWidth = 0.8;
+    for (let x = 0; x < w; x += majorSize) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+    }
+    for (let y = 0; y < h; y += majorSize) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+
+    // Margins
+    ctx.strokeStyle = '#a66858'; // Reddish-brown
+    ctx.globalAlpha = 0.55;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(S.margin - 10, 0); ctx.lineTo(S.margin - 10, h); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, S.margin); ctx.lineTo(w, S.margin); ctx.stroke();
+    ctx.restore();
+  }
+
+  if (style === 'music') {
+    ctx.save();
+    ctx.strokeStyle = c.lineColor || '#4a4a4a';
+    ctx.lineWidth = 0.8;
+    const lineSpacing = 8;
+    const staffSpacing = 72;
+    const startY = S.margin;
+    ctx.globalAlpha = c.lineOpacity;
+
+    for (let y = startY; y < h - 80; y += staffSpacing) {
+      // Draw 5 staff lines
+      for (let i = 0; i < 5; i++) {
+        const ly = y + i * lineSpacing;
+        ctx.beginPath();
+        ctx.moveTo(S.margin - 20, ly);
+        ctx.lineTo(w - S.margin + 20, ly);
+        ctx.stroke();
+      }
+      // Vertical bracket lines at start and end of staff
+      ctx.beginPath();
+      ctx.moveTo(S.margin - 20, y);
+      ctx.lineTo(S.margin - 20, y + 4 * lineSpacing);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(w - S.margin + 20, y);
+      ctx.lineTo(w - S.margin + 20, y + 4 * lineSpacing);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   // Page shadow edge
   ctx.save();
   ctx.globalAlpha = 0.06;
@@ -400,6 +542,9 @@ function drawPaperBackground(ctx, style) {
   ctx.fillRect(0, 0, 4, h);
   ctx.fillRect(w - 4, 0, 4, h);
   ctx.restore();
+
+  // Draw Layout Decorations (Cornell, etc.)
+  drawLayoutDecorations(ctx, S.noteLayout);
 }
 
 /* ───────────────────────────────────────────
@@ -483,14 +628,361 @@ function getFontStack(isIndic) {
   return `"${S.font}", "Noto Sans Devanagari", "Hind", sans-serif`;
 }
 
-function layoutText(text) {
-  text = sanitizeText(text);
+function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevanagari, getFontStack, getCharVariation, getGraphemes, ctx) {
   const queue = [];
   const pageTexts = [];
   let currentPageText = '';
 
+  const margin = S.margin;
+  const colWidth = (PAGE_W - margin * 2 - 40) / 2;
+  const col1Left = margin;
+  const col1Right = margin + colWidth;
+  const col2Left = PAGE_W - margin - colWidth;
+  const col2Right = PAGE_W - margin;
+
+  let activeCol = 1; // 1 or 2
+  let x = col1Left;
+  let y = margin + S.fontSize;
+  const lineH = S.fontSize * S.lineHeight;
+
+  let pageIdx = 0;
+  let charIndex = 0;
+  let lineCharIndex = 0;
+  const words = text.split(' ');
+
+  for (let wi = 0; wi < words.length; wi++) {
+    const word = words[wi];
+    const lines = word.split('\n');
+
+    for (let li = 0; li < lines.length; li++) {
+      if (li > 0) {
+        // Explicit newline
+        x = activeCol === 1 ? col1Left : col2Left;
+        y += lineH;
+        lineCharIndex = 0;
+        if (y + lineH > PAGE_H - margin) {
+          if (activeCol === 1) {
+            activeCol = 2;
+            x = col2Left;
+            y = margin + S.fontSize;
+          } else {
+            pageTexts.push(currentPageText);
+            currentPageText = '';
+            pageIdx++;
+            activeCol = 1;
+            x = col1Left;
+            y = margin + S.fontSize;
+          }
+        }
+        currentPageText += '\n';
+      }
+
+      const lineWord = lines[li];
+      if (!lineWord) continue;
+
+      const wordIsIndic = containsDevanagari(lineWord);
+      const fontStack = getFontStack(wordIsIndic);
+
+      // Measure word width
+      ctx.font = `${S.fontSize}px ${fontStack}`;
+      const wordWidth = ctx.measureText(lineWord).width + S.wordSpacing;
+
+      const rightBoundary = activeCol === 1 ? col1Right : col2Right;
+      const leftBoundary = activeCol === 1 ? col1Left : col2Left;
+
+      // Word wrap
+      if (x + wordWidth > rightBoundary && x > leftBoundary) {
+        x = leftBoundary;
+        y += lineH;
+        lineCharIndex = 0;
+        if (y + lineH > PAGE_H - margin) {
+          if (activeCol === 1) {
+            activeCol = 2;
+            x = col2Left;
+            y = margin + S.fontSize;
+          } else {
+            pageTexts.push(currentPageText);
+            currentPageText = '';
+            pageIdx++;
+            activeCol = 1;
+            x = col1Left;
+            y = margin + S.fontSize;
+          }
+        }
+      }
+
+      if (wordIsIndic) {
+        const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
+        const wobble = Math.sin(lineCharIndex * 0.04) * 0.4 * (S.fontSize / 22);
+        const cy = y + (v.baselineOff * 0.4) + wobble;
+
+        queue.push({
+          ch: lineWord,
+          x,
+          y: cy,
+          v,
+          pageIdx,
+          isIndic: true,
+          fontStack
+        });
+
+        x += ctx.measureText(lineWord).width + v.spacingExtra;
+        charIndex += lineWord.length;
+        lineCharIndex += lineWord.length;
+        currentPageText += lineWord;
+      } else {
+        const graphemes = getGraphemes(lineWord);
+        for (let ci = 0; ci < graphemes.length; ci++) {
+          const ch = graphemes[ci];
+          const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
+          const wobble = Math.sin(lineCharIndex * 0.04) * 0.8 * (S.fontSize / 22);
+          const cy = y + v.baselineOff + wobble;
+
+          queue.push({
+            ch,
+            x,
+            y: cy,
+            v,
+            pageIdx,
+            isIndic: false,
+            fontStack
+          });
+
+          x += ctx.measureText(ch).width + v.spacingExtra;
+          charIndex++;
+          lineCharIndex++;
+          currentPageText += ch;
+        }
+      }
+
+      // Space after word
+      if (li === lines.length - 1) {
+        ctx.font = `${S.fontSize}px ${fontStack}`;
+        x += ctx.measureText(' ').width + S.wordSpacing;
+        if (wi < words.length - 1) {
+          currentPageText += ' ';
+        }
+      }
+    }
+  }
+
+  pageTexts.push(currentPageText);
+  return { queue, pageTexts, pageCount: pageIdx + 1 };
+}
+
+function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevanagari, getFontStack, getCharVariation, getGraphemes, ctx) {
+  const queue = [];
+  const pageTexts = [];
+  let currentPageText = '';
+
+  const margin = S.margin;
+  const leftColRight = 210;
+  const rightColLeft = 250;
+  const rightColRight = PAGE_W - margin;
+
+  let yCues = margin + S.fontSize;
+  let yNotes = margin + S.fontSize;
+  let ySummary = PAGE_H - 170;
+
+  let pageIdx = 0;
+  const lineH = S.fontSize * S.lineHeight;
+
+  const lines = text.split('\n');
+
+  for (let li = 0; li < lines.length; li++) {
+    const rawLine = lines[li];
+    let type = 'note';
+    let lineText = rawLine;
+
+    if (rawLine.trim().startsWith('? ')) {
+      type = 'cue';
+      lineText = rawLine.replace(/^\?\s*/, '');
+    } else if (rawLine.toLowerCase().trim().startsWith('cue:')) {
+      type = 'cue';
+      lineText = rawLine.replace(/^cue:\s*/i, '');
+    } else if (rawLine.trim().startsWith('== ')) {
+      type = 'summary';
+      lineText = rawLine.replace(/^==\s*/, '');
+    } else if (rawLine.toLowerCase().trim().startsWith('summary:')) {
+      type = 'summary';
+      lineText = rawLine.replace(/^summary:\s*/i, '');
+    }
+
+    if (!lineText.trim()) {
+      if (type === 'note') {
+        yNotes += lineH * 0.5;
+      } else if (type === 'cue') {
+        yCues += lineH * 0.5;
+      }
+      currentPageText += '\n';
+      continue;
+    }
+
+    const words = lineText.split(' ');
+    let x = margin;
+    let y = margin + S.fontSize;
+
+    if (type === 'cue') {
+      y = Math.max(yCues, yNotes);
+      if (y + lineH > PAGE_H - 190) {
+        pageTexts.push(currentPageText);
+        currentPageText = '';
+        pageIdx++;
+        yCues = margin + S.fontSize;
+        yNotes = margin + S.fontSize;
+        ySummary = PAGE_H - 170;
+        y = margin + S.fontSize;
+      }
+      x = margin;
+    } else if (type === 'summary') {
+      y = ySummary;
+      if (y + lineH > PAGE_H - margin) {
+        pageTexts.push(currentPageText);
+        currentPageText = '';
+        pageIdx++;
+        yCues = margin + S.fontSize;
+        yNotes = margin + S.fontSize;
+        ySummary = PAGE_H - 170;
+        y = PAGE_H - 170;
+      }
+      x = margin;
+    } else {
+      y = Math.max(yNotes, yCues);
+      if (y + lineH > PAGE_H - 190) {
+        pageTexts.push(currentPageText);
+        currentPageText = '';
+        pageIdx++;
+        yCues = margin + S.fontSize;
+        yNotes = margin + S.fontSize;
+        ySummary = PAGE_H - 170;
+        y = margin + S.fontSize;
+      }
+      x = rightColLeft;
+    }
+
+    let lineCharIndex = 0;
+
+    for (let wi = 0; wi < words.length; wi++) {
+      const word = words[wi];
+      if (!word) continue;
+
+      const wordIsIndic = containsDevanagari(word);
+      const fontStack = getFontStack(wordIsIndic);
+
+      ctx.font = `${S.fontSize}px ${fontStack}`;
+      const wordWidth = ctx.measureText(word).width + S.wordSpacing;
+
+      let leftBoundary = margin;
+      let rightBoundary = rightColRight;
+
+      if (type === 'cue') {
+        leftBoundary = margin;
+        rightBoundary = leftColRight;
+      } else if (type === 'summary') {
+        leftBoundary = margin;
+        rightBoundary = rightColRight;
+      } else {
+        leftBoundary = rightColLeft;
+        rightBoundary = rightColRight;
+      }
+
+      if (x + wordWidth > rightBoundary && x > leftBoundary) {
+        x = leftBoundary;
+        y += lineH;
+        lineCharIndex = 0;
+        
+        if (type === 'summary') {
+          if (y + lineH > PAGE_H - margin) {
+            pageTexts.push(currentPageText);
+            currentPageText = '';
+            pageIdx++;
+            yCues = margin + S.fontSize;
+            yNotes = margin + S.fontSize;
+            ySummary = PAGE_H - 170;
+            y = PAGE_H - 170;
+          }
+        } else {
+          if (y + lineH > PAGE_H - 190) {
+            pageTexts.push(currentPageText);
+            currentPageText = '';
+            pageIdx++;
+            yCues = margin + S.fontSize;
+            yNotes = margin + S.fontSize;
+            ySummary = PAGE_H - 170;
+            y = margin + S.fontSize;
+          }
+        }
+      }
+
+      if (wordIsIndic) {
+        const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
+        const wobble = Math.sin(lineCharIndex * 0.04) * 0.4 * (S.fontSize / 22);
+        const cy = y + (v.baselineOff * 0.4) + wobble;
+
+        queue.push({
+          ch: word,
+          x,
+          y: cy,
+          v,
+          pageIdx,
+          isIndic: true,
+          fontStack,
+          cornellType: type
+        });
+
+        x += ctx.measureText(word).width + v.spacingExtra;
+        lineCharIndex += word.length;
+        currentPageText += word;
+      } else {
+        const graphemes = getGraphemes(word);
+        for (let ci = 0; ci < graphemes.length; ci++) {
+          const ch = graphemes[ci];
+          const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
+          const wobble = Math.sin(lineCharIndex * 0.04) * 0.8 * (S.fontSize / 22);
+          const cy = y + v.baselineOff + wobble;
+
+          queue.push({
+            ch,
+            x,
+            y: cy,
+            v,
+            pageIdx,
+            isIndic: false,
+            fontStack,
+            cornellType: type
+          });
+
+          x += ctx.measureText(ch).width + v.spacingExtra;
+          lineCharIndex++;
+          currentPageText += ch;
+        }
+      }
+
+      ctx.font = `${S.fontSize}px ${fontStack}`;
+      x += ctx.measureText(' ').width + S.wordSpacing;
+      if (wi < words.length - 1) {
+        currentPageText += ' ';
+      }
+    }
+
+    if (type === 'cue') {
+      yCues = y + lineH;
+    } else if (type === 'summary') {
+      ySummary = y + lineH;
+    } else {
+      yNotes = y + lineH;
+    }
+    currentPageText += '\n';
+  }
+
+  pageTexts.push(currentPageText);
+  return { queue, pageTexts, pageCount: pageIdx + 1 };
+}
+
+function layoutText(text) {
+  text = sanitizeText(text);
   if (!text.trim()) {
-    return { queue, pageTexts, pageCount: 1 };
+    return { queue: [], pageTexts: [], pageCount: 1 };
   }
 
   // Use a temporary canvas context to measure text sizes properly
@@ -498,6 +990,16 @@ function layoutText(text) {
   tmpCanvas.width = PAGE_W;
   tmpCanvas.height = PAGE_H;
   const ctx = tmpCanvas.getContext('2d');
+
+  if (S.noteLayout === 'twocolumn') {
+    return layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevanagari, getFontStack, getCharVariation, getGraphemes, ctx);
+  } else if (S.noteLayout === 'cornell') {
+    return layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevanagari, getFontStack, getCharVariation, getGraphemes, ctx);
+  }
+
+  const queue = [];
+  const pageTexts = [];
+  let currentPageText = '';
 
   const margin = S.margin;
   const rightMargin = PAGE_W - margin;
@@ -1307,6 +1809,64 @@ function showExportToast(msg, type = 'info') {
 /* ───────────────────────────────────────────
    PHASE 8.6–8.7 — AUTOSAVE & STATE RESTORE
 ─────────────────────────────────────────── */
+const DB_NAME = 'InkflowDB';
+const DB_VERSION = 1;
+const STORE_NAME = 'draftedGlyphs';
+let dbInstance = null;
+
+function getDB() {
+  if (dbInstance) return Promise.resolve(dbInstance);
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    request.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME);
+      }
+    };
+    request.onsuccess = (e) => {
+      dbInstance = e.target.result;
+      resolve(dbInstance);
+    };
+    request.onerror = (e) => {
+      reject(e.target.error);
+    };
+  });
+}
+
+function saveGlyphDB(char, dataUrl) {
+  return getDB().then(db => {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.put(dataUrl, char);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  });
+}
+
+function getGlyphsDB() {
+  return getDB().then(db => {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.openCursor();
+      const results = {};
+      req.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) {
+          results[cursor.key] = cursor.value;
+          cursor.continue();
+        } else {
+          resolve(results);
+        }
+      };
+      req.onerror = () => reject(req.error);
+    });
+  });
+}
+
 let autosaveTimeout;
 function autosave() {
   clearTimeout(autosaveTimeout);
@@ -1323,15 +1883,25 @@ function autosave() {
       bleed: S.bleed,
       pressure: S.pressure,
       paperStyle: S.paperStyle,
-      draftedGlyphs: draftedGlyphs,
+      noteLayout: S.noteLayout,
     };
     localStorage.setItem('inkflow-state', JSON.stringify(state));
   }, 1000);
 }
 
-function restoreState() {
+async function restoreState() {
   const raw = localStorage.getItem('inkflow-state');
+  
+  // 1. Try to load from IndexedDB
+  try {
+    const dbGlyphs = await getGlyphsDB();
+    Object.assign(draftedGlyphs, dbGlyphs);
+  } catch (err) {
+    console.error("Error loading glyphs from IndexedDB:", err);
+  }
+
   if (!raw) return;
+
   try {
     const state = JSON.parse(raw);
     if (state.text) {
@@ -1370,21 +1940,46 @@ function restoreState() {
         btn.classList.toggle('active', btn.dataset.style === state.paperStyle);
       });
     }
-    // Restore custom handwriting drafts
-    if (state.draftedGlyphs) {
+    if (state.noteLayout) {
+      S.noteLayout = state.noteLayout;
+      const select = document.getElementById('layout-select');
+      if (select) select.value = state.noteLayout;
+    }
+
+    // 2. Migrate draftedGlyphs if they exist in localStorage state
+    if (state.draftedGlyphs && Object.keys(state.draftedGlyphs).length > 0) {
       Object.assign(draftedGlyphs, state.draftedGlyphs);
-      // Ensure the studio character buttons highlight to reflect saved drafts
-      TEMPLATE_CHARS.forEach(char => {
-        if (draftedGlyphs[char] && draftedGlyphs[char].length > 0) {
-          const btn = Array.from(document.querySelectorAll('.char-btn')).find(b => b.textContent === char);
-          if (btn) btn.classList.add('has-data');
+      
+      // Save all of them to IndexedDB
+      for (const char of Object.keys(state.draftedGlyphs)) {
+        const val = state.draftedGlyphs[char];
+        if (val && val.length > 0) {
+          try {
+            await saveGlyphDB(char, val);
+          } catch (err) {
+            console.error(`Error migrating character "${char}" to IndexedDB:`, err);
+          }
         }
-      });
-      // Optionally redraw if studio is open
-      if (typeof drawStudioCanvas === 'function') drawStudioCanvas();
+      }
+      
+      // Remove draftedGlyphs from localStorage and save back
+      delete state.draftedGlyphs;
+      localStorage.setItem('inkflow-state', JSON.stringify(state));
     }
   } catch (e) { /* ignore corrupt state */ }
+
+  // 3. Highlight drafted characters in UI
+  ALL_TEMPLATE_CHARS.forEach(char => {
+    if (draftedGlyphs[char] && draftedGlyphs[char].length > 0) {
+      const btn = Array.from(document.querySelectorAll('.char-btn')).find(b => b.textContent === char);
+      if (btn) btn.classList.add('drafted');
+    }
+  });
+
+  // Optionally redraw if studio is open
+  if (typeof drawStudioCanvas === 'function') drawStudioCanvas();
 }
+
 
 /* ───────────────────────────────────────────
    PHASE 8.8 — PAGE NAVIGATION
@@ -1411,8 +2006,8 @@ function navigatePage(dir) {
 /* ───────────────────────────────────────────
    PHASE 8.7 + INIT — APP BOOT
 ─────────────────────────────────────────── */
-function initApp() {
-  restoreState();
+async function initApp() {
+  await restoreState();
   setupFileUpload();
   initHandFontedStudio();
 
@@ -1643,12 +2238,23 @@ function resetToDefaults() {
 function openHandFontedModal() {
   const modal = document.getElementById('handfonted-modal');
   if (modal) modal.classList.remove('hidden');
-  selectSketchCharacter('A');
+  switchSheet('letters');
 }
 
 function closeHandFontedModal() {
   const modal = document.getElementById('handfonted-modal');
   if (modal) modal.classList.add('hidden');
+}
+
+function switchSheet(sheet) {
+  activeSheet = sheet;
+  document.querySelectorAll('.sheet-tab').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById(`sheet-tab-${sheet}`);
+  if (btn) btn.classList.add('active');
+  
+  renderSketchCharGrid();
+  const firstChar = TEMPLATE_SHEETS[sheet][0];
+  selectSketchCharacter(firstChar);
 }
 
 function switchFontTab(tab) {
@@ -1747,7 +2353,8 @@ function renderSketchCharGrid() {
   if (!container) return;
   container.innerHTML = '';
   
-  TEMPLATE_CHARS.forEach(char => {
+  const chars = TEMPLATE_SHEETS[activeSheet];
+  chars.forEach(char => {
     const btn = document.createElement('div');
     btn.className = 'char-btn';
     btn.id = `char-btn-${char}`;
@@ -1793,6 +2400,9 @@ function saveActiveCharacter() {
   const btn = document.getElementById(`char-btn-${activeChar}`);
   if (btn) btn.classList.add('drafted');
   
+  // Persist to IndexedDB
+  saveGlyphDB(activeChar, dataUrl).catch(err => console.error("Error saving glyph to IndexedDB:", err));
+  
   // Micro-interaction: visual confirmation
   const wrapper = canvas.parentElement;
   wrapper.style.borderColor = 'var(--accent)';
@@ -1804,11 +2414,18 @@ function saveActiveCharacter() {
 function advanceActiveCharacter() {
   saveActiveCharacter();
   
-  const curIdx = TEMPLATE_CHARS.indexOf(activeChar);
-  if (curIdx < TEMPLATE_CHARS.length - 1) {
-    selectSketchCharacter(TEMPLATE_CHARS[curIdx + 1]);
+  const chars = TEMPLATE_SHEETS[activeSheet];
+  const curIdx = chars.indexOf(activeChar);
+  if (curIdx < chars.length - 1) {
+    selectSketchCharacter(chars[curIdx + 1]);
   } else {
-    alert('🎉 You have drafted all characters in the set! Click "Generate & Apply Font" below to compile your TrueType handwriting font.');
+    if (activeSheet === 'letters') {
+      if (confirm('🎉 Finished Letters template! Would you like to switch to Numbers & Symbols?')) {
+        switchSheet('symbols');
+      }
+    } else {
+      alert('🎉 You have drafted all characters in this set! Click "Generate & Apply Font" below to compile your TrueType handwriting font.');
+    }
   }
 }
 
@@ -1826,7 +2443,7 @@ function generateDownloadTemplate() {
   ctx.fillStyle = '#1c2340';
   ctx.font = 'bold 36px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('HandFonted Studio — Handwriting Template Grid', 800, 70);
+  ctx.fillText(`HandFonted Studio — ${activeSheet === 'letters' ? 'Letters' : 'Numbers & Symbols'} Template`, 800, 70);
   ctx.font = '22px sans-serif';
   ctx.fillStyle = '#555';
   ctx.fillText('Write each letter clearly inside its designated box, scan/photo this sheet, and upload it!', 800, 110);
@@ -1838,11 +2455,13 @@ function generateDownloadTemplate() {
   ctx.strokeStyle = '#cccccc';
   ctx.lineWidth = 2;
   
+  const chars = TEMPLATE_SHEETS[activeSheet];
+  
   for (let r = 0; r < 8; r++) {
     for (let c = 0; c < 8; c++) {
       const x = startX + c * size;
       const y = startY + r * size;
-      const char = TEMPLATE_CHARS[r * 8 + c] || '';
+      const char = chars[r * 8 + c] || '';
       
       // Outer square
       ctx.strokeStyle = '#cccccc';
@@ -1859,16 +2478,18 @@ function generateDownloadTemplate() {
       ctx.setLineDash([]);
       
       // Guide label tags
-      ctx.fillStyle = '#888888';
-      ctx.font = 'bold 16px sans-serif';
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'top';
-      ctx.fillText(char, x + 8, y + 8);
+      if (char) {
+        ctx.fillStyle = '#888888';
+        ctx.font = 'bold 16px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(char, x + 8, y + 8);
+      }
     }
   }
   
   const link = document.createElement('a');
-  link.download = 'handfonted-template.png';
+  link.download = `handfonted-template-${activeSheet}.png`;
   link.href = canvas.toDataURL();
   document.body.appendChild(link);
   link.click();
@@ -1906,20 +2527,47 @@ function setupTemplateUploader() {
     const file = e.target.files[0];
     if (file) handleTemplateImage(file);
   });
+
+  const sheetSelect = document.getElementById('upload-template-sheet-select');
+  if (sheetSelect) {
+    sheetSelect.addEventListener('change', () => {
+      activeUploadSheet = sheetSelect.value;
+      
+      // Load config to sliders
+      const config = gridConfigs[activeUploadSheet];
+      document.getElementById('slider-grid-x').value = config.gridX;
+      document.getElementById('slider-grid-y').value = config.gridY;
+      document.getElementById('slider-grid-w').value = config.gridW;
+      document.getElementById('slider-grid-h').value = config.gridH;
+      
+      // Show/hide aligner container
+      const img = alignerImages[activeUploadSheet];
+      const container = document.getElementById('template-aligner-container');
+      if (img) {
+        container.classList.remove('hidden');
+      } else {
+        container.classList.add('hidden');
+      }
+      
+      updateAlignerGrid();
+    });
+  }
 }
 
 function handleTemplateImage(file) {
   const reader = new FileReader();
   reader.onload = (e) => {
-    alignerImage = new Image();
-    alignerImage.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      alignerImages[activeUploadSheet] = img;
       document.getElementById('template-aligner-container').classList.remove('hidden');
       
-      // Set reasonable startup values that roughly frame standard templates
       gridX = 22;
       gridY = 36;
       gridW = 315;
       gridH = 315;
+      
+      gridConfigs[activeUploadSheet] = { gridX, gridY, gridW, gridH };
       
       document.getElementById('slider-grid-x').value = gridX;
       document.getElementById('slider-grid-y').value = gridY;
@@ -1928,22 +2576,33 @@ function handleTemplateImage(file) {
       
       updateAlignerGrid();
     };
-    alignerImage.src = e.target.result;
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
 
 function updateAlignerGrid() {
-  if (!alignerImage) return;
+  const img = alignerImages[activeUploadSheet];
   const canvas = document.getElementById('aligner-canvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
+
+  if (!img) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    return;
+  }
   
   // Read dynamic slider parameters
   gridX = parseInt(document.getElementById('slider-grid-x').value);
   gridY = parseInt(document.getElementById('slider-grid-y').value);
   gridW = parseInt(document.getElementById('slider-grid-w').value);
   gridH = parseInt(document.getElementById('slider-grid-h').value);
+  
+  // Sync to config
+  gridConfigs[activeUploadSheet].gridX = gridX;
+  gridConfigs[activeUploadSheet].gridY = gridY;
+  gridConfigs[activeUploadSheet].gridW = gridW;
+  gridConfigs[activeUploadSheet].gridH = gridH;
   
   // Display numbers in UI
   document.getElementById('val-grid-x').textContent = gridX;
@@ -1954,17 +2613,13 @@ function updateAlignerGrid() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   
   // Draw base image
-  ctx.drawImage(alignerImage, 0, 0, canvas.width, canvas.height);
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
   
   // Semi-transparent shading of outer bounding box
   ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-  // Top padding
   ctx.fillRect(0, 0, canvas.width, gridY);
-  // Bottom padding
   ctx.fillRect(0, gridY + gridH, canvas.width, canvas.height - (gridY + gridH));
-  // Left padding
   ctx.fillRect(0, gridY, gridX, gridH);
-  // Right padding
   ctx.fillRect(gridX + gridW, gridY, canvas.width - (gridX + gridW), gridH);
   
   // Red/Orange alignment grids
@@ -1975,17 +2630,19 @@ function updateAlignerGrid() {
   
   ctx.beginPath();
   for (let i = 0; i <= 8; i++) {
-    // Vertical
     ctx.moveTo(gridX + i * cellW, gridY);
     ctx.lineTo(gridX + i * cellW, gridY + gridH);
-    // Horizontal
     ctx.moveTo(gridX, gridY + i * cellH);
     ctx.lineTo(gridX + gridW, gridY + i * cellH);
   }
   ctx.stroke();
 }
 
-function cropTemplateCell(index) {
+function cropTemplateCell(index, sheetName) {
+  const img = alignerImages[sheetName];
+  if (!img) return null;
+  const config = gridConfigs[sheetName];
+
   const col = index % 8;
   const row = Math.floor(index / 8);
   
@@ -1994,22 +2651,20 @@ function cropTemplateCell(index) {
   cellCanvas.height = 128;
   const cellCtx = cellCanvas.getContext('2d');
   
-  // Map 360-scaled preview grids to native uploader dimensions
-  const scale = alignerImage.naturalWidth / 360;
+  const scale = img.naturalWidth / 360;
   
-  const cellW_preview = gridW / 8;
-  const cellH_preview = gridH / 8;
+  const cellW_preview = config.gridW / 8;
+  const cellH_preview = config.gridH / 8;
   
-  const srcX = (gridX + col * cellW_preview) * scale;
-  const srcY = (gridY + row * cellH_preview) * scale;
+  const srcX = (config.gridX + col * cellW_preview) * scale;
+  const srcY = (config.gridY + row * cellH_preview) * scale;
   const srcW = cellW_preview * scale;
   const srcH = cellH_preview * scale;
   
   cellCtx.fillStyle = '#ffffff';
   cellCtx.fillRect(0, 0, 128, 128);
   
-  // Draw cell with safe centering margins
-  cellCtx.drawImage(alignerImage, srcX, srcY, srcW, srcH, 12, 12, 104, 104);
+  cellCtx.drawImage(img, srcX, srcY, srcW, srcH, 12, 12, 104, 104);
   return cellCanvas;
 }
 
@@ -2233,13 +2888,22 @@ async function buildCustomFont() {
     
     const isTemplateTab = !document.getElementById('panel-template').classList.contains('hidden');
     
-    for (let i = 0; i < TEMPLATE_CHARS.length; i++) {
-      const char = TEMPLATE_CHARS[i];
+    for (let i = 0; i < ALL_TEMPLATE_CHARS.length; i++) {
+      const char = ALL_TEMPLATE_CHARS[i];
       let cellCanvas = null;
       
       if (isTemplateTab) {
-        if (!alignerImage) continue;
-        cellCanvas = cropTemplateCell(i);
+        let sheetName = 'letters';
+        let charIdx = TEMPLATE_SHEETS.letters.indexOf(char);
+        if (charIdx === -1) {
+          sheetName = 'symbols';
+          charIdx = TEMPLATE_SHEETS.symbols.indexOf(char);
+        }
+        
+        const img = alignerImages[sheetName];
+        if (!img) continue; // Skip if no template uploaded for this sheet
+        
+        cellCanvas = cropTemplateCell(charIdx, sheetName);
       } else {
         const dataUrl = draftedGlyphs[char];
         if (!dataUrl) continue; // Skip undrafted characters

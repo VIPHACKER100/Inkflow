@@ -20,10 +20,11 @@ The system state is governed by a central global configuration object `S` that a
 | `inkColor` | `String` | `"#1c2340"` | Hexadecimal string representation of the active ink color. |
 | `bleed` | `Float` | `0.5` | Intensity multiplier for drop-shadow bleeds ($0.0$ to $2.5$ range). |
 | `pressure` | `Float` | `0.12` | Scale of stroke thickness variation ($0.0$ to $0.3$ range). |
-| `paperStyle` | `String` | `"ruled"` | Page pattern identifier (`ruled`, `plain`, `grid`, `legal`, `vintage`, `dark`). |
+| `paperStyle` | `String` | `"ruled"` | Page pattern identifier (`ruled`, `plain`, `grid`, `legal`, `vintage`, `dark`, `dot_grid`, `engineering`, `music`). |
+| `noteLayout` | `String` | `"standard"` | Page note template layout (`standard`, `twocolumn`, `cornell`). |
 | `animSpeed` | `Integer` | `8` | Characters written per animation frame ($1$ to $30$ range). |
 | `currentPage`| `Integer` | `0` | 0-indexed integer identifying the active viewport page in focus. |
-| `draftedGlyphs`| `Object` | `{}` | Dictionary storing user-drawn SVG path coordinates for custom handwriting. |
+| `draftedGlyphs`| `Object` | `{}` | Local dictionary storing user-drawn SVG path data, populated from IndexedDB. |
 
 > **v1.2.0 Note**: Default values for `fontSize`, `lineHeight`, `wordSpacing`, `margin`, and `rotationMax` have been tuned down for cleaner, more realistic handwriting output at standard sizes.
 
@@ -34,16 +35,23 @@ The system state is governed by a central global configuration object `S` that a
 ```mermaid
 sequenceDiagram
     participant Boot as App Boot (initApp)
+    participant DB as IndexedDB (InkflowDB)
     participant LS as localStorage
     participant State as Global State S
     participant UI as DOM Controls
     participant Canvas as Canvas Renderer
     participant Editors as Page Editors
 
+    Boot->>DB: Open 'InkflowDB' & load all draftedGlyphs
+    DB->>State: Hydrate custom glyphs dict
     Boot->>LS: Read 'inkflow-state'
     alt State exists
-        LS->>State: Parse JSON → Hydrate S
-        State->>UI: Sync sliders, dropdowns, textareas
+        LS->>State: Parse JSON → Hydrate settings in S
+        State->>UI: Sync sliders, dropdowns, textareas, selects
+        alt Legacy glyphs found in localStorage
+            State->>DB: Migrate legacy glyphs to IndexedDB
+            State->>LS: Remove draftedGlyphs from localStorage
+        end
     else No saved state
         Boot->>State: Initialize with defaults
     end
@@ -54,17 +62,26 @@ sequenceDiagram
         UI->>State: Update S property
         State->>Canvas: debounceRender() (280ms)
         Canvas->>Editors: Sync pageTexts
-        State->>LS: autosave() → JSON.stringify (1000ms)
+        State->>LS: autosave() → JSON.stringify settings (1000ms)
+    end
+    
+    loop On HandFonted Sketch
+        UI->>DB: saveGlyphDB(char, dataUrl)
+        UI->>State: Update draftedGlyphs[char] in memory
     end
 ```
 
 ### Step-by-Step Lifecycle
 
-1. **App Boot (`initApp`)**: Reads state from `localStorage` key `inkflow-state`, sets up file upload module, and initializes HandFonted studio.
-2. **Deserialization**: If found, values are parsed and hydrated into `S`. Corresponding input sliders, dropdowns, and text fields are programmatically updated.
+1. **App Boot (`initApp`)**:
+   - Opens the **IndexedDB** database `InkflowDB` (version 1, object store `draftedGlyphs`) and reads all custom handwriting glyphs into memory.
+   - Reads general settings from `localStorage` under key `inkflow-state`.
+2. **Deserialization & Migration**:
+   - Hydrates `S` with the stored settings. Updates sliders, dropdowns, page layout selects, and text fields.
+   - **Migration Check**: If legacy custom glyphs are detected in `localStorage` (from previous versions), the boot pipeline automatically writes them to IndexedDB, clears them from `localStorage` to avoid exceeding the 5MB quota, and saves the cleaned state.
 3. **Trigger Render**: Calls `renderText()` using the restored settings. If no state exists, creates an empty canvas with ruled guides and a watermark placeholder.
 4. **Editor Sync**: After rendering, each page editor overlay receives the corresponding `pageTexts[i]` content and has its styles updated via `updateEditorStyles()`.
-5. **Change Event Listener**: Any interaction with input elements triggers a debounced `autosave()` cycle that serializes `S` into JSON and caches it in `localStorage` after a 1000ms delay.
+5. **Change Event Listener**: Any interaction with input elements triggers a debounced `autosave()` cycle that serializes settings into JSON and caches them in `localStorage` after a 1000ms delay. Custom font glyphs are saved directly to IndexedDB immediately as they are sketched or aligned.
 
 ---
 
@@ -97,7 +114,7 @@ function autosave() {
       font: S.font, fontSize: S.fontSize, lineHeight: S.lineHeight,
       wordSpacing: S.wordSpacing, margin: S.margin, rotationMax: S.rotationMax,
       inkColor: S.inkColor, bleed: S.bleed, pressure: S.pressure,
-      paperStyle: S.paperStyle, draftedGlyphs: draftedGlyphs,
+      paperStyle: S.paperStyle, noteLayout: S.noteLayout,
     };
     localStorage.setItem('inkflow-state', JSON.stringify(state));
   }, 1000);
