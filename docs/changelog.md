@@ -109,8 +109,10 @@ All notable changes to Inkflow are documented in this file.
 - **Cornell Note Layout**: New "Cornell Study Notes" layout template. Divides the page into visual cues, main notes, and summary sections, drawing dividing lines dynamically. Lines starting with `? ` or `cue:` automatically render in the Cues sidebar, and lines starting with `== ` or `summary:` render in the bottom Summary footer.
 - **Two-Column Note Layout**: New "Two-Column Grid" layout template that wraps and flows text across two columns per page before breaking to the next page.
 - **Page Layout UI Section**: Added a new collapsed "Page Layout" section in the sidebar with a note layout template selector.
+- **Character-Level Soft Wrapping**: All three layout engines (Standard, Two-Column, and Cornell) now perform per-character wrap checks. Long continuous strings without spaces (e.g. URLs, unbroken text) wrap at the right margin instead of overflowing off the page.
 
 ### ♻️ Changed
 - **`initApp()` & `restoreState()`**: Upgraded to async/await to support asynchronous IndexedDB initialization and glyph retrieval.
 - **`cropTemplateCell()`**: Signature updated to `cropTemplateCell(index, sheetName)` to support slicing character cells from multiple templates.
 - **`generateDownloadTemplate()`**: Updated to dynamically name files and draw guide characters depending on the active sheet.
+- **`layoutText()` Engine**: Now includes character-level overflow detection in all layout modes; characters exceeding the right boundary trigger a soft line break with page-break checks.

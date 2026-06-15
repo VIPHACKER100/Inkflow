@@ -27,6 +27,7 @@ graph TD
         E[Global State Object S]
         F[Debounced Autosave Module]
         G[LocalStorage Interface]
+        R[IndexedDB Glyph Store]
     end
 
     subgraph Engine_Layer [Core Execution Engines]
@@ -50,6 +51,7 @@ graph TD
     E -->|State Synchronization| F
     F -->|Serialized Save| G
     G -->|State Hydration| E
+    R -->|Glyph Data Hydration| E
 
     E -->|Render Triggers| H
     E -->|Transform Configs| I
@@ -79,7 +81,7 @@ graph TD
 The visible DOM elements the user interacts with directly. These include the sidebar control console (300px width), the floating top toolbar (56px fixed header), the main canvas grid viewport with inline page editors (`.page-editor` contenteditable overlays), and the bottom pill-style pagination controls.
 
 ### 2. State Management Layer
-A centralized global configuration object `S` acts as the single source of truth. Changes to any UI control update `S`, which triggers re-rendering. A debounced autosave module serializes the state to `localStorage` after a 1000ms idle delay.
+A centralized global configuration object `S` acts as the single source of truth. Changes to any UI control update `S`, which triggers re-rendering. A debounced autosave module serializes the state to `localStorage` after a 1000ms idle delay. Custom handwriting glyph data is stored in **IndexedDB** (`InkflowDB` → `draftedGlyphs` store) to bypass the 5MB `localStorage` quota limit.
 
 ### 3. Core Execution Engines
 The rendering pipeline that transforms state data into visual canvas output. The key innovation in v1.2.0 is the **unified `layoutText()` engine**, which performs all word-wrap, page-break, and character queue computation in a single pass, ensuring that both static rendering (`renderText`) and animation playback (`buildCharQueue`) produce identical results from the same layout logic.

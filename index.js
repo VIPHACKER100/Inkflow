@@ -687,8 +687,8 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
       ctx.font = `${S.fontSize}px ${fontStack}`;
       const wordWidth = ctx.measureText(lineWord).width + S.wordSpacing;
 
-      const rightBoundary = activeCol === 1 ? col1Right : col2Right;
-      const leftBoundary = activeCol === 1 ? col1Left : col2Left;
+      let rightBoundary = activeCol === 1 ? col1Right : col2Right;
+      let leftBoundary = activeCol === 1 ? col1Left : col2Left;
 
       // Word wrap
       if (x + wordWidth > rightBoundary && x > leftBoundary) {
@@ -699,6 +699,8 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
           if (activeCol === 1) {
             activeCol = 2;
             x = col2Left;
+            leftBoundary = col2Left;
+            rightBoundary = col2Right;
             y = margin + S.fontSize;
           } else {
             pageTexts.push(currentPageText);
@@ -706,6 +708,8 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
             pageIdx++;
             activeCol = 1;
             x = col1Left;
+            leftBoundary = col1Left;
+            rightBoundary = col1Right;
             y = margin + S.fontSize;
           }
         }
@@ -735,6 +739,34 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
         for (let ci = 0; ci < graphemes.length; ci++) {
           const ch = graphemes[ci];
           const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
+
+          ctx.font = `${S.fontSize}px ${fontStack}`;
+          const charWidth = ctx.measureText(ch).width + v.spacingExtra;
+
+          if (x + charWidth > rightBoundary && x > leftBoundary) {
+            x = leftBoundary;
+            y += lineH;
+            lineCharIndex = 0;
+            if (y + lineH > PAGE_H - margin) {
+              if (activeCol === 1) {
+                activeCol = 2;
+                x = col2Left;
+                leftBoundary = col2Left;
+                rightBoundary = col2Right;
+                y = margin + S.fontSize;
+              } else {
+                pageTexts.push(currentPageText);
+                currentPageText = '';
+                pageIdx++;
+                activeCol = 1;
+                x = col1Left;
+                leftBoundary = col1Left;
+                rightBoundary = col1Right;
+                y = margin + S.fontSize;
+              }
+            }
+          }
+
           const wobble = Math.sin(lineCharIndex * 0.04) * 0.8 * (S.fontSize / 22);
           const cy = y + v.baselineOff + wobble;
 
@@ -938,6 +970,38 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
         for (let ci = 0; ci < graphemes.length; ci++) {
           const ch = graphemes[ci];
           const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
+
+          ctx.font = `${S.fontSize}px ${fontStack}`;
+          const charWidth = ctx.measureText(ch).width + v.spacingExtra;
+
+          if (x + charWidth > rightBoundary && x > leftBoundary) {
+            x = leftBoundary;
+            y += lineH;
+            lineCharIndex = 0;
+            
+            if (type === 'summary') {
+              if (y + lineH > PAGE_H - margin) {
+                pageTexts.push(currentPageText);
+                currentPageText = '';
+                pageIdx++;
+                yCues = margin + S.fontSize;
+                yNotes = margin + S.fontSize;
+                ySummary = PAGE_H - 170;
+                y = PAGE_H - 170;
+              }
+            } else {
+              if (y + lineH > PAGE_H - 190) {
+                pageTexts.push(currentPageText);
+                currentPageText = '';
+                pageIdx++;
+                yCues = margin + S.fontSize;
+                yNotes = margin + S.fontSize;
+                ySummary = PAGE_H - 170;
+                y = margin + S.fontSize;
+              }
+            }
+          }
+
           const wobble = Math.sin(lineCharIndex * 0.04) * 0.8 * (S.fontSize / 22);
           const cy = y + v.baselineOff + wobble;
 
@@ -1078,6 +1142,22 @@ function layoutText(text) {
         for (let ci = 0; ci < graphemes.length; ci++) {
           const ch = graphemes[ci];
           const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
+
+          ctx.font = `${S.fontSize}px ${fontStack}`;
+          const charWidth = ctx.measureText(ch).width + v.spacingExtra;
+
+          if (x + charWidth > rightMargin && x > margin) {
+            x = margin;
+            y += lineH;
+            lineCharIndex = 0;
+            if (y + lineH > PAGE_H - margin) {
+              pageTexts.push(currentPageText);
+              currentPageText = '';
+              pageIdx++;
+              y = margin + S.fontSize;
+            }
+          }
+
           const wobble = Math.sin(lineCharIndex * 0.04) * 0.8 * (S.fontSize / 22);
           const cy = y + v.baselineOff + wobble;
 
