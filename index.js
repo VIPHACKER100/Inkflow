@@ -255,9 +255,9 @@ function createPage(pageNum) {
   });
 
   // Blur: hide overlay text and redraw handwriting to canvas
-  editor.addEventListener('blur', () => {
+  editor.addEventListener('blur', async () => {
     editor.style.color = 'transparent';
-    renderText(S.text);
+    await renderText(S.text);
   });
 
   // Input: concatenate all editor contents, sync to sidebar, and autosave
@@ -1255,7 +1255,16 @@ function layoutText(text) {
   return { queue, pageTexts, pageCount: pageIdx + 1 };
 }
 
-function renderText(text) {
+async function renderText(text) {
+  // Ensure font is loaded before measuring/rendering
+  if (document.fonts) {
+    try {
+      await document.fonts.load(`${S.fontSize}px "${S.font}"`);
+    } catch (e) {
+      // Font load failed, continue with fallback
+    }
+  }
+  
   text = sanitizeText(text);
   clearPages();
   if (!text.trim()) {
@@ -1283,26 +1292,40 @@ function renderText(text) {
     const ctx = canvas.getContext('2d');
     const v = item.v;
 
+    const activeEditor = document.getElementById('editor-' + (item.pageIdx + 1));
+    if (document.activeElement === activeEditor) return;
+
     ctx.save();
     ctx.translate(item.x, item.y);
     ctx.rotate((v.tiltDeg * (item.isIndic ? 0.3 : 1) * Math.PI) / 180);
     ctx.scale(v.scaleX, v.scaleY);
 
-    const pxSize = S.fontSize * v.pressureMod;
-    ctx.font = `${Math.max(10, pxSize)}px ${item.fontStack}`;
-    ctx.globalAlpha = v.opacity;
-
-    if (S.bleed > 0.05) {
-      ctx.shadowColor = S.shadowColor || S.inkColor;
-      ctx.shadowBlur = S.bleed * 1.4;
+    // Check if custom glyph exists
+    if (draftedGlyphs[item.ch]) {
+      const glyphImg = new Image();
+      glyphImg.onload = () => {
+        ctx.globalAlpha = v.opacity;
+        // Render glyph image without additional transformations
+        // Glyph width is intrinsic to the image; no extra scaling needed
+        const glyphWidth = glyphImg.width;
+        const glyphHeight = glyphImg.height;
+        ctx.drawImage(glyphImg, -glyphWidth / 2, -glyphHeight / 2, glyphWidth, glyphHeight);
+      };
+      glyphImg.src = draftedGlyphs[item.ch];
     } else {
-      ctx.shadowBlur = 0;
-    }
+      // Fallback to system font
+      const pxSize = S.fontSize;
+      ctx.font = `${Math.max(10, pxSize)}px ${item.fontStack}`;
+      ctx.globalAlpha = v.opacity * v.pressureMod;
 
-    ctx.fillStyle = S.inkColor;
-    
-    const activeEditor = document.getElementById('editor-' + (item.pageIdx + 1));
-    if (document.activeElement !== activeEditor) {
+      if (S.bleed > 0.05) {
+        ctx.shadowColor = S.shadowColor || S.inkColor;
+        ctx.shadowBlur = S.bleed * 1.4;
+      } else {
+        ctx.shadowBlur = 0;
+      }
+
+      ctx.fillStyle = S.inkColor;
       ctx.fillText(item.ch, 0, 0);
     }
     ctx.restore();
@@ -1328,12 +1351,14 @@ document.getElementById('text-input').addEventListener('input', function () {
 
 function debounceRender() {
   clearTimeout(renderTimeout);
-  renderTimeout = setTimeout(() => renderText(S.text), 280);
+  renderTimeout = setTimeout(async () => {
+    await renderText(S.text);
+  }, 280);
 }
 
-function triggerRender() {
+async function triggerRender() {
   S.text = document.getElementById('text-input').value;
-  renderText(S.text);
+  await renderText(S.text);
 }
 
 function buildCharQueue(text) {
@@ -1370,7 +1395,7 @@ function startAnimation() {
     if (!isAnimating || idx >= queue.length) {
       penEl.style.display = 'none';
       isAnimating = false;
-      renderText(S.text);
+      renderText(S.text); // Don't await here - fire and forget for animation end
       return;
     }
     const charsPerFrame = S.animSpeed;
@@ -1384,9 +1409,8 @@ function startAnimation() {
       ctx.translate(item.x, item.y);
       ctx.rotate((v.tiltDeg * (item.isIndic ? 0.3 : 1) * Math.PI) / 180);
       ctx.scale(v.scaleX, v.scaleY);
-      const pxSize = S.fontSize * v.pressureMod;
-      ctx.font = `${Math.max(10, pxSize)}px ${item.fontStack}`;
-      ctx.globalAlpha = v.opacity;
+      ctx.font = `${Math.max(10, S.fontSize)}px ${item.fontStack}`;
+      ctx.globalAlpha = v.opacity * v.pressureMod;
       if (S.bleed > 0.05) { ctx.shadowColor = S.inkColor; ctx.shadowBlur = S.bleed * 1.4; }
       ctx.fillStyle = S.inkColor;
       ctx.fillText(item.ch, 0, 0);
@@ -1702,12 +1726,12 @@ async function aiAction(type) {
   let result = null;
   let lastRenderTime = 0;
 
-  const onChunk = (text) => {
+  const onChunk = async (text) => {
     textarea.value = text;
     S.text = text;
     const now = Date.now();
     if (now - lastRenderTime > 200) {
-      renderText(text);
+      await renderText(text);
       lastRenderTime = now;
     }
   };
@@ -1752,7 +1776,7 @@ async function aiAction(type) {
   if (result !== null) {
     textarea.value = result;
     S.text = result;
-    renderText(S.text);
+    await renderText(S.text);
     autosave();
   }
 
@@ -2149,6 +2173,16 @@ function navigatePage(dir) {
 ─────────────────────────────────────────── */
 async function initApp() {
   await restoreState();
+  
+  // Wait for fonts to load before rendering
+  if (document.fonts) {
+    try {
+      await document.fonts.ready;
+    } catch (e) {
+      // Fonts failed to load, continue anyway
+    }
+  }
+  
   setupFileUpload();
   initHandFontedStudio();
 
@@ -2255,7 +2289,7 @@ function setupFileUpload() {
       S.text = text;
       
       // Render handwriting & save state
-      renderText(text);
+      await renderText(text);
       autosave();
       
       statusText.innerHTML = '<span style="color:#2d6a4f;font-weight:600;">✓ File loaded successfully!</span>';
@@ -3413,7 +3447,7 @@ async function buildCustomFont() {
     const spaceGlyph = new window.opentype.Glyph({
       name: 'space',
       unicode: 32,
-      advanceWidth: 320,
+      advanceWidth: 400, // Reasonable space width for handwriting fonts
       path: new window.opentype.Path()
     });
     glyphsList.push(spaceGlyph);
@@ -3445,10 +3479,23 @@ async function buildCustomFont() {
       }
       
       const path = canvasToOpentypePath(cellCanvas);
+      
+      // Calculate advance width based on glyph bounding box
+      // Opentype.js doesn't expose getBounds directly, so calculate from contours
+      let maxX = 0;
+      if (path.contours && path.contours.length > 0) {
+        for (let contour of path.contours) {
+          for (let point of contour) {
+            if (point.x > maxX) maxX = point.x;
+          }
+        }
+      }
+      const advanceWidth = Math.max(Math.round(maxX) + 50, 200); // Add padding and ensure minimum width
+      
       const glyph = new window.opentype.Glyph({
         name: char,
         unicode: char.charCodeAt(0),
-        advanceWidth: 650,
+        advanceWidth: advanceWidth,
         path: path
       });
       glyphsList.push(glyph);
