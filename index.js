@@ -16,6 +16,7 @@ const S = {
   animSpeed: 8,
   currentPage: 0,
   noteLayout: 'standard',
+  textAlignment: 'middle', // 'top', 'middle', 'bottom'
 };
 
 /* Canvas pages array */
@@ -199,6 +200,26 @@ function setPaper(btn) {
 }
 
 /* ───────────────────────────────────────────
+   TEXT VERTICAL ALIGNMENT CONTROL
+─────────────────────────────────────────── */
+function setTextAlignment(alignment) {
+  S.textAlignment = alignment;
+  
+  // Update UI
+  document.querySelectorAll('.align-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  document.querySelector(`.align-btn[data-align="${alignment}"]`).classList.add('active');
+  
+  // Update label
+  const labels = { top: 'Upper', middle: 'Middle', bottom: 'Lower' };
+  document.getElementById('align-val').textContent = labels[alignment] || 'Middle';
+  
+  // Re-render with new alignment
+  debounceRender();
+}
+
+/* ───────────────────────────────────────────
    PHASE 4.1 — CREATE CANVAS PAGE
 ─────────────────────────────────────────── */
 function createPage(pageNum) {
@@ -249,8 +270,23 @@ function createPage(pageNum) {
     editor.style.fontFamily = getFontStack(containsDevanagari(editor.innerText));
   });
 
+  // Create margin text overlay for left side notes
+  const marginText = document.createElement('div');
+  marginText.className = 'margin-text-overlay';
+  marginText.id = 'margin-' + pageNum;
+  marginText.contentEditable = 'true';
+  marginText.setAttribute('aria-label', 'Margin notes for Page ' + pageNum);
+  marginText.setAttribute('placeholder', '📝');
+  marginText.style.fontFamily = S.font;
+
+  // Update font when typing
+  marginText.addEventListener('input', () => {
+    marginText.style.fontFamily = getFontStack(containsDevanagari(marginText.innerText));
+  });
+
   container.appendChild(canvas);
   container.appendChild(editor);
+  container.appendChild(marginText);
   wrapper.appendChild(label);
   wrapper.appendChild(container);
 
@@ -570,6 +606,25 @@ function getCharVariation(rotMax, pressure, fontSize) {
 /* ───────────────────────────────────────────
    PHASE 4.1–4.8 — CLEAR & INIT PAGES
 ─────────────────────────────────────────── */
+
+/* Get vertical alignment offset based on text alignment setting */
+function getAlignmentOffset(alignment, fontSize, lineHeight) {
+  const lineH = fontSize * lineHeight;
+  
+  switch (alignment) {
+    case 'top':
+      // Text touches upper line (shift up by ~40% of line height)
+      return -(lineH * 0.35);
+    case 'bottom':
+      // Text sits on lower line (shift down by ~40% of line height)
+      return (lineH * 0.35);
+    case 'middle':
+    default:
+      // Centered between lines (no offset)
+      return 0;
+  }
+}
+
 function clearPages() {
   pages = [];
   S.currentPage = 0;
@@ -718,7 +773,8 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
       if (wordIsIndic) {
         const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
         const wobble = Math.sin(lineCharIndex * 0.04) * 0.4 * (S.fontSize / 22);
-        const cy = y + (v.baselineOff * 0.4) + wobble;
+        const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
+        const cy = y + (v.baselineOff * 0.4) + wobble + alignOffset;
 
         queue.push({
           ch: lineWord,
@@ -768,7 +824,8 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
           }
 
           const wobble = Math.sin(lineCharIndex * 0.04) * 0.8 * (S.fontSize / 22);
-          const cy = y + v.baselineOff + wobble;
+          const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
+          const cy = y + v.baselineOff + wobble + alignOffset;
 
           queue.push({
             ch,
@@ -949,7 +1006,8 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
       if (wordIsIndic) {
         const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
         const wobble = Math.sin(lineCharIndex * 0.04) * 0.4 * (S.fontSize / 22);
-        const cy = y + (v.baselineOff * 0.4) + wobble;
+        const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
+        const cy = y + (v.baselineOff * 0.4) + wobble + alignOffset;
 
         queue.push({
           ch: word,
@@ -1003,7 +1061,8 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
           }
 
           const wobble = Math.sin(lineCharIndex * 0.04) * 0.8 * (S.fontSize / 22);
-          const cy = y + v.baselineOff + wobble;
+          const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
+          const cy = y + v.baselineOff + wobble + alignOffset;
 
           queue.push({
             ch,
@@ -1121,7 +1180,8 @@ function layoutText(text) {
       if (wordIsIndic) {
         const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
         const wobble = Math.sin(lineCharIndex * 0.04) * 0.4 * (S.fontSize / 22);
-        const cy = y + (v.baselineOff * 0.4) + wobble;
+        const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
+        const cy = y + (v.baselineOff * 0.4) + wobble + alignOffset;
 
         queue.push({
           ch: lineWord,
@@ -1159,7 +1219,8 @@ function layoutText(text) {
           }
 
           const wobble = Math.sin(lineCharIndex * 0.04) * 0.8 * (S.fontSize / 22);
-          const cy = y + v.baselineOff + wobble;
+          const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
+          const cy = y + v.baselineOff + wobble + alignOffset;
 
           queue.push({
             ch,
@@ -2259,6 +2320,7 @@ function resetToDefaults() {
     bleed: 0.5,
     pressure: 0.12,
     paperStyle: 'ruled',
+    textAlignment: 'middle',
   };
 
   // Apply state
@@ -2297,6 +2359,15 @@ function resetToDefaults() {
     inkColorInput.value = defaults.inkColor;
     document.getElementById('ink-color-label').textContent = defaults.inkColor + ' — Navy';
   }
+
+  // Update Text Alignment
+  document.querySelectorAll('.align-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  const alignBtn = document.querySelector(`.align-btn[data-align="${defaults.textAlignment}"]`);
+  if (alignBtn) alignBtn.classList.add('active');
+  const alignVal = document.getElementById('align-val');
+  if (alignVal) alignVal.textContent = 'Middle';
 
   // Update Paper styles active classes
   document.querySelectorAll('.paper-btn').forEach(btn => {
@@ -2366,13 +2437,30 @@ function initHandFontedStudio() {
   const btn = document.getElementById('btn-handfonted-studio');
   if (btn) btn.addEventListener('click', openHandFontedModal);
   
+  // Initialize progress bar
+  updateCharProgress();
+  
+  // Adjust canvas size based on device
+  adjustCanvasSizeForDevice();
+  
+  // Listen for orientation changes
+  window.addEventListener('resize', adjustCanvasSizeForDevice);
+  window.addEventListener('orientationchange', () => {
+    setTimeout(adjustCanvasSizeForDevice, 300);
+  });
+  
   const canvas = document.getElementById('sketch-canvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   
+  // Stroke history for undo functionality
+  let strokes = [];
+  let currentStroke = [];
+  let brushSize = 3;
+  
   // High quality stroke aesthetics
   ctx.strokeStyle = '#1a1a1a';
-  ctx.lineWidth = 12;
+  ctx.lineWidth = brushSize;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   
@@ -2382,16 +2470,20 @@ function initHandFontedStudio() {
     const rect = canvas.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
     return {
-      x: clientX - rect.left,
-      y: clientY - rect.top
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY
     };
   }
   
   function startDraw(e) {
     e.preventDefault();
     drawing = true;
+    currentStroke = [];
     const pos = getPos(e);
+    currentStroke.push({ x: pos.x, y: pos.y });
     ctx.beginPath();
     ctx.moveTo(pos.x, pos.y);
   }
@@ -2400,13 +2492,65 @@ function initHandFontedStudio() {
     if (!drawing) return;
     e.preventDefault();
     const pos = getPos(e);
+    currentStroke.push({ x: pos.x, y: pos.y });
     ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
   }
   
   function stopDraw() {
+    if (drawing && currentStroke.length > 0) {
+      strokes.push({
+        points: [...currentStroke],
+        size: brushSize,
+        color: ctx.strokeStyle
+      });
+      currentStroke = [];
+    }
     drawing = false;
   }
+  
+  // Undo functionality
+  window.undoSketchStroke = function() {
+    if (strokes.length === 0) return;
+    strokes.pop();
+    redrawCanvas();
+  };
+  
+  // Brush size update
+  window.updateBrushSize = function() {
+    const slider = document.getElementById('brush-size-slider');
+    brushSize = parseFloat(slider.value);
+    document.getElementById('brush-size-val').textContent = brushSize.toFixed(1);
+    ctx.lineWidth = brushSize;
+  };
+  
+  // Redraw all strokes
+  function redrawCanvas() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    strokes.forEach(stroke => {
+      ctx.strokeStyle = stroke.color;
+      ctx.lineWidth = stroke.size;
+      ctx.beginPath();
+      if (stroke.points.length > 0) {
+        ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+        for (let i = 1; i < stroke.points.length; i++) {
+          ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+        }
+        ctx.stroke();
+      }
+    });
+    // Restore current settings
+    ctx.strokeStyle = '#1a1a1a';
+    ctx.lineWidth = brushSize;
+  }
+  
+  // Clear canvas - also clear stroke history
+  const originalClear = window.clearSketchCanvas;
+  window.clearSketchCanvas = function() {
+    strokes = [];
+    currentStroke = [];
+    originalClear();
+  };
   
   canvas.addEventListener('mousedown', startDraw);
   canvas.addEventListener('mousemove', draw);
@@ -2480,6 +2624,12 @@ function saveActiveCharacter() {
   const btn = document.getElementById(`char-btn-${activeChar}`);
   if (btn) btn.classList.add('drafted');
   
+  // Update progress indicator
+  updateCharProgress();
+  
+  // Show preview
+  showCharPreview(dataUrl);
+  
   // Persist to IndexedDB
   saveGlyphDB(activeChar, dataUrl).catch(err => console.error("Error saving glyph to IndexedDB:", err));
   
@@ -2489,6 +2639,176 @@ function saveActiveCharacter() {
   setTimeout(() => {
     wrapper.style.borderColor = '';
   }, 300);
+}
+
+// Update progress bar
+function updateCharProgress() {
+  const totalChars = ALL_TEMPLATE_CHARS.length;
+  const completedChars = Object.keys(draftedGlyphs).length;
+  const percent = Math.round((completedChars / totalChars) * 100);
+  
+  const countEl = document.getElementById('char-progress-count');
+  const percentEl = document.getElementById('char-progress-percent');
+  const fillEl = document.getElementById('char-progress-fill');
+  
+  if (countEl) countEl.textContent = `${completedChars}/${totalChars}`;
+  if (percentEl) percentEl.textContent = `${percent}%`;
+  if (fillEl) fillEl.style.width = `${percent}%`;
+}
+
+// Show preview of saved character
+function showCharPreview(dataUrl) {
+  const container = document.getElementById('char-preview-container');
+  const previewCanvas = document.getElementById('char-preview-canvas');
+  if (!container || !previewCanvas) return;
+  
+  container.style.display = 'flex';
+  const ctx = previewCanvas.getContext('2d');
+  const img = new Image();
+  img.onload = () => {
+    ctx.clearRect(0, 0, 48, 48);
+    ctx.drawImage(img, 0, 0, 48, 48);
+  };
+  img.src = dataUrl;
+}
+
+// Export font project as JSON
+function exportFontProject() {
+  const projectData = {
+    version: '1.0',
+    appName: 'Inkflow HandFonted Studio',
+    exportDate: new Date().toISOString(),
+    glyphs: draftedGlyphs,
+    fontName: document.getElementById('custom-font-name')?.value || 'MyHandwriting',
+    totalGlyphs: Object.keys(draftedGlyphs).length
+  };
+  
+  const dataStr = JSON.stringify(projectData, null, 2);
+  const blob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  
+  const link = document.createElement('a');
+  link.download = `${projectData.fontName}-project.json`;
+  link.href = url;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  
+  showToast(`✅ Project saved: ${projectData.totalGlyphs} characters`, 'success');
+}
+
+// Import font project from JSON
+function importFontProject(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const projectData = JSON.parse(e.target.result);
+      
+      if (!projectData.glyphs || typeof projectData.glyphs !== 'object') {
+        throw new Error('Invalid project file format');
+      }
+      
+      // Load glyphs
+      Object.assign(draftedGlyphs, projectData.glyphs);
+      
+      // Update font name if available
+      if (projectData.fontName) {
+        const nameInput = document.getElementById('custom-font-name');
+        if (nameInput) nameInput.value = projectData.fontName;
+      }
+      
+      // Refresh UI
+      renderSketchCharGrid();
+      updateCharProgress();
+      
+      // Select first character
+      if (ALL_TEMPLATE_CHARS.length > 0) {
+        selectSketchCharacter(ALL_TEMPLATE_CHARS[0]);
+      }
+      
+      showToast(`✅ Loaded ${Object.keys(projectData.glyphs).length} characters`, 'success');
+      
+    } catch (error) {
+      console.error('Error loading project:', error);
+      showToast('❌ Failed to load project file', 'error');
+    }
+  };
+  reader.readAsText(file);
+  
+  // Reset input so same file can be loaded again
+  event.target.value = '';
+}
+
+/* ───────────────────────────────────────────
+   DEVICE & RESOLUTION DETECTION
+─────────────────────────────────────────── */
+
+function getDeviceType() {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  
+  if (width <= 480) {
+    return { type: 'mobile', canvasSize: Math.min(280, width - 60), isTouchDevice };
+  } else if (width <= 767) {
+    return { type: 'tablet-portrait', canvasSize: 240, isTouchDevice };
+  } else if (width <= 1023) {
+    return { type: 'tablet-landscape', canvasSize: 280, isTouchDevice };
+  } else if (width <= 1919) {
+    return { type: 'desktop', canvasSize: 256, isTouchDevice };
+  } else {
+    return { type: 'large-desktop', canvasSize: 320, isTouchDevice };
+  }
+}
+
+function adjustCanvasSizeForDevice() {
+  const device = getDeviceType();
+  const canvas = document.getElementById('sketch-canvas');
+  const wrapper = document.querySelector('.canvas-wrapper');
+  
+  if (!canvas || !wrapper) return;
+  
+  // Set canvas internal resolution (for drawing quality)
+  const dpr = window.devicePixelRatio || 1;
+  const baseSize = 256;
+  
+  // High DPI devices get higher resolution canvas
+  if (dpr > 1) {
+    canvas.width = baseSize * Math.min(dpr, 2);
+    canvas.height = baseSize * Math.min(dpr, 2);
+  } else {
+    canvas.width = baseSize;
+    canvas.height = baseSize;
+  }
+  
+  // Visual size is set by CSS (already responsive)
+  // But we can add device-specific optimizations
+  
+  if (device.isTouchDevice) {
+    // Increase touch target sizes
+    canvas.style.touchAction = 'none';
+    wrapper.style.cursor = 'crosshair';
+    
+    // Prevent zoom on double-tap
+    wrapper.style.touchAction = 'pan-x pan-y';
+  }
+  
+  // Log device info for debugging
+  console.log(`Device: ${device.type}, Canvas: ${canvas.width}x${canvas.height}, DPR: ${dpr}, Touch: ${device.isTouchDevice}`);
+}
+
+// Detect high refresh rate displays
+function getOptimalAnimationSettings() {
+  const refreshRate = screen.refreshRate || 60;
+  
+  return {
+    useRAF: refreshRate >= 90, // Use requestAnimationFrame for smooth drawing on high refresh displays
+    smoothing: refreshRate >= 120
+  };
 }
 
 function advanceActiveCharacter() {
@@ -2511,69 +2831,203 @@ function advanceActiveCharacter() {
 
 // Handwriting PDF/PNG Sheet Template Builder
 function generateDownloadTemplate() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1600;
-  canvas.height = 1600;
-  const ctx = canvas.getContext('2d');
+  // Create a container for multiple sheets
+  const sheets = [];
   
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, 1600, 1600);
+  // ========================================
+  // SHEET 1: FRONT COVER / INSTRUCTIONS
+  // ========================================
+  const frontCanvas = document.createElement('canvas');
+  frontCanvas.width = 1600;
+  frontCanvas.height = 1600;
+  const frontCtx = frontCanvas.getContext('2d');
   
-  // Labeled Sheet Headers
-  ctx.fillStyle = '#1c2340';
-  ctx.font = 'bold 36px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText(`HandFonted Studio — ${activeSheet === 'letters' ? 'Letters' : 'Numbers & Symbols'} Template`, 800, 70);
-  ctx.font = '22px sans-serif';
-  ctx.fillStyle = '#555';
-  ctx.fillText('Write each letter clearly inside its designated box, scan/photo this sheet, and upload it!', 800, 110);
+  // Background
+  frontCtx.fillStyle = '#f7f3ea';
+  frontCtx.fillRect(0, 0, 1600, 1600);
   
-  const startX = 100;
-  const startY = 160;
-  const size = 175; // 8 * 175 = 1400px wide
+  // Decorative border
+  frontCtx.strokeStyle = '#c0622a';
+  frontCtx.lineWidth = 8;
+  frontCtx.strokeRect(40, 40, 1520, 1520);
   
-  ctx.strokeStyle = '#cccccc';
-  ctx.lineWidth = 2;
+  // Title
+  frontCtx.fillStyle = '#c0622a';
+  frontCtx.font = 'bold 72px serif';
+  frontCtx.textAlign = 'center';
+  frontCtx.fillText('✨ HandFonted Studio', 800, 200);
   
-  const chars = TEMPLATE_SHEETS[activeSheet];
+  frontCtx.fillStyle = '#1c2340';
+  frontCtx.font = '42px serif';
+  frontCtx.fillText('Custom Handwriting Font Creator', 800, 270);
   
-  for (let r = 0; r < 8; r++) {
-    for (let c = 0; c < 8; c++) {
-      const x = startX + c * size;
-      const y = startY + r * size;
-      const char = chars[r * 8 + c] || '';
-      
-      // Outer square
-      ctx.strokeStyle = '#cccccc';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(x, y, size, size);
-      
-      // Center dotted line helper
-      ctx.strokeStyle = '#e2e2e2';
-      ctx.setLineDash([6, 6]);
-      ctx.beginPath();
-      ctx.moveTo(x, y + size * 0.7);
-      ctx.lineTo(x + size, y + size * 0.7);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      
-      // Guide label tags
-      if (char) {
-        ctx.fillStyle = '#888888';
-        ctx.font = 'bold 16px sans-serif';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        ctx.fillText(char, x + 8, y + 8);
+  // Subtitle
+  frontCtx.fillStyle = '#6b6148';
+  frontCtx.font = 'italic 28px serif';
+  frontCtx.fillText('Transform your handwriting into a digital font', 800, 340);
+  
+  // Instructions box
+  frontCtx.fillStyle = 'rgba(192, 98, 42, 0.08)';
+  frontCtx.fillRect(150, 420, 1300, 900);
+  frontCtx.strokeStyle = '#c0622a';
+  frontCtx.lineWidth = 3;
+  frontCtx.strokeRect(150, 420, 1300, 900);
+  
+  // Instructions title
+  frontCtx.fillStyle = '#c0622a';
+  frontCtx.font = 'bold 36px sans-serif';
+  frontCtx.textAlign = 'left';
+  frontCtx.fillText('📋 Instructions:', 200, 490);
+  
+  // Instructions text
+  frontCtx.fillStyle = '#1c2340';
+  frontCtx.font = '24px sans-serif';
+  const instructions = [
+    '1. Print the following template sheets (Letters & Symbols)',
+    '',
+    '2. Use a dark pen or marker to write each character clearly',
+    '   inside its designated box',
+    '',
+    '3. Write naturally - your unique style will be captured!',
+    '',
+    '4. For best results:',
+    '   • Keep characters centered in each box',
+    '   • Use consistent size and slant',
+    '   • Write on a flat surface with good lighting',
+    '   • Avoid touching the box edges',
+    '',
+    '5. Scan or photograph the completed sheets',
+    '   • Use high contrast (300 DPI recommended)',
+    '   • Ensure the image is well-lit and in focus',
+    '',
+    '6. Upload your sheets in Inkflow\'s HandFonted Studio',
+    '',
+    '7. Align the grid overlay to match your written template',
+    '',
+    '8. Click "Generate & Apply Font" to create your custom font!',
+  ];
+  
+  let yPos = 550;
+  instructions.forEach(line => {
+    if (line === '') {
+      yPos += 15;
+    } else {
+      frontCtx.fillText(line, 220, yPos);
+      yPos += 35;
+    }
+  });
+  
+  // Footer
+  frontCtx.fillStyle = '#9e9078';
+  frontCtx.font = 'italic 20px serif';
+  frontCtx.textAlign = 'center';
+  frontCtx.fillText('Powered by Inkflow — AI Handwritten Notes Generator', 800, 1500);
+  frontCtx.fillText('inkflow.app', 800, 1535);
+  
+  sheets.push({
+    canvas: frontCanvas,
+    name: 'cover'
+  });
+  
+  // ========================================
+  // SHEET 2 & 3: CHARACTER TEMPLATES
+  // ========================================
+  const sheetTypes = [
+    { key: 'letters', title: 'Letters (A-Z, a-z)' },
+    { key: 'symbols', title: 'Numbers & Symbols' }
+  ];
+  
+  sheetTypes.forEach(sheetType => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1600;
+    canvas.height = 1600;
+    const ctx = canvas.getContext('2d');
+    
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, 1600, 1600);
+    
+    // Sheet Headers
+    ctx.fillStyle = '#1c2340';
+    ctx.font = 'bold 36px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`HandFonted Studio — ${sheetType.title}`, 800, 70);
+    ctx.font = '22px sans-serif';
+    ctx.fillStyle = '#555';
+    ctx.fillText('Write each character clearly inside its designated box', 800, 110);
+    
+    const startX = 100;
+    const startY = 160;
+    const size = 175; // 8 * 175 = 1400px wide
+    
+    ctx.strokeStyle = '#cccccc';
+    ctx.lineWidth = 2;
+    
+    const chars = TEMPLATE_SHEETS[sheetType.key];
+    
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const x = startX + c * size;
+        const y = startY + r * size;
+        const char = chars[r * 8 + c] || '';
+        
+        // Outer square
+        ctx.strokeStyle = '#cccccc';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, y, size, size);
+        
+        // Center baseline helper
+        ctx.strokeStyle = '#e2e2e2';
+        ctx.setLineDash([6, 6]);
+        ctx.beginPath();
+        ctx.moveTo(x, y + size * 0.7);
+        ctx.lineTo(x + size, y + size * 0.7);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        // Guide label tags
+        if (char) {
+          ctx.fillStyle = '#888888';
+          ctx.font = 'bold 16px sans-serif';
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'top';
+          ctx.fillText(char, x + 8, y + 8);
+        }
       }
     }
-  }
+    
+    sheets.push({
+      canvas: canvas,
+      name: sheetType.key
+    });
+  });
   
-  const link = document.createElement('a');
-  link.download = `handfonted-template-${activeSheet}.png`;
-  link.href = canvas.toDataURL();
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  // ========================================
+  // DOWNLOAD ALL SHEETS AS ZIP OR INDIVIDUAL
+  // ========================================
+  if (sheets.length === 1) {
+    // Single sheet download
+    const link = document.createElement('a');
+    link.download = `handfonted-template-${activeSheet}.png`;
+    link.href = sheets[0].canvas.toDataURL();
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } else {
+    // Multiple sheets - download each individually
+    sheets.forEach((sheet, index) => {
+      setTimeout(() => {
+        const link = document.createElement('a');
+        link.download = `handfonted-${index === 0 ? 'instructions' : `template-${sheet.name}`}.png`;
+        link.href = sheet.canvas.toDataURL();
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }, index * 300); // Stagger downloads to avoid browser blocking
+    });
+    
+    // Show toast notification
+    showToast('Downloading 3 sheets: Instructions + 2 templates', 'info');
+  }
 }
 
 // Aligner Cropping Mechanics

@@ -155,6 +155,35 @@ Try pasting a paragraph of lecture notes!"></textarea>
           <div class="sb-label">Rotation Chaos <span class="val" id="rot-val">1</span></div>
           <input type="range" id="rotation-slider" min="0" max="12" step="0.5" value="1" title="Rotation Chaos" />
 
+          <!-- Vertical Alignment Control -->
+          <div class="sb-label">Text Alignment <span class="val" id="align-val">Middle</span></div>
+          <div class="alignment-selector">
+            <button class="align-btn" data-align="top" onclick="setTextAlignment('top')" title="Text touches upper line">
+              <div class="align-preview">
+                <div class="align-line"></div>
+                <div class="align-text align-top">Aa</div>
+                <div class="align-line"></div>
+              </div>
+              <span>Upper</span>
+            </button>
+            <button class="align-btn active" data-align="middle" onclick="setTextAlignment('middle')" title="Text centered between lines">
+              <div class="align-preview">
+                <div class="align-line"></div>
+                <div class="align-text align-middle">Aa</div>
+                <div class="align-line"></div>
+              </div>
+              <span>Middle</span>
+            </button>
+            <button class="align-btn" data-align="bottom" onclick="setTextAlignment('bottom')" title="Text sits on lower line">
+              <div class="align-preview">
+                <div class="align-line"></div>
+                <div class="align-text align-bottom">Aa</div>
+                <div class="align-line"></div>
+              </div>
+              <span>Lower</span>
+            </button>
+          </div>
+
           <!-- Reset Defaults Button -->
           <button class="btn sm" id="btn-reset-defaults" onclick="resetToDefaults()">
             <i class="fa-solid fa-rotate-left"></i> &nbsp;Reset Defaults
@@ -351,6 +380,18 @@ Try pasting a paragraph of lecture notes!"></textarea>
       <!-- Live Sketchpad Panel -->
       <div id="panel-sketchpad" class="tab-panel">
         <p class="modal-desc">Draw letters one-by-one to generate a high-fidelity vector font.</p>
+        
+        <!-- Progress Bar -->
+        <div class="font-progress-bar">
+          <div class="progress-label">
+            <span>Progress: <strong id="char-progress-count">0/64</strong></span>
+            <span id="char-progress-percent">0%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="char-progress-fill" style="width: 0%"></div>
+          </div>
+        </div>
+        
         <div class="sketch-container">
           <div class="sketch-sidebar">
             <div class="sb-label">Select Character</div>
@@ -363,8 +404,18 @@ Try pasting a paragraph of lecture notes!"></textarea>
           <div class="sketch-main">
             <div class="sketch-header">
               <span class="active-char-label">Current: <strong id="current-char-display">A</strong></span>
-              <button class="btn sm" onclick="clearSketchCanvas()">🗑️ Clear</button>
+              <div style="display: flex; gap: 4px;">
+                <button class="btn sm" onclick="undoSketchStroke()" title="Undo last stroke">↶ Undo</button>
+                <button class="btn sm" onclick="clearSketchCanvas()" title="Clear canvas">🗑️ Clear</button>
+              </div>
             </div>
+            
+            <!-- Brush Size Control -->
+            <div class="brush-control">
+              <label class="brush-label">Brush Size: <span id="brush-size-val">3</span>px</label>
+              <input type="range" id="brush-size-slider" min="1" max="8" value="3" step="0.5" oninput="updateBrushSize()" title="Brush Size" />
+            </div>
+            
             <div class="canvas-wrapper">
               <canvas id="sketch-canvas" width="256" height="256"></canvas>
               <!-- Grey letter guide inside canvas -->
@@ -378,17 +429,30 @@ Try pasting a paragraph of lecture notes!"></textarea>
                 Next ➡️
               </button>
             </div>
+            
+            <!-- Preview of current character -->
+            <div class="char-preview" id="char-preview-container" style="display: none;">
+              <div class="preview-label">Saved Preview:</div>
+              <canvas id="char-preview-canvas" width="48" height="48"></canvas>
+            </div>
           </div>
+        </div>
+        
+        <!-- Save/Load Project -->
+        <div class="project-actions">
+          <button class="btn sm" onclick="exportFontProject()">💾 Save Progress (JSON)</button>
+          <button class="btn sm" onclick="document.getElementById('import-font-project').click()">📂 Load Progress</button>
+          <input type="file" id="import-font-project" accept=".json" style="display: none;" onchange="importFontProject(event)" title="Import Font Project" />
         </div>
       </div>
 
       <!-- Upload Template Panel -->
       <div id="panel-template" class="tab-panel hidden">
-        <p class="modal-desc">Download the 8x8 grid sheet, write your letters clearly, take a photo or scan of it, and align the grid overlay below.</p>
+        <p class="modal-desc">Download the template package (instructions + 2 sheets), write your letters clearly, scan/photo them, and align the grid overlay below.</p>
         <div class="template-actions" style="margin-top: 8px; justify-content: center; gap: 8px;">
-          <button class="btn sm" onclick="generateDownloadTemplate()">📥 Download Blank Template Grid</button>
+          <button class="btn sm primary" onclick="generateDownloadTemplate()">📦 Download Template Package (3 sheets)</button>
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span class="sb-label" style="margin: 0; font-size: 12px; color: var(--text-secondary);">Template Sheet:</span>
+            <span class="sb-label" style="margin: 0; font-size: 12px; color: var(--text-secondary);">Upload Sheet:</span>
             <select id="upload-template-sheet-select" style="font-size: 12px; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--btn-border); background: var(--btn-bg); color: var(--text-primary); outline: none;" title="Select template sheet type">
               <option value="letters">Letters (A-Z, a-z)</option>
               <option value="symbols">Numbers &amp; Symbols</option>
