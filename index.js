@@ -255,9 +255,9 @@ function createPage(pageNum) {
   });
 
   // Blur: hide overlay text and redraw handwriting to canvas
-  editor.addEventListener('blur', async () => {
+  editor.addEventListener('blur', () => {
     editor.style.color = 'transparent';
-    await renderText(S.text);
+    renderText(S.text);
   });
 
   // Input: concatenate all editor contents, sync to sidebar, and autosave
@@ -1351,14 +1351,12 @@ document.getElementById('text-input').addEventListener('input', function () {
 
 function debounceRender() {
   clearTimeout(renderTimeout);
-  renderTimeout = setTimeout(async () => {
-    await renderText(S.text);
-  }, 280);
+  renderTimeout = setTimeout(() => renderText(S.text), 280);
 }
 
-async function triggerRender() {
+function triggerRender() {
   S.text = document.getElementById('text-input').value;
-  await renderText(S.text);
+  renderText(S.text);
 }
 
 function buildCharQueue(text) {
@@ -1395,7 +1393,7 @@ function startAnimation() {
     if (!isAnimating || idx >= queue.length) {
       penEl.style.display = 'none';
       isAnimating = false;
-      renderText(S.text); // Don't await here - fire and forget for animation end
+      renderText(S.text);
       return;
     }
     const charsPerFrame = S.animSpeed;
@@ -1726,12 +1724,12 @@ async function aiAction(type) {
   let result = null;
   let lastRenderTime = 0;
 
-  const onChunk = async (text) => {
+  const onChunk = (text) => {
     textarea.value = text;
     S.text = text;
     const now = Date.now();
     if (now - lastRenderTime > 200) {
-      await renderText(text);
+      renderText(text);
       lastRenderTime = now;
     }
   };
@@ -1776,7 +1774,7 @@ async function aiAction(type) {
   if (result !== null) {
     textarea.value = result;
     S.text = result;
-    await renderText(S.text);
+    renderText(S.text);
     autosave();
   }
 
@@ -2289,7 +2287,7 @@ function setupFileUpload() {
       S.text = text;
       
       // Render handwriting & save state
-      await renderText(text);
+      renderText(text);
       autosave();
       
       statusText.innerHTML = '<span style="color:#2d6a4f;font-weight:600;">✓ File loaded successfully!</span>';
