@@ -1255,16 +1255,7 @@ function layoutText(text) {
   return { queue, pageTexts, pageCount: pageIdx + 1 };
 }
 
-async function renderText(text) {
-  // Ensure font is loaded before measuring/rendering
-  if (document.fonts) {
-    try {
-      await document.fonts.load(`${S.fontSize}px "${S.font}"`);
-    } catch (e) {
-      // Font load failed, continue with fallback
-    }
-  }
-  
+function renderText(text) {
   text = sanitizeText(text);
   clearPages();
   if (!text.trim()) {
@@ -1314,9 +1305,9 @@ async function renderText(text) {
       glyphImg.src = draftedGlyphs[item.ch];
     } else {
       // Fallback to system font
-      const pxSize = S.fontSize;
+      const pxSize = S.fontSize * v.pressureMod;
       ctx.font = `${Math.max(10, pxSize)}px ${item.fontStack}`;
-      ctx.globalAlpha = v.opacity * v.pressureMod;
+      ctx.globalAlpha = v.opacity;
 
       if (S.bleed > 0.05) {
         ctx.shadowColor = S.shadowColor || S.inkColor;
@@ -1407,8 +1398,9 @@ function startAnimation() {
       ctx.translate(item.x, item.y);
       ctx.rotate((v.tiltDeg * (item.isIndic ? 0.3 : 1) * Math.PI) / 180);
       ctx.scale(v.scaleX, v.scaleY);
-      ctx.font = `${Math.max(10, S.fontSize)}px ${item.fontStack}`;
-      ctx.globalAlpha = v.opacity * v.pressureMod;
+      const pxSize = S.fontSize * v.pressureMod;
+      ctx.font = `${Math.max(10, pxSize)}px ${item.fontStack}`;
+      ctx.globalAlpha = v.opacity;
       if (S.bleed > 0.05) { ctx.shadowColor = S.inkColor; ctx.shadowBlur = S.bleed * 1.4; }
       ctx.fillStyle = S.inkColor;
       ctx.fillText(item.ch, 0, 0);
@@ -2171,16 +2163,6 @@ function navigatePage(dir) {
 ─────────────────────────────────────────── */
 async function initApp() {
   await restoreState();
-  
-  // Wait for fonts to load before rendering
-  if (document.fonts) {
-    try {
-      await document.fonts.ready;
-    } catch (e) {
-      // Fonts failed to load, continue anyway
-    }
-  }
-  
   setupFileUpload();
   initHandFontedStudio();
 
@@ -2647,6 +2629,16 @@ function selectSketchCharacter(char) {
 function saveActiveCharacter() {
   const canvas = document.getElementById('sketch-canvas');
   if (!canvas) return;
+  
+  // Check if canvas has any ink before saving
+  const ctx = canvas.getContext('2d');
+  const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const hasInk = data.some((v, i) => i % 4 === 3 && v > 0); // any non-transparent alpha
+  
+  if (!hasInk) {
+    alert('Nothing drawn — sketch the character before saving.');
+    return;
+  }
   
   // Save canvas as image data URL
   const dataUrl = canvas.toDataURL();
@@ -3375,7 +3367,13 @@ function loadImageToCanvas(dataUrl) {
       canvas.width = 256;
       canvas.height = 256;
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
+      // Draw image centered and scaled to fit within 256×256 while preserving aspect ratio
+      const scale = Math.min(256 / img.width, 256 / img.height);
+      const scaledW = img.width * scale;
+      const scaledH = img.height * scale;
+      const x = (256 - scaledW) / 2;
+      const y = (256 - scaledH) / 2;
+      ctx.drawImage(img, x, y, scaledW, scaledH);
       resolve(canvas);
     };
     img.src = dataUrl;
@@ -3386,21 +3384,51 @@ function canvasToOpentypePath(canvas) {
   const contours = traceCanvasContours(canvas);
   const path = new window.opentype.Path();
   
+  if (contours.length === 0) return path;
+  
+  // Find global bounding box of all contours
+  let globalMinX = Infinity, globalMaxX = -Infinity;
+  let globalMinY = Infinity, globalMaxY = -Infinity;
+  
+  contours.forEach(points => {
+    points.forEach(p => {
+      globalMinX = Math.min(globalMinX, p.x);
+      globalMaxX = Math.max(globalMaxX, p.x);
+      globalMinY = Math.min(globalMinY, p.y);
+      globalMaxY = Math.max(globalMaxY, p.y);
+    });
+  });
+  
+  // Calculate dimensions
+  const width = globalMaxX - globalMinX || 1;
+  const height = globalMaxY - globalMinY || 1;
+  
+  // Scale to fit within 600x700 units in the 1000 UPM box, maintaining aspect ratio
+  const scale = Math.min(600 / width, 700 / height);
+  
+  // Center the glyph
+  const scaledWidth = width * scale;
+  const scaledHeight = height * scale;
+  const offsetX = 100 + (600 - scaledWidth) / 2;
+  const offsetY = 100;
+  
   contours.forEach(points => {
     if (points.length < 3) return;
     
-    // Scale points to 1000 UnitsEm box and center
-    const x0 = (points[0].x / canvas.width) * 800 + 100;
-    const y0 = 800 - (points[0].y / canvas.height) * 1000;
+    // Transform first point
+    const x0 = ((points[0].x - globalMinX) * scale) + offsetX;
+    const y0 = 800 - ((points[0].y - globalMinY) * scale) - offsetY;
     path.moveTo(x0, y0);
     
+    // Transform remaining points
     for (let i = 1; i < points.length; i++) {
-      const px = (points[i].x / canvas.width) * 800 + 100;
-      const py = 800 - (points[i].y / canvas.height) * 1000;
+      const px = ((points[i].x - globalMinX) * scale) + offsetX;
+      const py = 800 - ((points[i].y - globalMinY) * scale) - offsetY;
       path.lineTo(px, py);
     }
     path.closePath();
   });
+  
   return path;
 }
 
@@ -3478,17 +3506,34 @@ async function buildCustomFont() {
       
       const path = canvasToOpentypePath(cellCanvas);
       
-      // Calculate advance width based on glyph bounding box
-      // Opentype.js doesn't expose getBounds directly, so calculate from contours
-      let maxX = 0;
-      if (path.contours && path.contours.length > 0) {
-        for (let contour of path.contours) {
-          for (let point of contour) {
-            if (point.x > maxX) maxX = point.x;
+      // Skip cells with no ink — let the browser fall back to a system font
+      // for these instead of baking in an invisible glyph.
+      if (!path.commands || path.commands.length === 0) {
+        continue;
+      }
+      
+      // Calculate advance width based on glyph's visual width
+      // Find bounding box of glyph pixels in the canvas
+      const ctx = cellCanvas.getContext('2d');
+      const imageData = ctx.getImageData(0, 0, cellCanvas.width, cellCanvas.height);
+      const pixels = imageData.data;
+      
+      let minX = cellCanvas.width, maxX = 0;
+      for (let y = 0; y < cellCanvas.height; y++) {
+        for (let x = 0; x < cellCanvas.width; x++) {
+          const idx = (y * cellCanvas.width + x) * 4;
+          const alpha = pixels[idx + 3];
+          if (alpha > 50) { // If pixel is visible
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
           }
         }
       }
-      const advanceWidth = Math.max(Math.round(maxX) + 50, 200); // Add padding and ensure minimum width
+      
+      // Scale the width to match the 1000 UPM coordinate system
+      const scale = 800 / Math.max(cellCanvas.width, cellCanvas.height);
+      const glyphWidth = (maxX - minX) * scale;
+      const advanceWidth = Math.max(Math.round(glyphWidth + 100), 250); // Add padding
       
       const glyph = new window.opentype.Glyph({
         name: char,
