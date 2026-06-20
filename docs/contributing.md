@@ -93,7 +93,7 @@ Use GitHub Issues with one of these templates:
 
 ## Areas Open for Contribution
 
-- Additional paper styles (dot grid, engineering, music staff)
+- Additional paper styles (e.g. isometric, manuscript, ledger)
 - New handwriting fonts
 - Extended character sets (diacritics, CJK, Arabic)
 - Accessibility improvements (ARIA labels, screen reader testing)

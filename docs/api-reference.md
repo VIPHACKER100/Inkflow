@@ -179,12 +179,12 @@ Displays a non-blocking toast notification with auto-dismiss for success/warn/er
 
 ## UI Helpers
 
-### `toggleSection(element)`
+### `toggleSection(id)`
 Toggles a collapsible sidebar section open/closed with smooth animation.
+- Parameters: `id` (String) — The HTML ID of the sidebar section to toggle
 
-### `setTheme(theme)`
-Switches between light and dark mode.
-- **Parameters**: `theme` (String — `light|dark`)
+### `applyDark()`
+Toggles the dark mode state on the root element of the document and updates the theme toggle icon.
 
 ### `navigatePage(direction)`
 Navigates between rendered pages with smooth scroll-into-view.

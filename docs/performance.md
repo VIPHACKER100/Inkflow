@@ -46,7 +46,7 @@ Export Blob URLs are revoked after 1 second via `URL.revokeObjectURL()`, prevent
 - `autosave()` runs at most once per second (1000ms debounce)
 - Only serializes the config object — not canvas pixel data
 - localStorage limit: ~5MB (sufficient for text + settings)
-- Custom glyph data (`draftedGlyphs`) stored as base64 — can approach quota limits for extensive font sets
+- Custom glyph data (`draftedGlyphs`) is stored in `IndexedDB` (`InkflowDB` -> `draftedGlyphs` store), bypassing the 5MB localStorage limit and preventing quota crashes
 
 ---
 
@@ -112,4 +112,3 @@ AI responses use Server-Sent Events streaming, rendering text incrementally rath
 - **Paper grain noise**: Re-randomizes on each repaint (cosmetic, not a bug)
 - **AI latency**: API response time is network-dependent (1-5 seconds typical)
 - **Custom font tracing**: Complex handwriting may produce >1000 path points per glyph
-- **localStorage glyph storage**: Base64-encoded glyphs may approach the ~5MB quota limit; IndexedDB migration is planned

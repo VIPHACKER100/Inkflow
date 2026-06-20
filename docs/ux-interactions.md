@@ -85,7 +85,7 @@ function debounceRender() {
 
 ### Color Picker
 - Native `<input type="color">` for ink color selection
-- Preset color buttons for quick access (Navy, Blue, Green, Red, Graphite)
+- Preset color buttons for quick access (Navy, Black, Blue, Purple, Red, Green)
 - Instant preview on canvas
 
 ### Paper Style Selector

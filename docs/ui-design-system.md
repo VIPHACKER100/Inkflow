@@ -98,18 +98,22 @@ Bottom pill-style navigation for multi-page A4 transitions.
 ### Ink Colors (User-Selectable)
 | Name | Hex | Usage |
 | :--- | :--- | :--- |
-| Navy Black | `#1c2340` | Default ink — professional dark blue |
-| Royal Blue | `#1a3a7a` | Formal blue ink |
-| Forest Green | `#1a5c3a` | Nature-toned notes |
-| Crimson Red | `#8b1a1a` | Corrections and emphasis |
-| Graphite | `#333333` | Pencil-like writing |
+| Navy | `#1c2340` | Default ink — professional dark blue |
+| Black | `#1a1a1a` | Graphite-toned dark |
+| Blue | `#0a3d62` | Deep blue ink |
+| Purple | `#6d2177` | Creative violet tones |
+| Red | `#8b0000` | Corrections and emphasis |
+| Green | `#2d6a4f` | Forest/nature-toned green |
 
 ### Paper Backgrounds
 | Style | Color | Description |
 | :--- | :--- | :--- |
-| Ruled | `#f8f4ea` | Warm cream notebook |
-| Plain | `#faf7f0` | Clean ivory |
-| Grid | `#f6f2ec` | Light grid paper |
-| Legal | `#fef9c3` | Bright yellow legal pad |
-| Vintage | `#f2e8ce` | Aged parchment |
-| Dark | `#1a1a2e` | Indigo slate dark mode |
+| Ruled | `#f8f4ea` | Warm cream notebook with blue guidelines and red margin |
+| Plain | `#faf7f0` | Clean blank ivory sheet |
+| Grid | `#f6f2ec` | Light grid paper with 28px square intervals |
+| Legal | `#fef9c3` | Bright yellow legal pad with red left margin |
+| Vintage | `#f2e8ce` | Aged parchment paper with a dark radial vignette |
+| Dark | `#1a1a2e` | Slate indigo dark mode with glowing guides |
+| Dot Grid | `#f6f2ec` | Warm beige grid of dots at 28px intervals |
+| Engineering | `#eef6ed` | Pale green grid with 10px minor and 50px major lines |
+| Music Staff | `#faf7f0` | Soft ivory sheet with 5-line music staffs |

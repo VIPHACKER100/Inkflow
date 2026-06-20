@@ -79,12 +79,12 @@ Each paper style defines a unique color palette:
 
 ```javascript
 const PAPER_CONFIGS = {
-  ruled:       { bg: '#f7f3ea', lineColor: '#c8dce8', lineOpacity: 0.55, marginColor: '#e08080' },
-  plain:       { bg: '#faf6ee', lineColor: 'transparent' },
-  grid:        { bg: '#f5f0e6', lineColor: '#d4c9b4', lineOpacity: 0.45 },
-  legal:       { bg: '#fff8cc', lineColor: '#a8c6d8', lineOpacity: 0.55, marginColor: '#e08080' },
-  vintage:     { bg: '#e8dcc4', lineColor: '#c4b396', lineOpacity: 0.45 },
-  dark:        { bg: '#1e1e2e', lineColor: '#2e3a5a', lineOpacity: 0.7 },
+  ruled:       { bg: '#f8f4ea', lineColor: '#c5b9a0', lineOpacity: 0.55, redLine: '#e08080' },
+  plain:       { bg: '#faf7f0', lineColor: null },
+  grid:        { bg: '#f6f2ec', lineColor: '#c0b49a', lineOpacity: 0.35 },
+  legal:       { bg: '#fef9c3', lineColor: '#c8b820', lineOpacity: 0.45, redLine: '#e07070' },
+  vintage:     { bg: '#f2e8ce', lineColor: '#b8a080', lineOpacity: 0.4 },
+  dark:        { bg: '#1a1a2e', lineColor: '#3a3a5e', lineOpacity: 0.7 },
   dot_grid:    { bg: '#f6f2ec', lineColor: '#c0b49a', lineOpacity: 0.35 },
   engineering: { bg: '#eef6ed', lineColor: '#78a67d', lineOpacity: 0.4 },
   music:       { bg: '#faf7f0', lineColor: '#4a4a4a', lineOpacity: 0.55 }

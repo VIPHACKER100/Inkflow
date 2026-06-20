@@ -9,7 +9,7 @@ Complete reference for all user-configurable controls in Inkflow.
 | Control | Range | Default | Effect |
 | :--- | :--- | :--- | :--- |
 | **Font Family** | Dropdown (12+ fonts) | Caveat | Handwriting font used for rendering |
-| **Font Size** | 14px – 52px | 16px | Character size on canvas |
+| **Font Size** | 14px – 52px | 22px | Character size on canvas |
 | **Line Height** | 1.2 – 3.0 | 1.5 | Vertical spacing between lines |
 | **Word Spacing** | -2px – 14px | 1px | Horizontal gap between words |
 

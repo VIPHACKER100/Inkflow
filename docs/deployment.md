@@ -44,7 +44,6 @@ Inkflow loads these libraries from CDN at runtime:
 | :--- | :--- | :--- |
 | Google Fonts | fonts.googleapis.com | System fonts fallback |
 | Font Awesome | cdnjs.cloudflare.com | Unicode emoji fallback |
-| html2canvas | cdn.jsdelivr.net | Export buttons disabled |
 | jsPDF | cdn.jsdelivr.net | PDF export disabled |
 | opentype.js | cdn.jsdelivr.net | Custom font disabled |
 
@@ -77,5 +76,5 @@ mkdir vendor
 
 - **No `.env` files**: API keys are entered by the user at runtime
 - **No build step**: Deploy the source files directly
-- **No database**: All data persists in browser localStorage
+- **No external database**: All general settings persist in browser `localStorage`, and custom handwriting glyphs persist in `IndexedDB`
 - **CORS**: AI features require the `anthropic-dangerous-direct-browser-access` header

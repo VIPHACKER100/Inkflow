@@ -445,11 +445,18 @@ function drawPaperBackground(ctx, style) {
     ctx.globalAlpha = c.lineOpacity;
     ctx.strokeStyle = c.lineColor;
     ctx.lineWidth = 0.6;
-    const gridSz = 28;
-    for (let x = 0; x < w; x += gridSz) {
+    const gridSz = S.fontSize * S.lineHeight;
+    // Align with S.margin for clean layout
+    for (let x = S.margin; x < w; x += gridSz) {
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
     }
-    for (let y = 0; y < h; y += gridSz) {
+    for (let x = S.margin - gridSz; x > 0; x -= gridSz) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+    }
+    for (let y = S.margin; y < h; y += gridSz) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+    for (let y = S.margin - gridSz; y > 0; y -= gridSz) {
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
     }
     ctx.restore();
@@ -493,9 +500,16 @@ function drawPaperBackground(ctx, style) {
     ctx.save();
     ctx.fillStyle = c.lineColor || '#c0b49a';
     ctx.globalAlpha = c.lineOpacity;
-    const dotSz = 28;
-    for (let x = dotSz; x < w; x += dotSz) {
-      for (let y = dotSz; y < h; y += dotSz) {
+    const dotSz = S.fontSize * S.lineHeight;
+    for (let x = S.margin; x < w; x += dotSz) {
+      for (let y = S.margin; y < h; y += dotSz) {
+        ctx.beginPath();
+        ctx.arc(x, y, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    for (let x = S.margin - dotSz; x > 0; x -= dotSz) {
+      for (let y = S.margin; y < h; y += dotSz) {
         ctx.beginPath();
         ctx.arc(x, y, 1.2, 0, Math.PI * 2);
         ctx.fill();
@@ -507,26 +521,38 @@ function drawPaperBackground(ctx, style) {
   if (style === 'engineering') {
     ctx.save();
     ctx.strokeStyle = c.lineColor || '#78a67d';
-    const minorSize = 10;
-    const majorSize = 50;
+    const majorSize = S.fontSize * S.lineHeight;
+    const minorSize = majorSize / 5;
 
     // Draw minor lines
     ctx.globalAlpha = 0.18;
     ctx.lineWidth = 0.4;
-    for (let x = 0; x < w; x += minorSize) {
+    for (let x = S.margin; x < w; x += minorSize) {
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
     }
-    for (let y = 0; y < h; y += minorSize) {
+    for (let x = S.margin - minorSize; x > 0; x -= minorSize) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+    }
+    for (let y = S.margin; y < h; y += minorSize) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+    for (let y = S.margin - minorSize; y > 0; y -= minorSize) {
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
     }
 
     // Draw major lines
     ctx.globalAlpha = 0.4;
     ctx.lineWidth = 0.8;
-    for (let x = 0; x < w; x += majorSize) {
+    for (let x = S.margin; x < w; x += majorSize) {
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
     }
-    for (let y = 0; y < h; y += majorSize) {
+    for (let x = S.margin - majorSize; x > 0; x -= majorSize) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+    }
+    for (let y = S.margin; y < h; y += majorSize) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+    for (let y = S.margin - majorSize; y > 0; y -= majorSize) {
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
     }
 
@@ -543,8 +569,9 @@ function drawPaperBackground(ctx, style) {
     ctx.save();
     ctx.strokeStyle = c.lineColor || '#4a4a4a';
     ctx.lineWidth = 0.8;
-    const lineSpacing = 8;
-    const staffSpacing = 72;
+    const baseSpacing = S.fontSize * S.lineHeight;
+    const lineSpacing = baseSpacing * (8 / 33);
+    const staffSpacing = baseSpacing * (72 / 33);
     const startY = S.margin;
     ctx.globalAlpha = c.lineOpacity;
 
@@ -1329,9 +1356,9 @@ function renderText(text) {
       const glyphImg = getCachedGlyphImage(item.ch, draftedGlyphs[item.ch]);
       if (glyphImg) {
         ctx.globalAlpha = v.opacity;
-        const glyphWidth = glyphImg.width;
-        const glyphHeight = glyphImg.height;
-        ctx.drawImage(glyphImg, -glyphWidth / 2, -glyphHeight / 2, glyphWidth, glyphHeight);
+        // Scale the glyph image proportionally with the font size
+        const drawSz = S.fontSize * 1.35;
+        ctx.drawImage(glyphImg, -drawSz / 2, -drawSz / 2, drawSz, drawSz);
       } else {
         // Not decoded yet — draw the system-font glyph for this pass so
         // nothing goes blank; a re-render is queued once it's ready.
@@ -2434,7 +2461,7 @@ function setupFileUpload() {
 function resetToDefaults() {
   const defaults = {
     font: 'Caveat',
-    fontSize: 16,
+    fontSize: 22,
     lineHeight: 1.5,
     wordSpacing: 1,
     margin: 80,
@@ -3336,6 +3363,11 @@ function cropTemplateCell(index, sheetName) {
   cellCtx.fillRect(0, 0, 128, 128);
   
   cellCtx.drawImage(img, srcX, srcY, srcW, srcH, 12, 12, 104, 104);
+  
+  // Clear the guide label at the top-left of the cell to prevent it from being traced as ink
+  cellCtx.fillStyle = '#ffffff';
+  cellCtx.fillRect(12, 12, 32, 24);
+  
   return cellCanvas;
 }
 
