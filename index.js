@@ -153,6 +153,46 @@ document.getElementById('font-upload').addEventListener('change', async function
 });
 
 /* ───────────────────────────────────────────
+   PHASE 3.5 — AUTO-FIT FONT SIZE
+─────────────────────────────────────────── */
+function autoFitFontSize() {
+  const text = S.text.trim();
+  if (!text) return;
+
+  let min = 14;
+  let max = 52;
+  let bestSize = S.fontSize;
+
+  // Binary search for a font size that fits text within 1 or 2 pages optimally
+  // but let's target fitting the current text precisely into the first page if it's short,
+  // or just generally reducing it if it overflows.
+  
+  for (let i = 0; i < 6; i++) { // 6 iterations is enough for 14-52 range
+    const mid = Math.floor((min + max) / 2);
+    S.fontSize = mid;
+    const { pageCount } = layoutText(text);
+    
+    if (pageCount > 1) {
+      max = mid;
+    } else {
+      bestSize = mid;
+      min = mid;
+    }
+  }
+
+  S.fontSize = bestSize;
+  
+  // Sync UI
+  const slider = document.getElementById('font-size-slider');
+  if (slider) slider.value = S.fontSize;
+  const disp = document.getElementById('fs-val');
+  if (disp) disp.textContent = S.fontSize;
+
+  debounceRender();
+  autosave();
+}
+
+/* ───────────────────────────────────────────
    PHASE 5.1–5.6 — SLIDER CONTROLS
 ─────────────────────────────────────────── */
 function bindSlider(id, valId, key, parse = parseFloat, suffix = '') {
@@ -1800,6 +1840,15 @@ async function aiAction(type) {
     );
   }
 
+  if (type === 'arrange') {
+    if (!currentText) { setAiStatus('⚠ Add some text first.'); btns.forEach(b => b.disabled = false); return; }
+    result = await callClaude(
+      currentText,
+      'Reorganize and format the following text to look like beautifully arranged handwritten notes. Add appropriate section headers, bullet points, and clean paragraph breaks. Ensure the flow is logical and aesthetic. Use plain text only, no markdown symbols like asterisks or hashtags.',
+      onChunk
+    );
+  }
+
   if (type === 'grammar') {
     if (!currentText) { setAiStatus('⚠ Add some text first.'); btns.forEach(b => b.disabled = false); return; }
     result = await callClaude(
@@ -2101,11 +2150,8 @@ function glyphHasInk(dataUrl) {
       const cctx = c.getContext('2d');
       cctx.drawImage(img, 0, 0);
       try {
-        const { data } = cctx.getImageData(0, 0, c.width, c.height);
-        for (let i = 3; i < data.length; i += 4) {
-          if (data[i] > 0) { resolve(true); return; }
-        }
-        resolve(false);
+        // Phase 9.8 — Use stricter isCellBlank check
+        resolve(!isCellBlank(c));
       } catch (e) {
         // Can't inspect it (e.g. tainted canvas) — don't destroy data we can't verify.
         resolve(true);
@@ -2766,13 +2812,9 @@ function saveActiveCharacter() {
   const canvas = document.getElementById('sketch-canvas');
   if (!canvas) return;
   
-  // Check if canvas has any ink before saving
-  const ctx = canvas.getContext('2d');
-  const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const hasInk = data.some((v, i) => i % 4 === 3 && v > 0); // any non-transparent alpha
-  
-  if (!hasInk) {
-    alert('Nothing drawn — sketch the character before saving.');
+  // Phase 9.8 — Check if canvas has any significant ink before saving
+  if (isCellBlank(canvas)) {
+    alert('Nothing drawn — sketch the character before saving with dark ink.');
     return;
   }
   
@@ -3452,6 +3494,27 @@ function traceCanvasContours(canvas) {
   return contours;
 }
 
+/**
+ * Checks if a canvas cell contains any significant ink (dark pixels).
+ * This prevents empty glyphs from being added to the custom font.
+ */
+function isCellBlank(canvas) {
+  const ctx = canvas.getContext('2d');
+  const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  
+  // Scans for any pixel that is both opaque enough and dark enough to count as handwriting
+  for (let i = 0; i < data.length; i += 4) {
+    const alpha = data[i + 3];
+    if (alpha > 50) {
+      const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
+      if (brightness < 160) {
+        return false; // Found ink
+      }
+    }
+  }
+  return true; // No ink found
+}
+
 // Ramer-Douglas-Peucker (RDP) Simplification Engine
 function simplifyPath(points, tolerance) {
   if (points.length <= 2) return points;
@@ -3661,6 +3724,11 @@ async function buildCustomFont() {
         }
       }
       
+      // Phase 9.8 — Check if cell is blank before processing
+      if (isCellBlank(cellCanvas)) {
+        continue;
+      }
+
       const path = canvasToOpentypePath(cellCanvas);
       
       // Skip cells with no ink — let the browser fall back to a system font
@@ -3680,7 +3748,9 @@ async function buildCustomFont() {
         for (let x = 0; x < cellCanvas.width; x++) {
           const idx = (y * cellCanvas.width + x) * 4;
           const alpha = pixels[idx + 3];
-          if (alpha > 50) { // If pixel is visible
+          const brightness = (pixels[idx] + pixels[idx + 1] + pixels[idx + 2]) / 3;
+          
+          if (alpha > 50 && brightness < 160) { // Standard ink threshold
             if (x < minX) minX = x;
             if (x > maxX) maxX = x;
           }

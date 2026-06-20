@@ -136,7 +136,10 @@ Try pasting a paragraph of lecture notes!"></textarea>
           </button>
 
           <!-- Phase 5.1 — Font size -->
-          <div class="sb-label">Font Size <span class="val" id="fs-val">22</span></div>
+          <div class="sb-label">
+            Font Size <span class="val" id="fs-val">22</span>
+            <button class="btn sm link-btn" onclick="autoFitFontSize()" title="Auto-scale font to fit current text on page">Auto-Fit</button>
+          </div>
           <input type="range" id="font-size-slider" min="14" max="52" value="22" step="1" title="Font Size" />
 
           <!-- Phase 5.2 — Line spacing -->
@@ -289,6 +292,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
 
           <!-- AI action buttons -->
           <div class="ai-btn-group">
+            <button class="btn" onclick="aiAction('arrange')">🪄 Smart Arrange</button>
             <button class="btn" onclick="aiAction('summarize')">📋 Summarize Notes</button>
             <button class="btn" onclick="aiAction('grammar')">✏️ Improve Grammar</button>
             <button class="btn" onclick="aiAction('lecture')">🎓 Lecture → Notes</button>
