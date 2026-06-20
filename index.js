@@ -1255,6 +1255,30 @@ function layoutText(text) {
   return { queue, pageTexts, pageCount: pageIdx + 1 };
 }
 
+// Cache of decoded <img> elements for drafted glyphs, keyed by character.
+// renderText() only draws an entry once it's fully decoded (img.complete-
+// equivalent ready flag), so the drawImage() call always happens
+// synchronously inside the correct save()/translate()/restore() block for
+// that character instead of racing an async onload against ctx.restore().
+const glyphImageCache = {};
+
+function getCachedGlyphImage(char, src) {
+  let entry = glyphImageCache[char];
+  if (entry && entry.src === src) {
+    return entry.ready ? entry.img : null;
+  }
+  // New character, or its drafted artwork changed — (re)decode it.
+  const img = new Image();
+  entry = { img, src, ready: false };
+  glyphImageCache[char] = entry;
+  img.onload = () => {
+    entry.ready = true;
+    debounceRender(); // swap the system-font placeholder for the real stroke
+  };
+  img.src = src;
+  return null;
+}
+
 function renderText(text) {
   text = sanitizeText(text);
   clearPages();
@@ -1293,16 +1317,30 @@ function renderText(text) {
 
     // Check if custom glyph exists
     if (draftedGlyphs[item.ch]) {
-      const glyphImg = new Image();
-      glyphImg.onload = () => {
+      // Images decode asynchronously, but ctx.restore() below runs
+      // synchronously right after this block — by the time onload fired,
+      // the translate/rotate/scale for THIS character was already popped
+      // off the stack, so drawImage used to land at whatever transform was
+      // left after the *entire* queue finished (effectively the canvas
+      // origin), not at item.x/item.y. That's why drafted glyphs vanished
+      // from their correct spot instead of just rendering plainly.
+      // Fix: cache the decoded image and only ever drawImage() once it's
+      // ready, synchronously, inside the current transform.
+      const glyphImg = getCachedGlyphImage(item.ch, draftedGlyphs[item.ch]);
+      if (glyphImg) {
         ctx.globalAlpha = v.opacity;
-        // Render glyph image without additional transformations
-        // Glyph width is intrinsic to the image; no extra scaling needed
         const glyphWidth = glyphImg.width;
         const glyphHeight = glyphImg.height;
         ctx.drawImage(glyphImg, -glyphWidth / 2, -glyphHeight / 2, glyphWidth, glyphHeight);
-      };
-      glyphImg.src = draftedGlyphs[item.ch];
+      } else {
+        // Not decoded yet — draw the system-font glyph for this pass so
+        // nothing goes blank; a re-render is queued once it's ready.
+        const pxSize = S.fontSize * v.pressureMod;
+        ctx.font = `${Math.max(10, pxSize)}px ${item.fontStack}`;
+        ctx.globalAlpha = v.opacity;
+        ctx.fillStyle = S.inkColor;
+        ctx.fillText(item.ch, 0, 0);
+      }
     } else {
       // Fallback to system font
       const pxSize = S.fontSize * v.pressureMod;
@@ -2022,6 +2060,66 @@ function getGlyphsDB() {
   });
 }
 
+// Returns true if a drafted-glyph data URL contains at least one visible
+// (non-transparent) pixel. Used to catch stale "blank" entries that were
+// saved before the ink-check guard existed in saveActiveCharacter().
+function glyphHasInk(dataUrl) {
+  return new Promise((resolve) => {
+    if (!dataUrl) { resolve(false); return; }
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = img.naturalWidth || img.width || 1;
+      c.height = img.naturalHeight || img.height || 1;
+      const cctx = c.getContext('2d');
+      cctx.drawImage(img, 0, 0);
+      try {
+        const { data } = cctx.getImageData(0, 0, c.width, c.height);
+        for (let i = 3; i < data.length; i += 4) {
+          if (data[i] > 0) { resolve(true); return; }
+        }
+        resolve(false);
+      } catch (e) {
+        // Can't inspect it (e.g. tainted canvas) — don't destroy data we can't verify.
+        resolve(true);
+      }
+    };
+    img.onerror = () => resolve(false);
+    img.src = dataUrl;
+  });
+}
+
+// Strips blank/corrupt entries out of draftedGlyphs (memory + IndexedDB).
+// These can linger from before saveActiveCharacter() rejected empty
+// sketches (or from an old imported project), and they make renderText()
+// draw an invisible image instead of falling back to the system font for
+// that character — which is exactly what causes "missing" letters.
+async function pruneBlankGlyphs() {
+  const chars = Object.keys(draftedGlyphs);
+  let pruned = 0;
+  for (const char of chars) {
+    const inked = await glyphHasInk(draftedGlyphs[char]);
+    if (!inked) {
+      delete draftedGlyphs[char];
+      pruned++;
+      try {
+        const db = await getDB();
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).delete(char);
+      } catch (err) {
+        console.error('Could not remove blank glyph from IndexedDB:', char, err);
+      }
+      const btn = document.getElementById(`char-btn-${char}`);
+      if (btn) btn.classList.remove('drafted');
+      delete glyphImageCache[char];
+    }
+  }
+  if (pruned > 0) {
+    console.warn(`Inkflow: removed ${pruned} blank drafted glyph(s) that were rendering as invisible characters.`);
+  }
+  return pruned;
+}
+
 let autosaveTimeout;
 function autosave() {
   clearTimeout(autosaveTimeout);
@@ -2122,6 +2220,11 @@ async function restoreState() {
       localStorage.setItem('inkflow-state', JSON.stringify(state));
     }
   } catch (e) { /* ignore corrupt state */ }
+
+  // 2.5. Remove any stale blank glyphs (e.g. saved before the ink-check guard
+  // existed, or pulled in via the localStorage migration above) so they
+  // don't get drawn as invisible characters.
+  await pruneBlankGlyphs();
 
   // 3. Highlight drafted characters in UI
   ALL_TEMPLATE_CHARS.forEach(char => {
@@ -2728,7 +2831,7 @@ function importFontProject(event) {
   if (!file) return;
   
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = async function(e) {
     try {
       const projectData = JSON.parse(e.target.result);
       
@@ -2738,6 +2841,10 @@ function importFontProject(event) {
       
       // Load glyphs
       Object.assign(draftedGlyphs, projectData.glyphs);
+
+      // Strip any blank entries that may have come from an older export
+      // (saved before the ink-check guard existed).
+      await pruneBlankGlyphs();
       
       // Update font name if available
       if (projectData.fontName) {
@@ -3600,6 +3707,3 @@ async function buildCustomFont() {
     progressDiv.classList.add('hidden');
   }
 }
-
-
-
