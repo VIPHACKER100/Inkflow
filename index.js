@@ -2,7 +2,7 @@
    STATE — Global settings object
 ─────────────────────────────────────────── */
 const S = {
-  text: '',
+  text: 'This is a sample note starting from the second line of the page. The first line has been skipped automatically as per your request.\n\nYou can continue writing your notes here, and the engine will handle the line spacing and page breaks while always skipping the top line of every new page.',
   font: 'Caveat',
   fontSize: 22,
   lineHeight: 1.5,
@@ -764,8 +764,8 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
 
   let activeCol = 1; // 1 or 2
   let x = col1Left;
-  let y = margin + S.fontSize;
   const lineH = S.fontSize * S.lineHeight;
+  let y = margin + S.fontSize + lineH;
 
   let pageIdx = 0;
   let charIndex = 0;
@@ -786,14 +786,14 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
           if (activeCol === 1) {
             activeCol = 2;
             x = col2Left;
-            y = margin + S.fontSize;
+            y = margin + S.fontSize + lineH;
           } else {
             pageTexts.push(currentPageText);
             currentPageText = '';
             pageIdx++;
             activeCol = 1;
             x = col1Left;
-            y = margin + S.fontSize;
+            y = margin + S.fontSize + lineH;
           }
         }
         currentPageText += '\n';
@@ -823,7 +823,7 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
             x = col2Left;
             leftBoundary = col2Left;
             rightBoundary = col2Right;
-            y = margin + S.fontSize;
+            y = margin + S.fontSize + lineH;
           } else {
             pageTexts.push(currentPageText);
             currentPageText = '';
@@ -832,7 +832,7 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
             x = col1Left;
             leftBoundary = col1Left;
             rightBoundary = col1Right;
-            y = margin + S.fontSize;
+            y = margin + S.fontSize + lineH;
           }
         }
       }
@@ -876,7 +876,7 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
                 x = col2Left;
                 leftBoundary = col2Left;
                 rightBoundary = col2Right;
-                y = margin + S.fontSize;
+                y = margin + S.fontSize + lineH;
               } else {
                 pageTexts.push(currentPageText);
                 currentPageText = '';
@@ -885,7 +885,7 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
                 x = col1Left;
                 leftBoundary = col1Left;
                 rightBoundary = col1Right;
-                y = margin + S.fontSize;
+                y = margin + S.fontSize + lineH;
               }
             }
           }
@@ -936,12 +936,12 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
   const rightColLeft = 250;
   const rightColRight = PAGE_W - margin;
 
-  let yCues = margin + S.fontSize;
-  let yNotes = margin + S.fontSize;
+  const lineH = S.fontSize * S.lineHeight;
+  let yCues = margin + S.fontSize + lineH;
+  let yNotes = margin + S.fontSize + lineH;
   let ySummary = PAGE_H - 170;
 
   let pageIdx = 0;
-  const lineH = S.fontSize * S.lineHeight;
 
   const lines = text.split('\n');
 
@@ -976,7 +976,7 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
 
     const words = lineText.split(' ');
     let x = margin;
-    let y = margin + S.fontSize;
+    let y = margin + S.fontSize + lineH;
 
     if (type === 'cue') {
       y = Math.max(yCues, yNotes);
@@ -984,10 +984,10 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
         pageTexts.push(currentPageText);
         currentPageText = '';
         pageIdx++;
-        yCues = margin + S.fontSize;
-        yNotes = margin + S.fontSize;
+        yCues = margin + S.fontSize + lineH;
+        yNotes = margin + S.fontSize + lineH;
         ySummary = PAGE_H - 170;
-        y = margin + S.fontSize;
+        y = margin + S.fontSize + lineH;
       }
       x = margin;
     } else if (type === 'summary') {
@@ -996,8 +996,8 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
         pageTexts.push(currentPageText);
         currentPageText = '';
         pageIdx++;
-        yCues = margin + S.fontSize;
-        yNotes = margin + S.fontSize;
+        yCues = margin + S.fontSize + lineH;
+        yNotes = margin + S.fontSize + lineH;
         ySummary = PAGE_H - 170;
         y = PAGE_H - 170;
       }
@@ -1008,10 +1008,10 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
         pageTexts.push(currentPageText);
         currentPageText = '';
         pageIdx++;
-        yCues = margin + S.fontSize;
-        yNotes = margin + S.fontSize;
+        yCues = margin + S.fontSize + lineH;
+        yNotes = margin + S.fontSize + lineH;
         ySummary = PAGE_H - 170;
-        y = margin + S.fontSize;
+        y = margin + S.fontSize + lineH;
       }
       x = rightColLeft;
     }
@@ -1052,8 +1052,8 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
             pageTexts.push(currentPageText);
             currentPageText = '';
             pageIdx++;
-            yCues = margin + S.fontSize;
-            yNotes = margin + S.fontSize;
+            yCues = margin + S.fontSize + lineH;
+            yNotes = margin + S.fontSize + lineH;
             ySummary = PAGE_H - 170;
             y = PAGE_H - 170;
           }
@@ -1062,10 +1062,10 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
             pageTexts.push(currentPageText);
             currentPageText = '';
             pageIdx++;
-            yCues = margin + S.fontSize;
-            yNotes = margin + S.fontSize;
+            yCues = margin + S.fontSize + lineH;
+            yNotes = margin + S.fontSize + lineH;
             ySummary = PAGE_H - 170;
-            y = margin + S.fontSize;
+            y = margin + S.fontSize + lineH;
           }
         }
       }
@@ -1109,8 +1109,8 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
                 pageTexts.push(currentPageText);
                 currentPageText = '';
                 pageIdx++;
-                yCues = margin + S.fontSize;
-                yNotes = margin + S.fontSize;
+                yCues = margin + S.fontSize + lineH;
+                yNotes = margin + S.fontSize + lineH;
                 ySummary = PAGE_H - 170;
                 y = PAGE_H - 170;
               }
@@ -1119,10 +1119,10 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
                 pageTexts.push(currentPageText);
                 currentPageText = '';
                 pageIdx++;
-                yCues = margin + S.fontSize;
-                yNotes = margin + S.fontSize;
+                yCues = margin + S.fontSize + lineH;
+                yNotes = margin + S.fontSize + lineH;
                 ySummary = PAGE_H - 170;
-                y = margin + S.fontSize;
+                y = margin + S.fontSize + lineH;
               }
             }
           }
@@ -1194,8 +1194,10 @@ function layoutText(text) {
   const margin = S.margin;
   const rightMargin = PAGE_W - margin;
   let x = margin;
-  let y = margin + S.fontSize;
   const lineH = S.fontSize * S.lineHeight;
+  
+  // Skip the 1st line of every page
+  let y = margin + S.fontSize + lineH;
 
   let pageIdx = 0;
   let charIndex = 0;
@@ -1216,7 +1218,7 @@ function layoutText(text) {
           pageTexts.push(currentPageText);
           currentPageText = '';
           pageIdx++;
-          y = margin + S.fontSize;
+          y = margin + S.fontSize + lineH; // Skip 1st line on new page
         }
         currentPageText += '\n';
       }
@@ -1240,7 +1242,7 @@ function layoutText(text) {
           pageTexts.push(currentPageText);
           currentPageText = '';
           pageIdx++;
-          y = margin + S.fontSize;
+          y = margin + S.fontSize + lineH; // Skip 1st line on new page
         }
       }
 
@@ -1281,7 +1283,7 @@ function layoutText(text) {
               pageTexts.push(currentPageText);
               currentPageText = '';
               pageIdx++;
-              y = margin + S.fontSize;
+              y = margin + S.fontSize + lineH;
             }
           }
 
@@ -2352,10 +2354,11 @@ async function initApp() {
     drawPaperBackground(ctx, S.paperStyle);
     // Subtle placeholder text
     ctx.save();
+    const lineH = S.fontSize * S.lineHeight;
     ctx.font = `italic 18px "${S.font}"`;
     ctx.fillStyle = S.inkColor;
     ctx.globalAlpha = 0.18;
-    ctx.fillText('Start typing in the panel to the left…', S.margin, S.margin + S.fontSize);
+    ctx.fillText('Start typing in the panel to the left…', S.margin, S.margin + S.fontSize + lineH);
     ctx.restore();
   }
 }
