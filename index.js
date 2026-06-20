@@ -32,7 +32,7 @@ const TEMPLATE_SHEETS = {
   ],
   symbols: [
     '0','1','2','3','4','5','6','7','8','9',
-    '.',',','?','!','@','#','$','%','^','&','*',
+    ',','.','?','!','@','#','$','%','^','&','*',
     '(',')','-','_','+','=','/',':',';','\'','"'
   ]
 };
@@ -2576,7 +2576,7 @@ function switchFontTab(tab) {
     panelTemp.classList.remove('hidden');
     
     // Trigger grid render if aligner already has an image
-    if (alignerImage) {
+    if (alignerImages[activeUploadSheet]) {
       setTimeout(updateAlignerGrid, 50);
     }
   }
@@ -3349,15 +3349,16 @@ function cropTemplateCell(index, sheetName) {
   cellCanvas.height = 128;
   const cellCtx = cellCanvas.getContext('2d');
   
-  const scale = img.naturalWidth / 360;
+  const scaleX = img.naturalWidth / 360;
+  const scaleY = img.naturalHeight / 360;
   
   const cellW_preview = config.gridW / 8;
   const cellH_preview = config.gridH / 8;
   
-  const srcX = (config.gridX + col * cellW_preview) * scale;
-  const srcY = (config.gridY + row * cellH_preview) * scale;
-  const srcW = cellW_preview * scale;
-  const srcH = cellH_preview * scale;
+  const srcX = (config.gridX + col * cellW_preview) * scaleX;
+  const srcY = (config.gridY + row * cellH_preview) * scaleY;
+  const srcW = cellW_preview * scaleX;
+  const srcH = cellH_preview * scaleY;
   
   cellCtx.fillStyle = '#ffffff';
   cellCtx.fillRect(0, 0, 128, 128);
@@ -3631,22 +3632,33 @@ async function buildCustomFont() {
       const char = ALL_TEMPLATE_CHARS[i];
       let cellCanvas = null;
       
+      let sheetName = 'letters';
+      let charIdx = TEMPLATE_SHEETS.letters.indexOf(char);
+      if (charIdx === -1) {
+        sheetName = 'symbols';
+        charIdx = TEMPLATE_SHEETS.symbols.indexOf(char);
+      }
+      
       if (isTemplateTab) {
-        let sheetName = 'letters';
-        let charIdx = TEMPLATE_SHEETS.letters.indexOf(char);
-        if (charIdx === -1) {
-          sheetName = 'symbols';
-          charIdx = TEMPLATE_SHEETS.symbols.indexOf(char);
-        }
-        
         const img = alignerImages[sheetName];
-        if (!img) continue; // Skip if no template uploaded for this sheet
-        
-        cellCanvas = cropTemplateCell(charIdx, sheetName);
+        if (img) {
+          cellCanvas = cropTemplateCell(charIdx, sheetName);
+        } else if (draftedGlyphs[char]) {
+          cellCanvas = await loadImageToCanvas(draftedGlyphs[char]);
+        } else {
+          continue; // Skip if neither is present
+        }
       } else {
-        const dataUrl = draftedGlyphs[char];
-        if (!dataUrl) continue; // Skip undrafted characters
-        cellCanvas = await loadImageToCanvas(dataUrl);
+        if (draftedGlyphs[char]) {
+          cellCanvas = await loadImageToCanvas(draftedGlyphs[char]);
+        } else {
+          const img = alignerImages[sheetName];
+          if (img) {
+            cellCanvas = cropTemplateCell(charIdx, sheetName);
+          } else {
+            continue; // Skip if neither is present
+          }
+        }
       }
       
       const path = canvasToOpentypePath(cellCanvas);
