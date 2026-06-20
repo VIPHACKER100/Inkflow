@@ -80,6 +80,13 @@ System: Generate a complete handwritten-style assignment with an introduction,
 body paragraphs, and conclusion. Plain text only. No markdown.
 ```
 
+### 5. Smart Arrange (Optimization)
+```
+System: Restructure this text to make it more organized and readable.
+Keep all the original information but use better spacing, indentation, 
+and bullet points. Plain text only. No markdown.
+```
+
 ---
 
 ## Dynamic Model Registry

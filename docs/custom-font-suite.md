@@ -43,6 +43,7 @@ flowchart TD
 
 Isolates character contours on a temporary canvas slice by scanning for active pixels (alpha > 128) and tracing the boundaries in a clockwise sequence.
 
+- **Glyph Pruning**: To prevent the creation of "invisible" characters (rects with zero paths), the synthesizer uses `isCellBlank()` before tracing. Cells without sufficient ink (brightness threshold < 160 or alpha > 50) are discarded.
 - Traverses both external boundaries and internal negative outlines (holes, e.g. in 'o' or 'A')
 - Assembles clean mathematical coordinate arrays for each closed contour
 

@@ -129,7 +129,7 @@ flowchart TD
     G -->|No| I[Keep current coordinates]
     H --> J{y + LineHeight > PageHeight - Margin?}
     I --> K[Render individual characters / Indic word block]
-    J -->|Yes| L[Increment pageIdx, reset y to Margin + FontSize]
+    J -->|Yes| L[Increment pageIdx, reset y to Margin + FontSize + LineHeight]
     J -->|No| K
     L --> K
     K --> M[Advance x coordinate by character width + spacing]
@@ -144,7 +144,7 @@ flowchart TD
 4. **Font Stack**: The correct CSS font-family string is built, including Devanagari fallbacks if needed.
 5. **Width Measurement**: Each word's pixel width is measured using an offscreen canvas context with the active font settings.
 6. **Wrap Check**: If adding the word would exceed `PageWidth - margin`, the cursor resets to the left margin, advances vertically by `fontSize × lineHeight`, and `lineCharIndex` resets to 0.
-7. **Page Break**: If the vertical cursor exceeds `PageHeight - margin`, `pageIdx` increments and the cursor resets.
+7. **Page Break**: If the vertical cursor exceeds `PageHeight - margin`, `pageIdx` increments and the cursor resets to start on the **second line** of the new page (skipping the first ruled line).
 8. **Character Render & Character Wrap**: Non-Indic words are rendered character-by-character with unique randomized tilt, scale, baseline offset, and pressure variation. As characters are rendered, if the horizontal cursor position plus the character width exceeds the right boundary, the layout engine performs a **character-level soft wrap** to the next line (resetting the cursor to the left margin, advancing vertically, and checking for page breaks). Indic words are rendered as single blocks with reduced tilt.
 9. **Cursor Advance**: After each character/word, the horizontal cursor advances by the measured width plus a randomized spacing adjustment.
 

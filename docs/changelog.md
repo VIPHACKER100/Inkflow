@@ -4,6 +4,19 @@ All notable changes to Inkflow are documented in this file.
 
 ---
 
+## [1.2.1] — 2026-06-20
+
+### ✨ Added
+- **"Smart Arrange" AI Tool**: New AI feature that restructures handwritten notes using an optimization prompt, automatically organizing lists, headers, and bullet points for better readability.
+- **Font "Auto-Fit"**: New font size control that automatically scales the text size to perfectly fill the current page, preventing orphans and optimizing vertical space.
+- **Glyph Pruning for Custom Fonts**: The font synthesizer now uses blank-cell detection (brightness/alpha checks) to skip empty cells in handwriting templates, preventing "invisible" character bugs in generated `.ttf` files.
+
+### ♻️ Changed
+- **"Line Height" Control Bar**: Renamed and upgraded "Line Spacing" to "Line Height", with an expanded scale range of $1.0$ to $3.5$ for more precise vertical typography.
+- **Automatic First-Line Skip**: The layout engine now defaults all handwritten text to start from the **second line** of the page (skipping the first ruled line), providing a more natural notebook aesthetic.
+
+---
+
 ## [1.2.0] — 2026-06-14
 
 ### 🛠️ Fixed

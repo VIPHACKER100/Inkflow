@@ -2,7 +2,7 @@
 
 Welcome to the **Inkflow** documentation hub. This folder contains all technical, design, and operational documentation for the project.
 
-**Current Version**: 1.3.0 — Multi-Sheet HandFonting, Cornell & Grid Layouts, IndexedDB Glyph Storage
+**Current Version**: 1.2.1 — Smart Arrange, Auto-Fit, Font Glyph Pruning, Layout Refinements
 
 ---
 
