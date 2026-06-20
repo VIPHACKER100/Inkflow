@@ -2339,7 +2339,9 @@ function setupFileUpload() {
     
     // Show status
     uploadStatus.style.display = 'flex';
-    statusText.innerHTML = `<span class="spinner"></span> Processing "${file.name}"...`;
+    const spinner = document.createElement('span');
+    spinner.className = 'spinner';
+    statusText.replaceChildren(spinner, document.createTextNode(` Processing "${file.name}"...`));
     
     try {
       let text = '';
@@ -2375,12 +2377,16 @@ function setupFileUpload() {
       renderText(text);
       autosave();
       
-      statusText.innerHTML = '<span style="color:#2d6a4f;font-weight:600;">✓ File loaded successfully!</span>';
+      statusText.textContent = '✓ File loaded successfully!';
+      statusText.style.color = '#2d6a4f';
+      statusText.style.fontWeight = '600';
       setTimeout(() => {
         uploadStatus.style.display = 'none';
       }, 3500);
     } catch (e) {
-      statusText.innerHTML = `<span style="color:#8b0000;font-weight:600;">✕ Error: ${e.message}</span>`;
+      statusText.textContent = `✕ Error: ${e.message}`;
+      statusText.style.color = '#8b0000';
+      statusText.style.fontWeight = '600';
       console.error(e);
     }
   }
