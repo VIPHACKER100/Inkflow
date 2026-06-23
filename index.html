@@ -22,6 +22,12 @@
   <!-- Font Awesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
+  <!-- Mermaid for diagram support -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+
+  <!-- Rough.js for hand-drawn diagrams -->
+  <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/dist/rough.umd.js"></script>
+
   <!-- Custom Stylesheet -->
   <link rel="stylesheet" href="index.css" />
 </head>
@@ -73,6 +79,14 @@ Try pasting a paragraph of lecture notes!"></textarea>
           <div class="action-buttons-row">
             <button class="btn accent btn-render" onclick="triggerRender()">✦ Render</button>
             <button class="btn" onclick="clearText()" title="Clear text">✕</button>
+            <div class="dropdown">
+              <button class="btn" title="Insert Diagram template">📊 Diagram ▾</button>
+              <div class="dropdown-content">
+                <a href="#" onclick="insertDiagramTemplate('cycle')">Cycle Diagram</a>
+                <a href="#" onclick="insertDiagramTemplate('flowchart')">Flowchart</a>
+                <a href="#" onclick="insertDiagramTemplate('mermaid')">Mermaid (Logic)</a>
+              </div>
+            </div>
           </div>
 
           <div class="file-upload-wrapper">
@@ -187,6 +201,13 @@ Try pasting a paragraph of lecture notes!"></textarea>
             </button>
           </div>
 
+          <!-- Cursive Mode Toggle -->
+          <label class="checkbox-label" style="margin-top: 12px;">
+            <input type="checkbox" id="cursive-mode-toggle" title="Enable cursive mode with connected letters" onchange="onCursiveModeToggle()" />
+            <span class="checkbox-custom"></span>
+            <span class="checkbox-text">🔗 Cursive Mode</span>
+          </label>
+
           <!-- Reset Defaults Button -->
           <button class="btn sm" id="btn-reset-defaults" onclick="resetToDefaults()">
             <i class="fa-solid fa-rotate-left"></i> &nbsp;Reset Defaults
@@ -258,6 +279,13 @@ Try pasting a paragraph of lecture notes!"></textarea>
 
           <div class="sb-label">Pressure Variation <span class="val" id="pressure-val">0.12</span></div>
           <input type="range" id="pressure-slider" min="0" max="0.3" step="0.01" value="0.12" title="Pressure Variation" />
+
+          <div class="sb-label sb-label-mt">Smudge Effects</div>
+          <label class="checkbox-label">
+            <input type="checkbox" id="smudge-effects-toggle" title="Enable smudge and eraser effects" onchange="onSmudgeEffectsToggle()" />
+            <span class="checkbox-custom"></span>
+            <span class="checkbox-text">Enable smudge marks</span>
+          </label>
         </div>
       </div>
 
@@ -292,6 +320,8 @@ Try pasting a paragraph of lecture notes!"></textarea>
 
           <!-- AI action buttons -->
           <div class="ai-btn-group">
+            <button class="btn" onclick="aiAction('doubt')">🧩 Doubt Solver</button>
+            <button class="btn" onclick="aiAction('diagram')">🔀 Generate Diagram</button>
             <button class="btn" onclick="aiAction('arrange')">🪄 Smart Arrange</button>
             <button class="btn" onclick="aiAction('summarize')">📋 Summarize Notes</button>
             <button class="btn" onclick="aiAction('grammar')">✏️ Improve Grammar</button>
@@ -518,6 +548,12 @@ Try pasting a paragraph of lecture notes!"></textarea>
       </div>
     </div>
   </div>
+
+  <!-- Contextual Jitter Engine for advanced character variation -->
+  <script src="contextual-jitter-engine.js"></script>
+
+  <!-- Cursive Connector for ligatures and connected strokes -->
+  <script src="cursive-connector.js"></script>
 
   <!-- Custom Script -->
   <script src="index.js"></script>

@@ -2,7 +2,7 @@
    STATE — Global settings object
 ─────────────────────────────────────────── */
 const S = {
-  text: 'This is a sample note starting from the second line of the page. The first line has been skipped automatically as per your request.\n\nYou can continue writing your notes here, and the engine will handle the line spacing and page breaks while always skipping the top line of every new page.',
+  text: 'This is a sample note starting from the second line of the page. The first line has been skipped automatically as per your request.\n\n```diagram\n{\n  "type": "cycle",\n  "title": "Water Cycle",\n  "nodes": [\n    { "id": "n1", "label": "Evaporation" },\n    { "id": "n2", "label": "Condensation" },\n    { "id": "n3", "label": "Precipitation" },\n    { "id": "n4", "label": "Collection" }\n  ],\n  "edges": [\n    { "from": "n1", "to": "n2" },\n    { "from": "n2", "to": "n3" },\n    { "from": "n3", "to": "n4" },\n    { "from": "n4", "to": "n1" }\n  ]\n}\n```\n\nYou can continue writing your notes here, and the engine will handle the line spacing and page breaks while always skipping the top line of every new page.',
   font: 'Caveat',
   fontSize: 22,
   lineHeight: 1.5,
@@ -17,6 +17,8 @@ const S = {
   currentPage: 0,
   noteLayout: 'standard',
   textAlignment: 'middle', // 'top', 'middle', 'bottom'
+  smudgeEffects: false, // Smudge effects toggle
+  cursiveMode: false, // Cursive mode toggle (Req 3.1)
 };
 
 /* Canvas pages array */
@@ -24,6 +26,120 @@ let pages = [];
 let animFrameId = null;
 let isAnimating = false;
 let renderTimeout = null;
+
+// Initialize CursiveConnector for ligatures and connected strokes (Req 3.1-3.9)
+let cursiveConnector = null;
+if (typeof CursiveConnector !== 'undefined') {
+  cursiveConnector = new CursiveConnector();
+}
+
+/* Initialize Mermaid for diagrams */
+if (typeof mermaid !== 'undefined') {
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'base',
+    themeVariables: {
+      primaryColor: '#ffffff',
+      primaryTextColor: '#1c2340',
+      primaryBorderColor: '#1c2340',
+      lineColor: '#1c2340',
+      secondaryColor: '#f8f4ea',
+      tertiaryColor: '#f8f4ea'
+    }
+  });
+}
+
+/**
+ * PHASE 6.0 — STRUCTURED HAND-DRAWN DIAGRAMS (rough.js)
+ */
+function layoutCycle(nodes, radius, center) {
+  const angleStep = (2 * Math.PI) / nodes.length;
+  return nodes.map((node, i) => ({
+    ...node,
+    x: center.x + radius * Math.cos(i * angleStep - Math.PI / 2),
+    y: center.y + radius * Math.sin(i * angleStep - Math.PI / 2),
+    shape: node.shape || 'circle'
+  }));
+}
+
+function layoutFlowchart(nodes, edges, startX, startY, width) {
+  // Simplified layered layout
+  const layers = {};
+  const inDegree = {};
+  nodes.forEach(n => {
+    layers[n.id] = 0;
+    inDegree[n.id] = 0;
+  });
+  
+  edges.forEach(e => {
+    inDegree[e.to] = (inDegree[e.to] || 0) + 1;
+  });
+
+  // Basic layering based on connectivity
+  const queue = nodes.filter(n => inDegree[n.id] === 0).map(n => n.id);
+  const visited = new Set();
+  
+  let currentLayer = queue;
+  let layerIdx = 0;
+  const layerMap = [];
+  
+  while (currentLayer.length > 0) {
+    layerMap[layerIdx] = currentLayer;
+    const nextLayer = [];
+    currentLayer.forEach(id => {
+      visited.add(id);
+      edges.filter(e => e.from === id).forEach(e => {
+        if (!visited.has(e.to)) {
+          layers[e.to] = layerIdx + 1;
+          nextLayer.push(e.to);
+        }
+      });
+    });
+    currentLayer = [...new Set(nextLayer)];
+    layerIdx++;
+  }
+
+  // Fallback for cycles or disconnected nodes
+  const remaining = nodes.filter(n => !visited.has(n.id)).map(n => n.id);
+  if (remaining.length > 0) {
+    layerMap.push(remaining);
+  }
+
+  const verticalGap = 100;
+  const results = [];
+  
+  layerMap.forEach((layerIds, lIdx) => {
+    const layerWidth = layerIds.length * 150;
+    const xBase = startX + (width - layerWidth) / 2 + 75;
+    layerIds.forEach((id, i) => {
+      const node = nodes.find(n => n.id === id);
+      if (!node) return;
+      results.push({
+        ...node,
+        x: xBase + i * 150,
+        y: startY + lIdx * verticalGap,
+        shape: node.shape || 'box'
+      });
+    });
+  });
+
+  return results;
+}
+
+function drawArrowhead(ctx, rc, x, y, angle, size, color, roughness) {
+  const p1 = { x: x, y: y };
+  const p2 = {
+    x: x - size * Math.cos(angle - Math.PI / 6),
+    y: y - size * Math.sin(angle - Math.PI / 6)
+  };
+  const p3 = {
+    x: x - size * Math.cos(angle + Math.PI / 6),
+    y: y - size * Math.sin(angle + Math.PI / 6)
+  };
+  
+  rc.line(p1.x, p1.y, p2.x, p2.y, { stroke: color, roughness: roughness });
+  rc.line(p1.x, p1.y, p3.x, p3.y, { stroke: color, roughness: roughness });
+}
 
 const TEMPLATE_SHEETS = {
   letters: [
@@ -227,6 +343,46 @@ function setInkPreset(hex, name) {
   inkColorInput.value = hex;
   document.getElementById('ink-color-label').textContent = hex + ' — ' + name;
   debounceRender();
+}
+
+/* ───────────────────────────────────────────
+   PHASE 2.2 — SMUDGE EFFECTS TOGGLE
+─────────────────────────────────────────── */
+const smudgeEffectsToggle = document.getElementById('smudge-effects-toggle');
+if (smudgeEffectsToggle) {
+  smudgeEffectsToggle.addEventListener('change', () => {
+    S.smudgeEffects = smudgeEffectsToggle.checked;
+    autosave();
+    debounceRender();
+  });
+}
+
+/* ───────────────────────────────────────────
+   PHASE 3.1 — CURSIVE MODE TOGGLE
+   Enables connected letter strokes (ligatures and connection curves)
+   Requirements: 3.1, 3.4, 3.7
+─────────────────────────────────────────── */
+function onCursiveModeToggle() {
+  const cursiveModeToggle = document.getElementById('cursive-mode-toggle');
+  if (cursiveModeToggle) {
+    S.cursiveMode = cursiveModeToggle.checked;
+    autosave();
+    debounceRender();
+  }
+}
+
+function onSmudgeEffectsToggle() {
+  const smudgeToggle = document.getElementById('smudge-effects-toggle');
+  if (smudgeToggle) {
+    S.smudgeEffects = smudgeToggle.checked;
+    autosave();
+    debounceRender();
+  }
+}
+
+const cursiveModeToggle = document.getElementById('cursive-mode-toggle');
+if (cursiveModeToggle) {
+  cursiveModeToggle.addEventListener('change', onCursiveModeToggle);
 }
 
 /* ───────────────────────────────────────────
@@ -651,23 +807,160 @@ function drawPaperBackground(ctx, style) {
 }
 
 /* ───────────────────────────────────────────
-   PHASE 4.3 — PER-CHARACTER VARIATION ENGINE
+   PHASE 4.3 — PER-CHARACTER VARIATION ENGINE (Enhanced)
+   
    All offsets scale proportionally with fontSize
    so the handwriting looks natural at any size.
+   
+   Now integrated with CharacterVariationContext for
+   position-aware variation (Requirements 1.1-1.8)
 ─────────────────────────────────────────── */
-function getCharVariation(rotMax, pressure, fontSize) {
-  const rand = (min, max) => min + Math.random() * (max - min);
-  // Scale factor: at 22px baseline, factors equal ~1.0
-  const k = (fontSize || 22) / 22;
-  return {
-    tiltDeg: rand(-rotMax, rotMax),
-    scaleY: rand(0.97, 1.03),
-    scaleX: rand(0.98, 1.02),
-    baselineOff: rand(-0.4, 0.4) * k,
-    spacingExtra: rand(-0.4, 0.6) * k,
-    pressureMod: 1 - (Math.random() * pressure * 1.4),  // stroke weight variation
-    opacity: rand(0.92, 1.0),
+// Note: getCharVariation and getCharVariationWithContext are now defined in
+// contextual-jitter-engine.js and available globally
+
+/* ───────────────────────────────────────────
+   PHASE 2.2 / 2.3 — SMUDGE & ERASER EFFECTS RENDERING
+   
+   Renders semi-transparent overlay shapes to simulate
+   smudges and eraser marks on pages (Requirements 2.2-2.9)
+─────────────────────────────────────────── */
+function renderSmudgeEffects(ctx, pageIdx) {
+  if (!S.smudgeEffects) return;
+
+  const PAGE_W = 794;
+  const PAGE_H = 1123;
+  
+  // Seed random generator for consistent smudges per page
+  // This ensures the same page always has the same smudges
+  const seed = 12345 + pageIdx * 9876;
+  const seededRandom = () => {
+    const x = Math.sin(seed * 12.9898 + pageIdx * 78.233) * 43758.5453;
+    return x - Math.floor(x);
   };
+  
+  // Generate 2-5 random overlay shapes per page
+  const numShapes = Math.floor(seededRandom() * 4) + 2; // 2-5 shapes
+  
+  for (let i = 0; i < numShapes; i++) {
+    // Determine if this is a smudge or eraser effect
+    const isEraser = seededRandom() > 0.6; // 40% smudge, 60% eraser (more eraser-like)
+    
+    // Opacity range: 0.05-0.15 for smudge, 0.03-0.08 for eraser
+    const minOpacity = isEraser ? 0.03 : 0.05;
+    const maxOpacity = isEraser ? 0.08 : 0.15;
+    const opacity = minOpacity + seededRandom() * (maxOpacity - minOpacity);
+    
+    // Dimensions: 40-120px width, 15-40px height
+    const width = 40 + seededRandom() * 80;
+    const height = 15 + seededRandom() * 25;
+    
+    // Position: top edge starting below 100px of page
+    // Shapes can extend into exclusion zone (top 100px)
+    const minY = 100 - height * 0.3; // Allow some shapes to partially overlap top
+    const maxY = PAGE_H - height;
+    const y = minY + seededRandom() * (maxY - minY);
+    const x = seededRandom() * (PAGE_W - width);
+    
+    // Generate random shape (blob or ellipse-like)
+    const shapeType = seededRandom() > 0.5 ? 'blob' : 'ellipse';
+    
+    ctx.save();
+    ctx.globalAlpha = opacity;
+    ctx.fillStyle = S.paperStyle === 'dark' ? '#ffffff' : '#888888'; // Light gray
+    
+    if (shapeType === 'ellipse') {
+      // Draw ellipse using canvas path
+      const radiusX = width / 2;
+      const radiusY = height / 2;
+      const rotation = seededRandom() * Math.PI;
+      
+      ctx.translate(x + radiusX, y + radiusY);
+      ctx.rotate(rotation);
+      ctx.scale(radiusX, radiusY);
+      ctx.beginPath();
+      ctx.arc(0, 0, 1, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      // Draw blob shape using multiple overlapping circles
+      ctx.translate(x, y);
+      const blobPoints = 4;
+      for (let j = 0; j < blobPoints; j++) {
+        const bx = (width / 2) * Math.cos((j / blobPoints) * Math.PI * 2);
+        const by = (height / 2) * Math.sin((j / blobPoints) * Math.PI * 2);
+        const blobRadius = Math.min(width, height) * 0.3 * (0.7 + seededRandom() * 0.6);
+        ctx.beginPath();
+        ctx.arc(bx, by, blobRadius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    ctx.restore();
+  }
+}
+
+/* ───────────────────────────────────────────
+   PHASE 3.1–3.9 — CURSIVE CONNECTION RENDERING
+   
+   Renders connection strokes between consecutive lowercase letters
+   when cursive mode is enabled. Uses ligature pairs for special
+   letter combinations (Requirements 3.1–3.9)
+─────────────────────────────────────────── */
+function renderCursiveConnections(queue) {
+  if (!cursiveConnector) return;
+
+  // Build a map of character items by page for easier lookup
+  const pageCharMap = {};
+  queue.forEach((item, idx) => {
+    // Only process text characters (not diagrams, shapes, etc.)
+    if (item.type || item.isIndic) return;
+    if (!pageCharMap[item.pageIdx]) {
+      pageCharMap[item.pageIdx] = [];
+    }
+    pageCharMap[item.pageIdx].push({ item, idx });
+  });
+
+  // For each page, process consecutive character pairs to render connections
+  Object.keys(pageCharMap).forEach(pageIdx => {
+    const canvas = pages[parseInt(pageIdx)];
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    const charList = pageCharMap[pageIdx];
+    for (let i = 0; i < charList.length - 1; i++) {
+      const currItem = charList[i].item;
+      const nextItem = charList[i + 1].item;
+
+      // Check if connection should be rendered
+      // Req 3.6: Skip uppercase, whitespace, punctuation
+      if (!cursiveConnector.shouldRenderConnection(currItem.ch, nextItem.ch, currItem.isIndic)) {
+        continue;
+      }
+
+      // Check if it's a ligature pair (Req 3.4, 3.5)
+      if (cursiveConnector.isLigaturePair(currItem.ch, nextItem.ch)) {
+        // Render ligature glyph instead of individual characters
+        // For now, we'll just render the connection stroke
+        // The actual character rendering will handle skipping the next char if ligature
+        continue; // TODO: Integrate ligature rendering into main queue processing
+      }
+
+      // Render connection stroke between characters (Req 3.2, 3.3)
+      const v = currItem.v;
+      const exitPoint = cursiveConnector.getExitPoint(currItem.ch, 20, S.fontSize);
+      const entryPoint = cursiveConnector.getEntryPoint(nextItem.ch, 20, S.fontSize);
+
+      cursiveConnector.renderConnectionStroke(
+        ctx,
+        { x: currItem.x, y: currItem.y },
+        exitPoint,
+        { x: nextItem.x, y: nextItem.y },
+        entryPoint,
+        S.inkColor,
+        v.pressureMod,
+        S.fontSize
+      );
+    }
+  });
 }
 
 /* ───────────────────────────────────────────
@@ -713,12 +1006,110 @@ function clearText() {
   autosave();
 }
 
+function insertDiagramTemplate(type) {
+  const textarea = document.getElementById('text-input');
+  let template = '';
+  
+  if (type === 'mermaid') {
+    template = '\n```mermaid\ngraph TD\n  A[Start] --> B(Process)\n  B --> C{Decision}\n  C -- Yes --> D[Result 1]\n  C -- No --> E[Result 2]\n```\n';
+  } else if (type === 'cycle') {
+    template = '\n```diagram\n{\n  "type": "cycle",\n  "title": "Water Cycle",\n  "nodes": [\n    { "id": "n1", "label": "Evaporation" },\n    { "id": "n2", "label": "Condensation" },\n    { "id": "n3", "label": "Precipitation" },\n    { "id": "n4", "label": "Collection" }\n  ],\n  "edges": [\n    { "from": "n1", "to": "n2" },\n    { "from": "n2", "to": "n3" },\n    { "from": "n3", "to": "n4" },\n    { "from": "n4", "to": "n1" }\n  ]\n}\n```\n';
+  } else if (type === 'flowchart') {
+    template = '\n```diagram\n{\n  "type": "flowchart",\n  "nodes": [\n    { "id": "s1", "label": "Input", "shape": "oval" },\n    { "id": "p1", "label": "Process data", "shape": "box" },\n    { "id": "d1", "label": "Valid?", "shape": "diamond" },\n    { "id": "s2", "label": "Success", "shape": "box" },\n    { "id": "e1", "label": "Error", "shape": "box" }\n  ],\n  "edges": [\n    { "from": "s1", "to": "p1" },\n    { "from": "p1", "to": "d1" },\n    { "from": "d1", "to": "s2", "label": "Yes" },\n    { "from": "d1", "to": "e1", "label": "No" }\n  ]\n}\n```\n';
+  }
+  
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const val = textarea.value;
+  
+  textarea.value = val.substring(0, start) + template + val.substring(end);
+  textarea.focus();
+  textarea.selectionStart = textarea.selectionEnd = start + template.length;
+  
+  S.text = textarea.value;
+  debounceRender();
+  autosave();
+}
+
 /* ───────────────────────────────────────────
    PHASE 4.4 — HELPER FUNCTIONS
 ─────────────────────────────────────────── */
 function sanitizeText(str) {
   if (!str) return '';
   return str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\uE000-\uF8FF]/g, '');
+}
+
+/**
+ * Split text into blocks of plain text, mermaid diagrams, and structured diagrams.
+ */
+function parseBlocks(text) {
+  const blocks = [];
+  // Match both mermaid and custom diagram blocks
+  const blockRegex = /```(mermaid|diagram)([\s\S]*?)```/g;
+  let lastIndex = 0;
+  let match;
+
+  while ((match = blockRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      blocks.push({ type: 'text', content: text.substring(lastIndex, match.index) });
+    }
+    const type = match[1];
+    const content = match[2].trim();
+    blocks.push({ type: type, content: content, raw: match[0] });
+    lastIndex = blockRegex.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    blocks.push({ type: 'text', content: text.substring(lastIndex) });
+  }
+
+  return blocks;
+}
+
+const diagramCache = {};
+
+function getDiagramImage(content) {
+  if (diagramCache[content]) {
+    return diagramCache[content].ready ? diagramCache[content] : { ready: false };
+  }
+
+  const id = 'mermaid-' + Math.random().toString(36).substr(2, 9);
+  const entry = { ready: false, img: new Image(), width: 0, height: 0, content };
+  diagramCache[content] = entry;
+
+  // Mermaid.render is async
+  if (typeof mermaid !== 'undefined') {
+    mermaid.render(id, content).then(({ svg }) => {
+      const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      
+      // We need to get dimensions from the SVG
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(svg, 'image/svg+xml');
+      const svgEl = doc.querySelector('svg');
+      const viewbox = svgEl.getAttribute('viewBox');
+      if (viewbox) {
+        const parts = viewbox.split(' ');
+        entry.width = parseFloat(parts[2]);
+        entry.height = parseFloat(parts[3]);
+      } else {
+        entry.width = parseFloat(svgEl.getAttribute('width')) || 400;
+        entry.height = parseFloat(svgEl.getAttribute('height')) || 300;
+      }
+
+      entry.img.onload = () => {
+        entry.ready = true;
+        debounceRender();
+      };
+      entry.img.src = url;
+    }).catch(err => {
+      console.error('Mermaid render failed', err);
+      entry.error = true;
+      entry.ready = true; // Mark ready so we don't keep trying
+    });
+  }
+
+  return entry;
 }
 
 function getGraphemes(text) {
@@ -1191,6 +1582,9 @@ function layoutText(text) {
   const pageTexts = [];
   let currentPageText = '';
 
+  // Initialize contextual jitter engine
+  const variationContext = new CharacterVariationContext();
+
   const margin = S.margin;
   const rightMargin = PAGE_W - margin;
   let x = margin;
@@ -1202,118 +1596,273 @@ function layoutText(text) {
   let pageIdx = 0;
   let charIndex = 0;
   let lineCharIndex = 0;
-  const words = text.split(' ');
 
-  for (let wi = 0; wi < words.length; wi++) {
-    const word = words[wi];
-    const lines = word.split('\n');
+  const blocks = parseBlocks(text);
 
-    for (let li = 0; li < lines.length; li++) {
-      if (li > 0) {
-        // Explicit newline
-        x = margin;
-        y += lineH;
-        lineCharIndex = 0;
-        if (y + lineH > PAGE_H - margin) {
-          pageTexts.push(currentPageText);
-          currentPageText = '';
-          pageIdx++;
-          y = margin + S.fontSize + lineH; // Skip 1st line on new page
-        }
-        currentPageText += '\n';
+  for (const block of blocks) {
+    if (block.type === 'mermaid') {
+      const diag = getDiagramImage(block.content);
+      
+      // Calculate display size. Scale it to fit width if necessary.
+      const maxWidth = PAGE_W - margin * 2;
+      let dWidth = diag.width || 400;
+      let dHeight = diag.height || 200;
+
+      if (dWidth > maxWidth) {
+        const scale = maxWidth / dWidth;
+        dWidth = maxWidth;
+        dHeight *= scale;
       }
 
-      const lineWord = lines[li];
-      if (!lineWord) continue;
-
-      const wordIsIndic = containsDevanagari(lineWord);
-      const fontStack = getFontStack(wordIsIndic);
-
-      // Measure word width
-      ctx.font = `${S.fontSize}px ${fontStack}`;
-      const wordWidth = ctx.measureText(lineWord).width + S.wordSpacing;
-
-      // Word wrap
-      if (x + wordWidth > rightMargin && x > margin) {
-        x = margin;
-        y += lineH;
-        lineCharIndex = 0;
-        if (y + lineH > PAGE_H - margin) {
-          pageTexts.push(currentPageText);
-          currentPageText = '';
-          pageIdx++;
-          y = margin + S.fontSize + lineH; // Skip 1st line on new page
-        }
+      // If diagram doesn't fit on current page, move to next
+      if (y + dHeight > PAGE_H - margin) {
+        pageTexts.push(currentPageText);
+        currentPageText = '';
+        pageIdx++;
+        y = margin + S.fontSize + lineH;
       }
 
-      if (wordIsIndic) {
-        const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
-        const wobble = Math.sin(lineCharIndex * 0.04) * 0.4 * (S.fontSize / 22);
-        const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
-        const cy = y + (v.baselineOff * 0.4) + wobble + alignOffset;
+      queue.push({
+        type: 'mermaid',
+        content: block.content,
+        x: (PAGE_W - dWidth) / 2, // Centered
+        y: y,
+        w: dWidth,
+        h: dHeight,
+        pageIdx
+      });
 
-        queue.push({
-          ch: lineWord,
-          x,
-          y: cy,
-          v,
-          pageIdx,
-          isIndic: true,
-          fontStack
-        });
+      currentPageText += block.raw + '\n';
+      y += dHeight + lineH;
+      x = margin;
+      lineCharIndex = 0;
+      continue;
+    }
 
-        x += ctx.measureText(lineWord).width + v.spacingExtra;
-        charIndex += lineWord.length;
-        lineCharIndex += lineWord.length;
-        currentPageText += lineWord;
+    if (block.type === 'diagram') {
+      let data;
+      try {
+        data = JSON.parse(block.content);
+        if (!data || !data.nodes) throw new Error('Missing nodes');
+      } catch (e) {
+        console.error('Failed to parse diagram JSON', e);
+        continue;
+      }
+
+      const dWidth = PAGE_W - margin * 2;
+      const dHeight = data.nodes.length > 5 ? 400 : 300;
+
+      if (y + dHeight > PAGE_H - margin) {
+        pageTexts.push(currentPageText);
+        currentPageText = '';
+        pageIdx++;
+        y = margin + S.fontSize + lineH;
+      }
+
+      let positionedNodes = [];
+      if (data.type === 'cycle') {
+        positionedNodes = layoutCycle(data.nodes, Math.min(dWidth, dHeight) / 3, { x: PAGE_W / 2, y: y + dHeight / 2 });
       } else {
-        const graphemes = getGraphemes(lineWord);
-        for (let ci = 0; ci < graphemes.length; ci++) {
-          const ch = graphemes[ci];
-          const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
+        positionedNodes = layoutFlowchart(data.nodes, data.edges || [], margin, y + 50, dWidth);
+      }
 
-          ctx.font = `${S.fontSize}px ${fontStack}`;
-          const charWidth = ctx.measureText(ch).width + v.spacingExtra;
+      // 1. Add Shapes to queue
+      positionedNodes.forEach(node => {
+        queue.push({
+          type: 'shape',
+          shape: node.shape,
+          x: node.x,
+          y: node.y,
+          w: 80,
+          h: 40,
+          pageIdx
+        });
+      });
 
-          if (x + charWidth > rightMargin && x > margin) {
-            x = margin;
-            y += lineH;
-            lineCharIndex = 0;
-            if (y + lineH > PAGE_H - margin) {
-              pageTexts.push(currentPageText);
-              currentPageText = '';
-              pageIdx++;
-              y = margin + S.fontSize + lineH;
-            }
+      // 2. Add Edges to queue
+      if (data.edges) {
+        data.edges.forEach(edge => {
+          const from = positionedNodes.find(n => n.id === edge.from);
+          const to = positionedNodes.find(n => n.id === edge.to);
+          if (from && to) {
+            queue.push({
+              type: 'edge',
+              from: { x: from.x, y: from.y },
+              to: { x: to.x, y: to.y },
+              pageIdx
+            });
           }
+        });
+      }
 
-          const wobble = Math.sin(lineCharIndex * 0.04) * 0.8 * (S.fontSize / 22);
+      // 3. Add labels to queue
+      positionedNodes.forEach(node => {
+        const words = node.label.split(' ');
+        
+        // Measure total height to center vertically
+        const labelLineHeight = 16;
+        const totalHeight = words.length > 1 ? labelLineHeight * 1.5 : labelLineHeight;
+        let ly = node.y - (totalHeight / 2) + 12;
+
+        words.forEach(word => {
+          const wordIsIndic = containsDevanagari(word);
+          const fontStack = getFontStack(wordIsIndic);
+          ctx.font = `14px ${fontStack}`;
+          const wordWidth = ctx.measureText(word).width;
+          
+          let lx = node.x - (wordWidth / 2);
+
+          const graphemes = getGraphemes(word);
+          graphemes.forEach(ch => {
+            const v = getCharVariation(S.rotationMax, S.pressure, 14);
+            queue.push({
+              ch, x: lx, y: ly + v.baselineOff, v, pageIdx, isIndic: wordIsIndic, fontStack
+            });
+            ctx.font = `14px ${fontStack}`; // ensure font persists for measurement
+            lx += ctx.measureText(ch).width + v.spacingExtra;
+          });
+          ly += labelLineHeight;
+        });
+      });
+
+      y += dHeight + lineH;
+      currentPageText += block.raw + '\n';
+      x = margin;
+      lineCharIndex = 0;
+      continue;
+    }
+
+    // Text block processing
+    const words = block.content.split(' ');
+
+    for (let wi = 0; wi < words.length; wi++) {
+      const word = words[wi];
+      const lines = word.split('\n');
+
+      for (let li = 0; li < lines.length; li++) {
+        if (li > 0) {
+          // Explicit newline
+          x = margin;
+          y += lineH;
+          lineCharIndex = 0;
+          if (y + lineH > PAGE_H - margin) {
+            pageTexts.push(currentPageText);
+            currentPageText = '';
+            pageIdx++;
+            y = margin + S.fontSize + lineH; // Skip 1st line on new page
+          }
+          currentPageText += '\n';
+        }
+
+        const lineWord = lines[li];
+        if (!lineWord) continue;
+
+        const wordIsIndic = containsDevanagari(lineWord);
+        const fontStack = getFontStack(wordIsIndic);
+
+        // Measure word width
+        ctx.font = `${S.fontSize}px ${fontStack}`;
+        const wordWidth = ctx.measureText(lineWord).width + S.wordSpacing;
+
+        // Word wrap
+        if (x + wordWidth > rightMargin && x > margin) {
+          x = margin;
+          y += lineH;
+          lineCharIndex = 0;
+          variationContext.resetAtLineBreak();  // Reset fatigue at line breaks (Req 1.5)
+          if (y + lineH > PAGE_H - margin) {
+            pageTexts.push(currentPageText);
+            currentPageText = '';
+            pageIdx++;
+            y = margin + S.fontSize + lineH; // Skip 1st line on new page
+          }
+        }
+
+        if (wordIsIndic) {
+          // Update context for Indic word (treated as single unit in context tracking)
+          variationContext.updateForCharacter(lineCharIndex, lineLength, lineCharIndex === 0, lineCharIndex === lineLength - 1);
+          const v = getCharVariationWithContext(S.rotationMax, S.pressure, S.fontSize, variationContext);
+          const wobble = Math.sin(lineCharIndex * 0.04) * 0.4 * (S.fontSize / 22);
           const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
-          const cy = y + v.baselineOff + wobble + alignOffset;
+          const cy = y + (v.baselineOff * 0.4) + wobble + alignOffset;
 
           queue.push({
-            ch,
+            ch: lineWord,
             x,
             y: cy,
             v,
             pageIdx,
-            isIndic: false,
+            isIndic: true,
             fontStack
           });
 
-          x += ctx.measureText(ch).width + v.spacingExtra;
-          charIndex++;
-          lineCharIndex++;
-          currentPageText += ch;
-        }
-      }
+          x += ctx.measureText(lineWord).width + v.spacingExtra;
+          charIndex += lineWord.length;
+          lineCharIndex += lineWord.length;
+          currentPageText += lineWord;
+        } else {
+          const graphemes = getGraphemes(lineWord);
+          for (let ci = 0; ci < graphemes.length; ci++) {
+            const ch = graphemes[ci];
+            
+            // Update context for each character position (Req 1.6 - compute position context)
+            const isWordStart = ci === 0;
+            const isWordEnd = ci === graphemes.length - 1;
+            // Estimate line length based on typical character width (approximate ~80 chars per line)
+            const estimatedLineLength = 100;
+            variationContext.updateForCharacter(lineCharIndex, estimatedLineLength, isWordStart, isWordEnd);
+            
+            // Get contextual variation (Req 1.1-1.8 integrated)
+            const v = getCharVariationWithContext(S.rotationMax, S.pressure, S.fontSize, variationContext);
 
-      // Space after word (not on last word of line)
-      if (li === lines.length - 1) {
-        ctx.font = `${S.fontSize}px ${fontStack}`;
-        x += ctx.measureText(' ').width + S.wordSpacing;
-        if (wi < words.length - 1) {
-          currentPageText += ' ';
+            ctx.font = `${S.fontSize}px ${fontStack}`;
+            const charWidth = ctx.measureText(ch).width + v.spacingExtra;
+
+            if (x + charWidth > rightMargin && x > margin) {
+              x = margin;
+              y += lineH;
+              lineCharIndex = 0;
+              variationContext.resetAtLineBreak();  // Reset fatigue at line breaks (Req 1.5)
+              if (y + lineH > PAGE_H - margin) {
+                pageTexts.push(currentPageText);
+                currentPageText = '';
+                pageIdx++;
+                y = margin + S.fontSize + lineH;
+              }
+            }
+
+            const wobble = Math.sin(lineCharIndex * 0.04) * 0.8 * (S.fontSize / 22);
+            const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
+            const cy = y + v.baselineOff + wobble + alignOffset;
+
+            queue.push({
+              ch,
+              x,
+              y: cy,
+              v,
+              pageIdx,
+              isIndic: false,
+              fontStack
+            });
+
+            x += ctx.measureText(ch).width + v.spacingExtra;
+            charIndex++;
+            lineCharIndex++;
+            currentPageText += ch;
+          }
+        }
+
+        // Space after word (not on last word of line)
+        if (wi < words.length - 1 || li < lines.length - 1) {
+          ctx.font = `${S.fontSize}px ${fontStack}`;
+          const spaceW = ctx.measureText(' ').width + S.wordSpacing;
+          
+          if (x + spaceW < rightMargin) {
+            x += spaceW;
+            currentPageText += ' ';
+          } else {
+            // If space doesn't fit, just continue to next word which will wrap
+          }
         }
       }
     }
@@ -1354,6 +1903,8 @@ function renderText(text) {
   if (!text.trim()) {
     const canvas = createPage(1);
     drawPaperBackground(canvas.getContext('2d'), S.paperStyle);
+    const ctx = canvas.getContext('2d');
+    renderSmudgeEffects(ctx, 0);
     const editor = document.getElementById('editor-1');
     if (editor) {
       editor.innerText = '';
@@ -1368,15 +1919,132 @@ function renderText(text) {
     const canvas = createPage(i + 1);
     const ctx = canvas.getContext('2d');
     drawPaperBackground(ctx, S.paperStyle);
+    // Render smudge effects before text content (in drawing order)
+    renderSmudgeEffects(ctx, i);
   }
+
+  // Render cursive connections if cursive mode is enabled (Req 3.2, 3.3)
+  if (S.cursiveMode && cursiveConnector) {
+    renderCursiveConnections(queue);
+  }
+
+  // Cache Rough.js instances per page
+  const rcCache = new Map();
 
   queue.forEach((item) => {
     const canvas = pages[item.pageIdx];
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    const v = item.v;
 
     const activeEditor = document.getElementById('editor-' + (item.pageIdx + 1));
+    if (document.activeElement === activeEditor) return;
+
+    if (item.type === 'mermaid') {
+      const diag = getDiagramImage(item.content);
+      if (diag.ready && diag.img && !diag.error) {
+        ctx.save();
+        ctx.translate(item.x, item.y);
+        ctx.rotate((Math.random() * 0.4 - 0.2) * Math.PI / 180);
+        ctx.globalAlpha = 0.9;
+        ctx.drawImage(diag.img, 0, 0, item.w, item.h);
+        ctx.restore();
+      } else if (diag.error) {
+        ctx.fillStyle = '#ff0000';
+        ctx.font = '12px Courier New';
+        ctx.fillText('[Mermaid Error]', item.x, item.y + 20);
+      } else {
+        ctx.save();
+        ctx.strokeStyle = S.inkColor;
+        ctx.globalAlpha = 0.3;
+        ctx.setLineDash([5, 5]);
+        ctx.strokeRect(item.x, item.y, item.w, item.h);
+        ctx.font = 'italic 12px sans-serif';
+        ctx.fillStyle = S.inkColor;
+        ctx.fillText('Rendering Mermaid...', item.x + 10, item.y + 20);
+        ctx.restore();
+      }
+      return;
+    }
+
+    if (item.type === 'shape' || item.type === 'edge') {
+      let rc = rcCache.get(item.pageIdx);
+      if (!rc && typeof rough !== 'undefined') {
+        rc = rough.canvas(canvas);
+        rcCache.set(item.pageIdx, rc);
+      }
+
+      const options = {
+        roughness: S.pressure * 4,
+        stroke: S.inkColor,
+        strokeWidth: 1.2,
+        bowing: S.rotationMax * 2
+      };
+
+      if (item.type === 'shape') {
+        if (rc) {
+          if (item.shape === 'circle') {
+            rc.circle(item.x, item.y, Math.max(item.w, item.h), options);
+          } else if (item.shape === 'diamond') {
+            const halfW = item.w / 2;
+            const halfH = item.h / 2;
+            rc.polygon([
+              [item.x, item.y - halfH],
+              [item.x + halfW, item.y],
+              [item.x, item.y + halfH],
+              [item.x - halfW, item.y]
+            ], options);
+          } else {
+            rc.rectangle(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h, options);
+          }
+        } else {
+          // Fallback to standard canvas
+          ctx.strokeStyle = S.inkColor;
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          if (item.shape === 'circle') {
+            ctx.arc(item.x, item.y, Math.max(item.w, item.h) / 2, 0, Math.PI * 2);
+          } else if (item.shape === 'diamond') {
+            const halfW = item.w / 2;
+            const halfH = item.h / 2;
+            ctx.moveTo(item.x, item.y - halfH);
+            ctx.lineTo(item.x + halfW, item.y);
+            ctx.lineTo(item.x, item.y + halfH);
+            ctx.lineTo(item.x - halfW, item.y);
+            ctx.closePath();
+          } else {
+            ctx.rect(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h);
+          }
+          ctx.stroke();
+        }
+      } else if (item.type === 'edge') {
+        if (rc) {
+          rc.line(item.from.x, item.from.y, item.to.x, item.to.y, options);
+          const angle = Math.atan2(item.to.y - item.from.y, item.to.x - item.from.x);
+          drawArrowhead(ctx, rc, item.to.x, item.to.y, angle, 12, S.inkColor, options.roughness);
+        } else {
+          // Fallback to standard canvas
+          ctx.strokeStyle = S.inkColor;
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.moveTo(item.from.x, item.from.y);
+          ctx.lineTo(item.to.x, item.to.y);
+          ctx.stroke();
+          // Arrowhead fallback
+          const angle = Math.atan2(item.to.y - item.from.y, item.to.x - item.from.x);
+          ctx.beginPath();
+          ctx.moveTo(item.to.x, item.to.y);
+          ctx.lineTo(item.to.x - 10 * Math.cos(angle - 0.5), item.to.y - 10 * Math.sin(angle - 0.5));
+          ctx.moveTo(item.to.x, item.to.y);
+          ctx.lineTo(item.to.x - 10 * Math.cos(angle + 0.5), item.to.y - 10 * Math.sin(angle + 0.5));
+          ctx.stroke();
+        }
+      }
+      return;
+    }
+
+    const v = item.v;
+
+    // Check if editor for this page is focused; if so, don't draw text (overlay shows it)
     if (document.activeElement === activeEditor) return;
 
     ctx.save();
@@ -1457,6 +2125,32 @@ function triggerRender() {
   renderText(S.text);
 }
 
+/**
+ * PHASE 6.0 — DIAGRAM TEMPLATES
+ */
+function insertDiagramTemplate(type) {
+  const textarea = document.getElementById('text-input');
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const current = textarea.value;
+
+  let template = '';
+  if (type === 'cycle') {
+    template = '\n```diagram\n{\n  "type": "cycle",\n  "nodes": [\n    { "id": "n1", "label": "Start" },\n    { "id": "n2", "label": "Develop" },\n    { "id": "n3", "label": "Review" },\n    { "id": "n4", "label": "Ship" }\n  ],\n  "edges": [\n    { "from": "n1", "to": "n2" },\n    { "from": "n2", "to": "n3" },\n    { "from": "n3", "to": "n4" },\n    { "from": "n4", "to": "n1" }\n  ]\n}\n```\n';
+  } else if (type === 'flowchart') {
+    template = '\n```diagram\n{\n  "type": "flowchart",\n  "nodes": [\n    { "id": "s1", "label": "Input", "shape": "box" },\n    { "id": "s2", "label": "Verify?", "shape": "diamond" },\n    { "id": "s3", "label": "Success", "shape": "oval" }\n  ],\n  "edges": [\n    { "from": "s1", "to": "s2" },\n    { "from": "s2", "to": "s3", "label": "Yes" }\n  ]\n}\n```\n';
+  } else if (type === 'mermaid') {
+    template = '\n```mermaid\ngraph TD\n  A[Idea] --> B(Writing)\n  B --> C{Good?}\n  C -->|Yes| D[Publish]\n  C -->|No| B\n```\n';
+  }
+
+  textarea.value = current.substring(0, start) + template + current.substring(end);
+  textarea.focus();
+  textarea.selectionStart = textarea.selectionEnd = start + template.length;
+  
+  S.text = textarea.value;
+  debounceRender();
+}
+
 function buildCharQueue(text) {
   const { queue } = layoutText(text);
   return queue;
@@ -1500,6 +2194,63 @@ function startAnimation() {
       const canvas = pages[item.pageIdx] || pages[pages.length - 1];
       if (!canvas) continue;
       const ctx = canvas.getContext('2d');
+
+      if (item.type === 'mermaid') {
+        const diag = getDiagramImage(item.content);
+        if (diag.ready && diag.img && !diag.error) {
+          ctx.save();
+          ctx.translate(item.x, item.y);
+          ctx.rotate((Math.random() * 0.4 - 0.2) * Math.PI / 180);
+          ctx.globalAlpha = 0.9;
+          ctx.drawImage(diag.img, 0, 0, item.w, item.h);
+          ctx.restore();
+        }
+        continue;
+      }
+
+      if (item.type === 'shape' || item.type === 'edge') {
+        const rc = (typeof rough !== 'undefined') ? rough.canvas(canvas) : null;
+        const options = {
+          roughness: S.pressure * 4,
+          stroke: S.inkColor,
+          strokeWidth: 1.2,
+          bowing: S.rotationMax * 2
+        };
+
+        if (item.type === 'shape') {
+          if (rc) {
+            if (item.shape === 'circle') {
+              rc.circle(item.x, item.y, Math.max(item.w, item.h), options);
+            } else if (item.shape === 'diamond') {
+              const halfW = item.w / 2, halfH = item.h / 2;
+              rc.polygon([[item.x, item.y - halfH], [item.x + halfW, item.y], [item.x, item.y + halfH], [item.x - halfW, item.y]], options);
+            } else {
+              rc.rectangle(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h, options);
+            }
+          } else {
+            ctx.strokeStyle = S.inkColor;
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            if (item.shape === 'circle') ctx.arc(item.x, item.y, Math.max(item.w, item.h) / 2, 0, Math.PI * 2);
+            else ctx.rect(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h);
+            ctx.stroke();
+          }
+        } else if (item.type === 'edge') {
+          if (rc) {
+            rc.line(item.from.x, item.from.y, item.to.x, item.to.y, options);
+            const angle = Math.atan2(item.to.y - item.from.y, item.to.x - item.from.x);
+            drawArrowhead(ctx, rc, item.to.x, item.to.y, angle, 12, S.inkColor, options.roughness);
+          } else {
+            ctx.strokeStyle = S.inkColor;
+            ctx.beginPath();
+            ctx.moveTo(item.from.x, item.from.y);
+            ctx.lineTo(item.to.x, item.to.y);
+            ctx.stroke();
+          }
+        }
+        continue;
+      }
+
       const v = item.v;
       ctx.save();
       ctx.translate(item.x, item.y);
@@ -1832,6 +2583,64 @@ async function aiAction(type) {
       lastRenderTime = now;
     }
   };
+
+  if (type === 'doubt') {
+    if (!currentText) {
+      setAiStatus('⚠ Please enter a problem to solve');
+      btns.forEach(b => b.disabled = false);
+      return;
+    }
+    
+    const systemPrompt = `You are an expert tutor helping Indian students solve math and physics problems aligned with CBSE, ICSE, and State Board curricula.
+
+Your task is to provide step-by-step solutions with clear working and explanations suitable for student learning.
+
+Format your response as:
+- Start with "Step 1:" for the first step
+- Continue with "Step 2:", "Step 3:", etc.
+- Include all mathematical working and intermediate calculations
+- Show the final answer clearly
+- Use plain-text mathematical notation (e.g., x^2 for x squared, sqrt(x) for square root, integral for integration)
+- Provide clear explanations for each step
+- Maintain handwriting-suitable formatting with proper line breaks
+
+Focus on conceptual clarity and helping students understand the problem-solving process.`;
+    
+    result = await callClaude(
+      'Solve this problem step by step:\n\n' + currentText,
+      systemPrompt,
+      onChunk
+    );
+  }
+
+  if (type === 'diagram') {
+    const topic = document.getElementById('ai-topic').value.trim() || currentText;
+    if (!topic) { setAiStatus('⚠ Enter a topic first.'); btns.forEach(b => b.disabled = false); return; }
+    
+    // For diagram, we need a special prompt that forces structured JSON
+    const systemPrompt = `Generate a structured diagram JSON for the topic: ${topic}.
+Return ONLY a JSON object surrounded by \`\`\`diagram and \`\`\` tags.
+Supported types: "cycle", "flowchart".
+Constraints: 
+- Max 6 nodes.
+- Short labels (2-3 words).
+- If Hindi is detected, use Devanagari.
+- Cycle format: { "type": "cycle", "nodes": [{ "id": "n1", "label": "Text" }, ...], "edges": [{ "from": "n1", "to": "n2" }, ...] }
+- Flowchart format: { "type": "flowchart", "nodes": [{ "id": "s1", "label": "Step", "shape": "box/diamond/oval" }, ...], "edges": [{ "from": "s1", "to": "s2", "label": "Yes/No" }, ...] }`;
+    
+    result = await callClaude(
+      'Generate a ' + (topic.length > 20 ? 'diagram of ' : '') + topic,
+      systemPrompt,
+      (text) => {
+        textarea.value = text;
+        S.text = text;
+        // Don't render until it's likely finished or at least has a valid block
+        if (text.includes('```diagram') && text.includes('```')) {
+           debounceRender();
+        }
+      }
+    );
+  }
 
   if (type === 'summarize') {
     if (!currentText) { setAiStatus('⚠ Add some text first.'); btns.forEach(b => b.disabled = false); return; }
@@ -2212,6 +3021,7 @@ function autosave() {
       pressure: S.pressure,
       paperStyle: S.paperStyle,
       noteLayout: S.noteLayout,
+      smudgeEffects: S.smudgeEffects,
     };
     localStorage.setItem('inkflow-state', JSON.stringify(state));
   }, 1000);
@@ -2272,6 +3082,16 @@ async function restoreState() {
       S.noteLayout = state.noteLayout;
       const select = document.getElementById('layout-select');
       if (select) select.value = state.noteLayout;
+    }
+    if (state.smudgeEffects !== undefined) {
+      S.smudgeEffects = state.smudgeEffects;
+      const toggle = document.getElementById('smudge-effects-toggle');
+      if (toggle) toggle.checked = state.smudgeEffects;
+    }
+    if (state.cursiveMode !== undefined) {
+      S.cursiveMode = state.cursiveMode;
+      const toggle = document.getElementById('cursive-mode-toggle');
+      if (toggle) toggle.checked = state.cursiveMode;
     }
 
     // 2. Migrate draftedGlyphs if they exist in localStorage state
@@ -2343,6 +3163,12 @@ async function initApp() {
   await restoreState();
   setupFileUpload();
   initHandFontedStudio();
+
+  // Initialize smudge effects toggle
+  const smudgeToggle = document.getElementById('smudge-effects-toggle');
+  if (smudgeToggle) {
+    smudgeToggle.checked = S.smudgeEffects;
+  }
 
   // Render initial state or blank page
   if (S.text) {

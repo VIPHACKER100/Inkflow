@@ -199,6 +199,44 @@ body {
   backdrop-filter: none;
 }
 
+/* Dropdown styling */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;
+  background-color: var(--sidebar-bg);
+  min-width: 140px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.1);
+  z-index: 1001;
+  border-radius: var(--radius);
+  border: 1px solid var(--sidebar-border);
+  backdrop-filter: blur(20px);
+}
+
+.dropdown-content a {
+  color: var(--text-primary);
+  padding: 8px 12px;
+  text-decoration: none;
+  display: block;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  transition: var(--transition);
+}
+
+.dropdown-content a:hover {
+  background-color: var(--btn-hover);
+  color: var(--accent);
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
 .btn.link-btn:hover {
   color: var(--accent);
   background: transparent;
@@ -404,6 +442,55 @@ select:focus {
 .color-row span {
   font-size: 12px;
   color: var(--text-secondary);
+}
+
+/* Checkbox Control */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary);
+  user-select: none;
+  transition: var(--transition);
+}
+
+.checkbox-label:hover {
+  color: var(--accent);
+}
+
+.checkbox-label input[type="checkbox"] {
+  display: none;
+}
+
+.checkbox-custom {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--input-border);
+  border-radius: 4px;
+  background: var(--input-bg);
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkbox-custom {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkbox-custom::after {
+  content: '✓';
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.checkbox-text {
+  flex: 1;
 }
 
 /* Paper style buttons grid */
@@ -1783,6 +1870,46 @@ html.dark .drop-zone {
   display: flex;
   gap: 6px;
 }
+
+/* ── DROPDOWN MENUS ── */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  bottom: 100%; /* Show above the button */
+  left: 0;
+  background-color: var(--sidebar-bg);
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  border: 1px solid var(--sidebar-border);
+  border-radius: 8px;
+  z-index: 1000;
+  backdrop-filter: blur(24px) saturate(1.4);
+  margin-bottom: 8px;
+}
+
+.dropdown-content a {
+  color: var(--text-main);
+  padding: 10px 14px;
+  text-decoration: none;
+  display: block;
+  font-size: 13px;
+  transition: background 0.2s;
+}
+
+.dropdown-content a:hover {
+  background-color: var(--accent-faded);
+  color: var(--accent);
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
 .btn-render, .btn-start {
   flex: 1;
 }

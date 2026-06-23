@@ -7,7 +7,7 @@ Complete reference for all public JavaScript functions in `index.js`.
 ## Core Rendering
 
 ### `layoutText(text)`
-**v1.2.0** — Unified layout engine that computes all character positions, word-wrap, and page breaks. Routes internally to `layoutTextTwoColumn` or `layoutTextCornell` if layout-specific overrides are active.
+**v1.4.0** — Unified layout engine that computes all character positions, word-wrap, and page breaks. Supports Mermaid diagram blocks (````mermaid`). Routes internally to `layoutTextTwoColumn` or `layoutTextCornell` if layout-specific overrides are active (Note: Diagram blocks currently supported in standard layout).
 - **Parameters**: `text` (String) — raw input text
 - **Returns**: `{ queue, pageTexts, pageCount }` — character render items, per-page text strings, total pages
 - **Used by**: `renderText()`, `buildCharQueue()`, `startAnimation()`
