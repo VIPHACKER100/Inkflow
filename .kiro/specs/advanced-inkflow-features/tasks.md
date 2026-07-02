@@ -12,7 +12,7 @@ All implementation will be in JavaScript, building upon the existing InkFlow arc
 
 ### Part A: Rendering & Realism Enhancements
 
-- [-] 1. Implement Contextual Per-Character Jitter Engine
+- [x] 1. Implement Contextual Per-Character Jitter Engine
   - Create `CharacterVariationContext` class to track position metadata (line-start, line-end, mid-word, character-count-in-line)
   - Extend `getCharVariation()` function to accept position context parameter
   - Implement position-aware variation scaling (1.2× pressure at line-start, 1.3× slant at line-end)
@@ -21,14 +21,14 @@ All implementation will be in JavaScript, building upon the existing InkFlow arc
   - Implement hand-cramping simulation (1.5× spacing randomization after 80 chars per line)
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8_
 
-- [ ] 2. Add Smudge and Eraser Effects System
-  - [-] 2.1 Create UI toggle control for smudge effects in sidebar
+- [x] 2. Add Smudge and Eraser Effects System
+  - [x] 2.1 Create UI toggle control for smudge effects in sidebar
     - Add checkbox input "Smudge Effects" to sidebar
     - Wire toggle to state object `S.smudgeEffects`
     - Persist toggle state to localStorage
     - _Requirements: 2.1, 2.6, 2.7_
   
-  - [~] 2.2 Implement smudge rendering function
+  - [x] 2.2 Implement smudge rendering function
     - Create `renderSmudgeEffects()` function
     - Generate 2-5 random overlay shapes per page
     - Apply opacity range 0.05-0.15 for smudge, 0.03-0.08 for eraser
@@ -37,15 +37,15 @@ All implementation will be in JavaScript, building upon the existing InkFlow arc
     - Render before text content in drawing order
     - _Requirements: 2.2, 2.3, 2.4, 2.5, 2.8, 2.9_
 
-- [ ] 3. Implement Ligatures and Connected Cursive
-  - [-] 3.1 Create cursive mode toggle and connection system
+- [x] 3. Implement Ligatures and Connected Cursive
+  - [x] 3.1 Create cursive mode toggle and connection system
     - Add "Cursive Mode" checkbox to font settings section
     - Create `CursiveConnector` class to manage connection strokes
     - Define ligature pairs array (th, ch, sh, st, ct, ll, ff, fi, fl)
     - Store pre-defined ligature glyph shapes
     - _Requirements: 3.1, 3.4, 3.7_
   
-  - [~] 3.2 Implement connection stroke rendering
+  - [x] 3.2 Implement connection stroke rendering
     - Create `renderConnectionStroke()` function using quadratic Bezier curves
     - Define character exit/entry points for lowercase letters
     - Add logic to skip connections for uppercase, whitespace, punctuation
@@ -53,8 +53,8 @@ All implementation will be in JavaScript, building upon the existing InkFlow arc
     - Ensure cursive mode only applies to Latin script (not Devanagari)
     - _Requirements: 3.2, 3.3, 3.5, 3.6, 3.8, 3.9_
 
-- [ ] 4. Implement Multi-Pen Support System
-  - [-] 4.1 Create markdown structure parser
+- [x] 4. Implement Multi-Pen Support System
+  - [x] 4.1 Create markdown structure parser
     - Create `MarkdownParser` class with methods for detecting headings, bullets, emphasis
     - Parse markdown symbols before stripping them from display text
     - Output structured data format with text segments and Text_Type metadata
@@ -62,20 +62,20 @@ All implementation will be in JavaScript, building upon the existing InkFlow arc
     - Handle nested structures (emphasis within bullets)
     - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5, 11.6, 11.7, 11.8, 11.9, 11.10_
   
-  - [~] 4.2 Implement pen profile configuration system
+  - [x] 4.2 Implement pen profile configuration system
     - Create `PenProfile` data structure (inkColor, pressure, blur, fontFamily properties)
     - Add UI configuration panel for defining pen profiles
     - Create default profile assignments (heading: blue bold, body: black, bullet: black medium, emphasis: dark-blue italic)
     - Persist pen profile configurations to localStorage
     - _Requirements: 4.4, 4.5, 4.7, 4.8_
   
-  - [~] 4.3 Integrate pen profiles with rendering pipeline
+  - [x] 4.3 Integrate pen profiles with rendering pipeline
     - Modify rendering logic to apply pen profile based on Text_Type
     - Complete current word before switching profiles to avoid mid-word color changes
     - Update `layoutText()` to pass Text_Type metadata through pipeline
     - _Requirements: 4.1, 4.2, 4.3, 4.6, 4.9, 4.10_
   
-  - [~] 4.4 Write property test for round-trip markdown parsing
+  - [x] 4.4 Write property test for round-trip markdown parsing
     - **Property: Parse-then-pretty-print-then-parse produces equivalent structure**
     - **Validates: Requirements 12.1, 12.2**
     - Generate random markdown structures (headings, bullets, emphasis, mixed)
@@ -83,12 +83,12 @@ All implementation will be in JavaScript, building upon the existing InkFlow arc
     - Include edge cases (nested structures, empty lines, special characters)
     - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5_
 
-- [~] 5. Checkpoint - Rendering enhancements complete
+- [x] 5. Checkpoint - Rendering enhancements complete
   - Ensure all rendering tests pass, ask the user if questions arise.
 
 ### Part B: AI Features & Multi-Language Support
 
-- [ ] 6. Implement Doubt-Solver AI Workflow
+- [x] 6. Implement Doubt-Solver AI Workflow
   - [x] 6.1 Create doubt-solver UI and API integration
     - Add "Doubt Solver" button to AI tools section
     - Create system prompt for step-by-step problem solving (Indian curriculum focus)
@@ -96,22 +96,22 @@ All implementation will be in JavaScript, building upon the existing InkFlow arc
     - Handle empty input validation with error toast
     - _Requirements: 5.1, 5.2, 5.3, 5.7, 5.9_
   
-  - [~] 6.2 Implement solution streaming and rendering
+  - [x] 6.2 Implement solution streaming and rendering
     - Process AI response using existing SSE streaming mechanism
     - Format solution with step numbering (Step 1:, Step 2:, etc.)
     - Support plain-text mathematical notation (x^2, sqrt(x), integrals)
     - Render solution incrementally with current handwriting settings
     - _Requirements: 5.4, 5.5, 5.6, 5.8, 5.10_
 
-- [ ] 7. Implement AI Diagram Generation
-  - [~] 7.1 Create diagram generator UI and system prompt
+- [x] 7. Implement AI Diagram Generation
+  - [x] 7.1 Create diagram generator UI and system prompt
     - Add "Generate Diagram" button to AI tools section
     - Create system prompt for SVG path output (cycle, flowchart, labeled structures)
     - Send diagram description to AI provider
     - Validate diagram description input
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.9_
   
-  - [~] 7.2 Implement hand-drawn diagram rendering
+  - [x] 7.2 Implement hand-drawn diagram rendering
     - Parse SVG path data from AI response
     - Apply waviness to straight lines for hand-drawn effect
     - Render labels using current handwriting font with variation
