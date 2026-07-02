@@ -280,6 +280,32 @@ Try pasting a paragraph of lecture notes!"></textarea>
           <div class="sb-label">Pressure Variation <span class="val" id="pressure-val">0.12</span></div>
           <input type="range" id="pressure-slider" min="0" max="0.3" step="0.01" value="0.12" title="Pressure Variation" />
 
+          <div class="sb-label sb-label-mt">Markdown Multi-Pen</div>
+          <label class="checkbox-label">
+            <input type="checkbox" id="markdown-multipen-toggle" title="Apply markdown-aware pen profiles" />
+            <span class="checkbox-custom"></span>
+            <span class="checkbox-text">Enable markdown pen mapping</span>
+          </label>
+
+          <div class="pen-grid" id="markdown-pen-grid">
+            <div class="pen-grid-row">
+              <label for="pen-color-heading">Heading</label>
+              <input type="color" id="pen-color-heading" value="#0a3d62" title="Heading Pen Color" />
+            </div>
+            <div class="pen-grid-row">
+              <label for="pen-color-body">Body</label>
+              <input type="color" id="pen-color-body" value="#1c2340" title="Body Pen Color" />
+            </div>
+            <div class="pen-grid-row">
+              <label for="pen-color-bullet">Bullet</label>
+              <input type="color" id="pen-color-bullet" value="#2d6a4f" title="Bullet Pen Color" />
+            </div>
+            <div class="pen-grid-row">
+              <label for="pen-color-emphasis">Emphasis</label>
+              <input type="color" id="pen-color-emphasis" value="#8b0000" title="Emphasis Pen Color" />
+            </div>
+          </div>
+
           <div class="sb-label sb-label-mt">Smudge Effects</div>
           <label class="checkbox-label">
             <input type="checkbox" id="smudge-effects-toggle" title="Enable smudge and eraser effects" onchange="onSmudgeEffectsToggle()" />
@@ -554,6 +580,9 @@ Try pasting a paragraph of lecture notes!"></textarea>
 
   <!-- Cursive Connector for ligatures and connected strokes -->
   <script src="cursive-connector.js"></script>
+
+  <!-- Markdown parser for segment-aware styling -->
+  <script src="markdown-parser.js"></script>
 
   <!-- Custom Script -->
   <script src="index.js"></script>

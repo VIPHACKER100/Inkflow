@@ -19,6 +19,13 @@ const S = {
   textAlignment: 'middle', // 'top', 'middle', 'bottom'
   smudgeEffects: false, // Smudge effects toggle
   cursiveMode: false, // Cursive mode toggle (Req 3.1)
+  markdownMultiPen: true,
+  markdownPenProfiles: {
+    heading: { inkColor: '#0a3d62', pressure: 0.14, rotationScale: 1.12 },
+    body: { inkColor: null },
+    bullet: { inkColor: '#2d6a4f', pressure: 0.13 },
+    emphasis: { inkColor: '#8b0000', pressure: 0.15, rotationScale: 1.08 }
+  }
 };
 
 /* Canvas pages array */
@@ -31,6 +38,66 @@ let renderTimeout = null;
 let cursiveConnector = null;
 if (typeof CursiveConnector !== 'undefined') {
   cursiveConnector = new CursiveConnector();
+}
+
+let markdownParser = null;
+if (typeof MarkdownParser !== 'undefined') {
+  markdownParser = new MarkdownParser();
+}
+
+function getStyledLineSegments(lineText) {
+  if (!lineText) return [];
+  if (!S.markdownMultiPen || !markdownParser) {
+    return [{ text: lineText, type: 'body', emphasisType: null, level: null }];
+  }
+
+  const parsed = markdownParser.parse(lineText);
+  if (!Array.isArray(parsed) || parsed.length === 0) {
+    return [{ text: lineText, type: 'body', emphasisType: null, level: null }];
+  }
+
+  return parsed.map(seg => ({
+    text: seg.text || '',
+    type: seg.type || 'body',
+    emphasisType: seg.emphasisType || null,
+    level: seg.level || null
+  }));
+}
+
+function getPenProfileForSegment(segment) {
+  const type = segment?.type || 'body';
+  const map = S.markdownPenProfiles || {};
+  const profile = map[type] || map.body || {};
+  return {
+    inkColor: profile.inkColor || null,
+    pressure: typeof profile.pressure === 'number' ? profile.pressure : null,
+    rotationScale: typeof profile.rotationScale === 'number' ? profile.rotationScale : 1,
+    key: `${type}:${segment?.emphasisType || 'none'}:${segment?.level || 0}`
+  };
+}
+
+function tokenizeWithSpaces(text) {
+  if (!text) return [];
+  const tokens = [];
+  let word = '';
+
+  for (const ch of text) {
+    if (ch === ' ') {
+      if (word.length > 0) {
+        tokens.push({ type: 'word', text: word });
+        word = '';
+      }
+      tokens.push({ type: 'space', text: ' ' });
+    } else {
+      word += ch;
+    }
+  }
+
+  if (word.length > 0) {
+    tokens.push({ type: 'word', text: word });
+  }
+
+  return tokens;
 }
 
 /* Initialize Mermaid for diagrams */
@@ -342,8 +409,68 @@ function setInkPreset(hex, name) {
   S.inkColor = hex;
   inkColorInput.value = hex;
   document.getElementById('ink-color-label').textContent = hex + ' — ' + name;
+  syncMarkdownPenControls();
   debounceRender();
 }
+
+function syncMarkdownPenControls() {
+  const multiPenToggle = document.getElementById('markdown-multipen-toggle');
+  const penGrid = document.getElementById('markdown-pen-grid');
+  const headingInput = document.getElementById('pen-color-heading');
+  const bodyInput = document.getElementById('pen-color-body');
+  const bulletInput = document.getElementById('pen-color-bullet');
+  const emphasisInput = document.getElementById('pen-color-emphasis');
+
+  if (multiPenToggle) {
+    multiPenToggle.checked = !!S.markdownMultiPen;
+  }
+  if (penGrid) {
+    penGrid.setAttribute('aria-disabled', S.markdownMultiPen ? 'false' : 'true');
+  }
+
+  const profiles = S.markdownPenProfiles || {};
+  if (headingInput) headingInput.value = (profiles.heading && profiles.heading.inkColor) || '#0a3d62';
+  if (bodyInput) bodyInput.value = (profiles.body && profiles.body.inkColor) || S.inkColor;
+  if (bulletInput) bulletInput.value = (profiles.bullet && profiles.bullet.inkColor) || '#2d6a4f';
+  if (emphasisInput) emphasisInput.value = (profiles.emphasis && profiles.emphasis.inkColor) || '#8b0000';
+}
+
+function onMarkdownMultiPenToggle() {
+  const toggle = document.getElementById('markdown-multipen-toggle');
+  if (!toggle) return;
+  S.markdownMultiPen = toggle.checked;
+  syncMarkdownPenControls();
+  autosave();
+  debounceRender();
+}
+
+function onMarkdownPenColorChange(type, value) {
+  if (!S.markdownPenProfiles[type]) {
+    S.markdownPenProfiles[type] = {};
+  }
+  S.markdownPenProfiles[type].inkColor = value;
+  autosave();
+  debounceRender();
+}
+
+const markdownMultiPenToggle = document.getElementById('markdown-multipen-toggle');
+if (markdownMultiPenToggle) {
+  markdownMultiPenToggle.addEventListener('change', onMarkdownMultiPenToggle);
+}
+
+const markdownPenInputMap = {
+  heading: 'pen-color-heading',
+  body: 'pen-color-body',
+  bullet: 'pen-color-bullet',
+  emphasis: 'pen-color-emphasis'
+};
+
+Object.keys(markdownPenInputMap).forEach(type => {
+  const el = document.getElementById(markdownPenInputMap[type]);
+  if (!el) return;
+  el.addEventListener('input', () => onMarkdownPenColorChange(type, el.value));
+  el.addEventListener('change', autosave);
+});
 
 /* ───────────────────────────────────────────
    PHASE 2.2 — SMUDGE EFFECTS TOGGLE
@@ -936,6 +1063,11 @@ function renderCursiveConnections(queue) {
         continue;
       }
 
+      // Do not connect across style/pen boundaries.
+      if (currItem.penKey !== nextItem.penKey) {
+        continue;
+      }
+
       // Check if it's a ligature pair (Req 3.4, 3.5)
       if (cursiveConnector.isLigaturePair(currItem.ch, nextItem.ch)) {
         // Render ligature glyph instead of individual characters
@@ -955,7 +1087,7 @@ function renderCursiveConnections(queue) {
         exitPoint,
         { x: nextItem.x, y: nextItem.y },
         entryPoint,
-        S.inkColor,
+        currItem.inkColor || S.inkColor,
         v.pressureMod,
         S.fontSize
       );
@@ -1123,6 +1255,60 @@ function getGraphemes(text) {
 
 function isIndicScript(text) {
   return /[\u0900-\u097F\uA8E0-\uA8FF\u1CD0-\u1CFF\u0980-\u09FF\u0A00-\u0A7F\u0A80-\u0AFF\u0B00-\u0B7F\u0B80-\u0BFF\u0C00-\u0C7F\u0C80-\u0CFF\u0D00-\u0D7F\u0D80-\u0DFF]/.test(text);
+}
+
+function classifyScriptChar(ch) {
+  if (!ch) return 'neutral';
+  if (isIndicScript(ch)) return 'indic';
+  if (/[A-Za-z]/.test(ch)) return 'latin';
+  return 'neutral';
+}
+
+function resolveNeutralScript(graphemes, index, fallback = 'latin') {
+  for (let i = index - 1; i >= 0; i--) {
+    const leftClass = classifyScriptChar(graphemes[i]);
+    if (leftClass !== 'neutral') return leftClass;
+  }
+  for (let i = index + 1; i < graphemes.length; i++) {
+    const rightClass = classifyScriptChar(graphemes[i]);
+    if (rightClass !== 'neutral') return rightClass;
+  }
+  return fallback;
+}
+
+function getScriptRuns(text) {
+  const graphemes = getGraphemes(text);
+  if (!graphemes.length) return [];
+
+  const fallback = containsDevanagari(text) ? 'indic' : 'latin';
+  const runs = [];
+  let activeScript = null;
+  let buffer = '';
+
+  for (let i = 0; i < graphemes.length; i++) {
+    const ch = graphemes[i];
+    let scriptClass = classifyScriptChar(ch);
+    if (scriptClass === 'neutral') {
+      scriptClass = resolveNeutralScript(graphemes, i, fallback);
+    }
+    if (activeScript === null) {
+      activeScript = scriptClass;
+      buffer = ch;
+      continue;
+    }
+    if (scriptClass === activeScript) {
+      buffer += ch;
+      continue;
+    }
+    runs.push({ text: buffer, isIndic: activeScript === 'indic' });
+    activeScript = scriptClass;
+    buffer = ch;
+  }
+
+  if (buffer) {
+    runs.push({ text: buffer, isIndic: activeScript === 'indic' });
+  }
+  return runs;
 }
 
 const containsDevanagari = isIndicScript;
@@ -1732,137 +1918,158 @@ function layoutText(text) {
       continue;
     }
 
-    // Text block processing
-    const words = block.content.split(' ');
+    // Text block processing with markdown-aware segment styling.
+    const lines = block.content.split('\n');
 
-    for (let wi = 0; wi < words.length; wi++) {
-      const word = words[wi];
-      const lines = word.split('\n');
+    const applySpaceAdvance = (fontStack) => {
+      ctx.font = `${S.fontSize}px ${fontStack}`;
+      const spaceW = ctx.measureText(' ').width + S.wordSpacing;
+      if (x + spaceW < rightMargin) {
+        x += spaceW;
+        currentPageText += ' ';
+      }
+    };
 
-      for (let li = 0; li < lines.length; li++) {
-        if (li > 0) {
-          // Explicit newline
-          x = margin;
-          y += lineH;
-          lineCharIndex = 0;
-          if (y + lineH > PAGE_H - margin) {
-            pageTexts.push(currentPageText);
-            currentPageText = '';
-            pageIdx++;
-            y = margin + S.fontSize + lineH; // Skip 1st line on new page
-          }
-          currentPageText += '\n';
+    for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+      if (lineIdx > 0) {
+        x = margin;
+        y += lineH;
+        lineCharIndex = 0;
+        variationContext.resetAtLineBreak();
+        if (y + lineH > PAGE_H - margin) {
+          pageTexts.push(currentPageText);
+          currentPageText = '';
+          pageIdx++;
+          y = margin + S.fontSize + lineH;
         }
+        currentPageText += '\n';
+      }
 
-        const lineWord = lines[li];
-        if (!lineWord) continue;
+      const lineText = lines[lineIdx];
+      if (!lineText) continue;
 
-        const wordIsIndic = containsDevanagari(lineWord);
-        const fontStack = getFontStack(wordIsIndic);
+      const segments = getStyledLineSegments(lineText);
+      for (let si = 0; si < segments.length; si++) {
+        const segment = segments[si];
+        if (!segment.text) continue;
 
-        // Measure word width
-        ctx.font = `${S.fontSize}px ${fontStack}`;
-        const wordWidth = ctx.measureText(lineWord).width + S.wordSpacing;
+        const penProfile = getPenProfileForSegment(segment);
+        const penPressure = penProfile.pressure !== null ? penProfile.pressure : S.pressure;
+        const penRotation = S.rotationMax * penProfile.rotationScale;
+        const inkColor = penProfile.inkColor || S.inkColor;
+        const tokens = tokenizeWithSpaces(segment.text);
 
-        // Word wrap
-        if (x + wordWidth > rightMargin && x > margin) {
-          x = margin;
-          y += lineH;
-          lineCharIndex = 0;
-          variationContext.resetAtLineBreak();  // Reset fatigue at line breaks (Req 1.5)
-          if (y + lineH > PAGE_H - margin) {
-            pageTexts.push(currentPageText);
-            currentPageText = '';
-            pageIdx++;
-            y = margin + S.fontSize + lineH; // Skip 1st line on new page
+        for (let ti = 0; ti < tokens.length; ti++) {
+          const token = tokens[ti];
+          if (token.type === 'space') {
+            const previewIsIndic = containsDevanagari(segment.text);
+            applySpaceAdvance(getFontStack(previewIsIndic));
+            continue;
           }
-        }
 
-        if (wordIsIndic) {
-          // Update context for Indic word (treated as single unit in context tracking)
-          variationContext.updateForCharacter(lineCharIndex, lineLength, lineCharIndex === 0, lineCharIndex === lineLength - 1);
-          const v = getCharVariationWithContext(S.rotationMax, S.pressure, S.fontSize, variationContext);
-          const wobble = Math.sin(lineCharIndex * 0.04) * 0.4 * (S.fontSize / 22);
-          const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
-          const cy = y + (v.baselineOff * 0.4) + wobble + alignOffset;
+          const lineWord = token.text;
+          if (!lineWord) continue;
 
-          queue.push({
-            ch: lineWord,
-            x,
-            y: cy,
-            v,
-            pageIdx,
-            isIndic: true,
-            fontStack
+          const scriptRuns = getScriptRuns(lineWord);
+          let wordWidth = S.wordSpacing;
+          scriptRuns.forEach(run => {
+            const runFontStack = getFontStack(run.isIndic);
+            ctx.font = `${S.fontSize}px ${runFontStack}`;
+            wordWidth += ctx.measureText(run.text).width;
           });
 
-          x += ctx.measureText(lineWord).width + v.spacingExtra;
-          charIndex += lineWord.length;
-          lineCharIndex += lineWord.length;
-          currentPageText += lineWord;
-        } else {
-          const graphemes = getGraphemes(lineWord);
-          for (let ci = 0; ci < graphemes.length; ci++) {
-            const ch = graphemes[ci];
-            
-            // Update context for each character position (Req 1.6 - compute position context)
-            const isWordStart = ci === 0;
-            const isWordEnd = ci === graphemes.length - 1;
-            // Estimate line length based on typical character width (approximate ~80 chars per line)
-            const estimatedLineLength = 100;
-            variationContext.updateForCharacter(lineCharIndex, estimatedLineLength, isWordStart, isWordEnd);
-            
-            // Get contextual variation (Req 1.1-1.8 integrated)
-            const v = getCharVariationWithContext(S.rotationMax, S.pressure, S.fontSize, variationContext);
+          if (x + wordWidth > rightMargin && x > margin) {
+            x = margin;
+            y += lineH;
+            lineCharIndex = 0;
+            variationContext.resetAtLineBreak();
+            if (y + lineH > PAGE_H - margin) {
+              pageTexts.push(currentPageText);
+              currentPageText = '';
+              pageIdx++;
+              y = margin + S.fontSize + lineH;
+            }
+          }
 
-            ctx.font = `${S.fontSize}px ${fontStack}`;
-            const charWidth = ctx.measureText(ch).width + v.spacingExtra;
+          scriptRuns.forEach(run => {
+            const fontStack = getFontStack(run.isIndic);
+            if (run.isIndic) {
+              const estimatedLineLength = 100;
+              const lineLength = Math.max(1, estimatedLineLength);
+              variationContext.updateForCharacter(lineCharIndex, lineLength, lineCharIndex === 0, lineCharIndex === lineLength - 1);
+              const v = getCharVariationWithContext(penRotation, penPressure, S.fontSize, variationContext);
+              const wobble = Math.sin(lineCharIndex * 0.04) * 0.4 * (S.fontSize / 22);
+              const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
+              const cy = y + (v.baselineOff * 0.4) + wobble + alignOffset;
 
-            if (x + charWidth > rightMargin && x > margin) {
-              x = margin;
-              y += lineH;
-              lineCharIndex = 0;
-              variationContext.resetAtLineBreak();  // Reset fatigue at line breaks (Req 1.5)
-              if (y + lineH > PAGE_H - margin) {
-                pageTexts.push(currentPageText);
-                currentPageText = '';
-                pageIdx++;
-                y = margin + S.fontSize + lineH;
-              }
+              queue.push({
+                ch: run.text,
+                x,
+                y: cy,
+                v,
+                pageIdx,
+                isIndic: true,
+                fontStack,
+                inkColor,
+                penKey: penProfile.key
+              });
+
+              ctx.font = `${S.fontSize}px ${fontStack}`;
+              x += ctx.measureText(run.text).width + v.spacingExtra;
+              charIndex += run.text.length;
+              lineCharIndex += run.text.length;
+              currentPageText += run.text;
+              return;
             }
 
-            const wobble = Math.sin(lineCharIndex * 0.04) * 0.8 * (S.fontSize / 22);
-            const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
-            const cy = y + v.baselineOff + wobble + alignOffset;
+            const graphemes = getGraphemes(run.text);
+            for (let ci = 0; ci < graphemes.length; ci++) {
+              const ch = graphemes[ci];
+              const isWordStart = ci === 0;
+              const isWordEnd = ci === graphemes.length - 1;
+              const estimatedLineLength = 100;
+              variationContext.updateForCharacter(lineCharIndex, estimatedLineLength, isWordStart, isWordEnd);
 
-            queue.push({
-              ch,
-              x,
-              y: cy,
-              v,
-              pageIdx,
-              isIndic: false,
-              fontStack
-            });
+              const v = getCharVariationWithContext(penRotation, penPressure, S.fontSize, variationContext);
 
-            x += ctx.measureText(ch).width + v.spacingExtra;
-            charIndex++;
-            lineCharIndex++;
-            currentPageText += ch;
-          }
-        }
+              ctx.font = `${S.fontSize}px ${fontStack}`;
+              const charWidth = ctx.measureText(ch).width + v.spacingExtra;
 
-        // Space after word (not on last word of line)
-        if (wi < words.length - 1 || li < lines.length - 1) {
-          ctx.font = `${S.fontSize}px ${fontStack}`;
-          const spaceW = ctx.measureText(' ').width + S.wordSpacing;
-          
-          if (x + spaceW < rightMargin) {
-            x += spaceW;
-            currentPageText += ' ';
-          } else {
-            // If space doesn't fit, just continue to next word which will wrap
-          }
+              if (x + charWidth > rightMargin && x > margin) {
+                x = margin;
+                y += lineH;
+                lineCharIndex = 0;
+                variationContext.resetAtLineBreak();
+                if (y + lineH > PAGE_H - margin) {
+                  pageTexts.push(currentPageText);
+                  currentPageText = '';
+                  pageIdx++;
+                  y = margin + S.fontSize + lineH;
+                }
+              }
+
+              const wobble = Math.sin(lineCharIndex * 0.04) * 0.8 * (S.fontSize / 22);
+              const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
+              const cy = y + v.baselineOff + wobble + alignOffset;
+
+              queue.push({
+                ch,
+                x,
+                y: cy,
+                v,
+                pageIdx,
+                isIndic: false,
+                fontStack,
+                inkColor,
+                penKey: penProfile.key
+              });
+
+              x += ctx.measureText(ch).width + v.spacingExtra;
+              charIndex++;
+              lineCharIndex++;
+              currentPageText += ch;
+            }
+          });
         }
       }
     }
@@ -2043,6 +2250,7 @@ function renderText(text) {
     }
 
     const v = item.v;
+    const itemInkColor = item.inkColor || S.inkColor;
 
     // Check if editor for this page is focused; if so, don't draw text (overlay shows it)
     if (document.activeElement === activeEditor) return;
@@ -2075,7 +2283,7 @@ function renderText(text) {
         const pxSize = S.fontSize * v.pressureMod;
         ctx.font = `${Math.max(10, pxSize)}px ${item.fontStack}`;
         ctx.globalAlpha = v.opacity;
-        ctx.fillStyle = S.inkColor;
+        ctx.fillStyle = itemInkColor;
         ctx.fillText(item.ch, 0, 0);
       }
     } else {
@@ -2085,13 +2293,13 @@ function renderText(text) {
       ctx.globalAlpha = v.opacity;
 
       if (S.bleed > 0.05) {
-        ctx.shadowColor = S.shadowColor || S.inkColor;
+        ctx.shadowColor = S.shadowColor || itemInkColor;
         ctx.shadowBlur = S.bleed * 1.4;
       } else {
         ctx.shadowBlur = 0;
       }
 
-      ctx.fillStyle = S.inkColor;
+      ctx.fillStyle = itemInkColor;
       ctx.fillText(item.ch, 0, 0);
     }
     ctx.restore();
@@ -3022,6 +3230,9 @@ function autosave() {
       paperStyle: S.paperStyle,
       noteLayout: S.noteLayout,
       smudgeEffects: S.smudgeEffects,
+      cursiveMode: S.cursiveMode,
+      markdownMultiPen: S.markdownMultiPen,
+      markdownPenProfiles: S.markdownPenProfiles,
     };
     localStorage.setItem('inkflow-state', JSON.stringify(state));
   }, 1000);
@@ -3093,6 +3304,16 @@ async function restoreState() {
       const toggle = document.getElementById('cursive-mode-toggle');
       if (toggle) toggle.checked = state.cursiveMode;
     }
+    if (state.markdownMultiPen !== undefined) {
+      S.markdownMultiPen = !!state.markdownMultiPen;
+    }
+    if (state.markdownPenProfiles && typeof state.markdownPenProfiles === 'object') {
+      S.markdownPenProfiles = {
+        ...S.markdownPenProfiles,
+        ...state.markdownPenProfiles
+      };
+    }
+    syncMarkdownPenControls();
 
     // 2. Migrate draftedGlyphs if they exist in localStorage state
     if (state.draftedGlyphs && Object.keys(state.draftedGlyphs).length > 0) {
@@ -3169,6 +3390,7 @@ async function initApp() {
   if (smudgeToggle) {
     smudgeToggle.checked = S.smudgeEffects;
   }
+  syncMarkdownPenControls();
 
   // Render initial state or blank page
   if (S.text) {
@@ -3196,6 +3418,7 @@ async function initApp() {
   });
 fontSelect.addEventListener('change', autosave);
 inkColorInput.addEventListener('change', autosave);
+inkColorInput.addEventListener('change', syncMarkdownPenControls);
 
 // Boot
 initApp();

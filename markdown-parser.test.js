@@ -232,6 +232,36 @@ runner.test('Parse multiple emphasis in same line', function() {
   this.assertTrue(emphasisCount >= 3, `Should have at least 3 emphasis segments, got ${emphasisCount}`);
 });
 
+runner.test('Heading line produces heading and emphasis segments for mixed content', function() {
+  const text = '# Topic with *focus*';
+  const result = parser.parse(text);
+
+  const headingCount = result.filter(s => s.type === parser.TEXT_TYPES.HEADING).length;
+  const emphasisCount = result.filter(s => s.type === parser.TEXT_TYPES.EMPHASIS).length;
+  this.assertTrue(headingCount >= 1, 'Expected heading segment for non-emphasized content');
+  this.assertTrue(emphasisCount >= 1, 'Expected emphasis segment in heading line');
+});
+
+runner.test('Bullet line produces bullet and emphasis segments for mixed content', function() {
+  const text = '- revise *formula* daily';
+  const result = parser.parse(text);
+
+  const bulletCount = result.filter(s => s.type === parser.TEXT_TYPES.BULLET).length;
+  const emphasisCount = result.filter(s => s.type === parser.TEXT_TYPES.EMPHASIS).length;
+  this.assertTrue(bulletCount >= 1, 'Expected bullet segment for non-emphasized content');
+  this.assertTrue(emphasisCount >= 1, 'Expected emphasis segment in bullet line');
+});
+
+runner.test('Mixed markdown lines preserve per-line type metadata for mapping', function() {
+  const text = '# Heading\n- Bullet line\nBody with *emphasis*';
+  const result = parser.parse(text);
+
+  this.assertTrue(result.some(s => s.type === parser.TEXT_TYPES.HEADING), 'Heading type missing');
+  this.assertTrue(result.some(s => s.type === parser.TEXT_TYPES.BULLET), 'Bullet type missing');
+  this.assertTrue(result.some(s => s.type === parser.TEXT_TYPES.BODY), 'Body type missing');
+  this.assertTrue(result.some(s => s.type === parser.TEXT_TYPES.EMPHASIS), 'Emphasis type missing');
+});
+
 // ─────────────────────────────────────────────────────────────
 // PRETTY PRINT (MARKDOWN RECONSTRUCTION) TESTS
 // ─────────────────────────────────────────────────────────────
