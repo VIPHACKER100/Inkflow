@@ -140,6 +140,12 @@ Try pasting a paragraph of lecture notes!"></textarea>
             </optgroup>
           </select>
 
+          <label class="checkbox-label" style="margin-top: 8px;">
+            <input type="checkbox" id="auto-switch-devanagari" checked title="Automatically switch to Devanagari fonts for Hindi text" onchange="onHinglishToggle()" />
+            <span class="checkbox-custom"></span>
+            <span class="checkbox-text">A/अ Auto-switch Script</span>
+          </label>
+
           <!-- Phase 3.3 — Custom font upload -->
           <div class="sb-label" style="margin-top:10px;">Upload Custom Font</div>
           <input type="file" id="font-upload" accept=".ttf,.otf" title="Upload Custom Font" />
@@ -215,6 +221,30 @@ Try pasting a paragraph of lecture notes!"></textarea>
         </div>
       </div>
 
+      <!-- ── COLLABORATION SECTION ── -->
+      <div class="sb-section" id="sec-collab">
+        <div class="sb-section-header" onclick="toggleSection('sec-collab')">
+          👥 &nbsp;Collaboration
+          <span class="sb-arrow">▾</span>
+        </div>
+        <div class="sb-body">
+          <div class="collab-controls">
+            <div class="collab-status-bar">
+              <span id="collab-status-indicator" class="status-indicator offline"></span>
+              <span id="collab-status-text">Offline</span>
+            </div>
+            <button class="btn sm primary" id="btn-collab-connect" onclick="toggleCollaboration()">Connect to Session</button>
+          </div>
+          
+          <div id="collab-users-container" class="hidden">
+            <div class="sb-label" style="margin-top: 12px;">Active Users</div>
+            <ul id="collab-users-list" class="users-list">
+              <!-- Users populated here -->
+            </ul>
+          </div>
+        </div>
+      </div>
+
       <!-- ── PAPER STYLE SECTION ── -->
       <div class="sb-section" id="sec-paper">
         <div class="sb-section-header" onclick="toggleSection('sec-paper')">
@@ -248,7 +278,24 @@ Try pasting a paragraph of lecture notes!"></textarea>
             <option value="standard">Standard (Flowing)</option>
             <option value="twocolumn">Two-Column Grid</option>
             <option value="cornell">Cornell Study Notes</option>
+            <option value="meeting">Meeting Notes</option>
           </select>
+        </div>
+      </div>
+      <!-- ── LAYER MANAGER SECTION ── -->
+      <div class="sb-section" id="sec-layers">
+        <div class="sb-section-header" onclick="toggleSection('sec-layers')">
+          📚 &nbsp;Layer Manager
+          <span class="sb-arrow">▾</span>
+        </div>
+        <div class="sb-body">
+          <div id="layer-list" class="layer-list">
+            <!-- Dynamically populated by updateLayerUI() -->
+          </div>
+          <div class="layer-controls-row">
+            <button class="btn sm" onclick="addNewLayer()" title="Add Layer">➕ Add</button>
+            <button class="btn sm" onclick="flattenAllLayers()" title="Flatten All">⬇️ Flatten</button>
+          </div>
         </div>
       </div>
 
@@ -306,6 +353,13 @@ Try pasting a paragraph of lecture notes!"></textarea>
             </div>
           </div>
 
+          <div class="sb-label sb-label-mt">Hinglish Auto-Switch</div>
+          <label class="checkbox-label">
+            <input type="checkbox" id="hinglish-toggle" title="Auto-switch fonts for mixed Hindi-English text" />
+            <span class="checkbox-custom"></span>
+            <span class="checkbox-text">Enable script-aware font switching</span>
+          </label>
+
           <div class="sb-label sb-label-mt">Smudge Effects</div>
           <label class="checkbox-label">
             <input type="checkbox" id="smudge-effects-toggle" title="Enable smudge and eraser effects" onchange="onSmudgeEffectsToggle()" />
@@ -346,6 +400,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
 
           <!-- AI action buttons -->
           <div class="ai-btn-group">
+            <button class="btn accent" onclick="toggleAudioRecording()" id="btn-record-lecture" title="Record Audio Lecture">🎙️ Record Lecture</button>
             <button class="btn" onclick="aiAction('doubt')">🧩 Doubt Solver</button>
             <button class="btn" onclick="aiAction('diagram')">🔀 Generate Diagram</button>
             <button class="btn" onclick="aiAction('arrange')">🪄 Smart Arrange</button>
@@ -353,6 +408,12 @@ Try pasting a paragraph of lecture notes!"></textarea>
             <button class="btn" onclick="aiAction('grammar')">✏️ Improve Grammar</button>
             <button class="btn" onclick="aiAction('lecture')">🎓 Lecture → Notes</button>
             <button class="btn" onclick="aiAction('assignment')">📝 Generate Assignment</button>
+          </div>
+          
+          <div id="recording-status-panel" class="hidden" style="margin-top: 10px; padding: 10px; background: var(--bg-alt); border-radius: 6px; display: flex; align-items: center; gap: 10px; font-size: 14px;">
+            <div class="pulsing-dot"></div>
+            <span id="recording-timer">00:00</span>
+            <span id="recording-size" style="color: var(--text-muted); font-size: 12px;">0 KB</span>
           </div>
         </div>
       </div>
@@ -575,6 +636,32 @@ Try pasting a paragraph of lecture notes!"></textarea>
     </div>
   </div>
 
+  <!-- ════════════════════════════════════════
+     PHASE 11 — GRAMMAR CORRECTION MODAL
+  ════════════════════════════════════════ -->
+  <div id="grammar-modal" class="modal-overlay hidden">
+    <div class="modal-card" style="max-width: 800px; width: 90%;">
+      <div class="modal-header">
+        <h3>✨ AI Grammar Correction <span id="grammar-lang-badge" class="badge">English</span></h3>
+        <button class="modal-close" onclick="closeGrammarModal()">✕</button>
+      </div>
+      <div class="modal-body" style="display: flex; gap: 20px; text-align: left;">
+        <div style="flex: 1;">
+          <h4>Original Text</h4>
+          <textarea id="grammar-original" class="text-input" readonly style="height: 300px; background: var(--bg-alt);"></textarea>
+        </div>
+        <div style="flex: 1;">
+          <h4>Corrected Text</h4>
+          <textarea id="grammar-corrected" class="text-input" style="height: 300px;"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="btn" onclick="closeGrammarModal()">Cancel</button>
+        <button class="btn primary" onclick="acceptGrammarCorrection()">✅ Accept Changes</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Contextual Jitter Engine for advanced character variation -->
   <script src="contextual-jitter-engine.js"></script>
 
@@ -583,6 +670,25 @@ Try pasting a paragraph of lecture notes!"></textarea>
 
   <!-- Markdown parser for segment-aware styling -->
   <script src="markdown-parser.js"></script>
+
+  <!-- Audio Recorder for Voice-to-Notes -->
+  <script src="audio-recorder.js"></script>
+
+  <!-- Script detector for Hinglish support -->
+  <script src="script-detector.js"></script>
+
+  <!-- Collaborative Writing Engine (Task 13) -->
+  <script src="collaborative-engine.js"></script>
+
+  <!-- TensorFlow.js for Smart Stroke Prediction (Task 14) -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+  <script src="stroke-prediction-engine.js"></script>
+
+  <!-- Multi-Layer Canvas Architecture (Task 16) -->
+  <script src="layer-compositor.js"></script>
+
+  <!-- Advanced Template System (Task 15) -->
+  <script src="template-manager.js"></script>
 
   <!-- Custom Script -->
   <script src="index.js"></script>

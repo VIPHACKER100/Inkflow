@@ -119,8 +119,8 @@ All implementation will be in JavaScript, building upon the existing InkFlow arc
     - Apply current ink color and pressure variation to diagram strokes
     - _Requirements: 6.5, 6.6, 6.7, 6.8, 6.10_
 
-- [ ] 8. Implement Voice-to-Notes Pipeline
-  - [~] 8.1 Create audio recording system
+- [x] 8. Implement Voice-to-Notes Pipeline
+  - [x] 8.1 Create audio recording system
     - Add "Record Lecture" button with visual indicator (pulsing red dot and timer)
     - Implement microphone permission request using MediaRecorder API
     - Add pause/resume functionality during recording
@@ -129,14 +129,14 @@ All implementation will be in JavaScript, building upon the existing InkFlow arc
     - Handle permission denial with error toast
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.9, 7.10, 7.11_
   
-  - [~] 8.2 Integrate transcription and AI processing
+  - [x] 8.2 Integrate transcription and AI processing
     - Implement audio-to-text conversion using Web Speech API or third-party service
     - Feed transcript to existing Lecture-to-Notes AI workflow
     - Render cleaned notes incrementally using SSE streaming
     - _Requirements: 7.6, 7.7, 7.8, 7.12_
 
-- [ ] 9. Implement Hinglish Multi-Language Support
-  - [~] 9.1 Create script detection and font switching system
+- [x] 9. Implement Hinglish Multi-Language Support
+  - [x] 9.1 Create script detection and font switching system
     - Create `ScriptDetector` class using Unicode ranges (U+0900-U+097F Devanagari, U+0041-U+007A Latin)
     - Implement `FontSwitcher` class to handle mid-sentence font transitions
     - Identify script boundaries within text during layout processing
@@ -144,14 +144,14 @@ All implementation will be in JavaScript, building upon the existing InkFlow arc
     - Complete transitions at word boundaries to avoid mid-word font changes
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.7_
   
-  - [~] 9.2 Optimize mixed-script rendering
+  - [x] 9.2 Optimize mixed-script rendering
     - Maintain consistent baseline alignment across script switches
     - Measure character widths using correct font for each segment
     - Apply consistent ink color and pressure across script boundaries
     - Apply reduced tilt (30% of base) to Devanagari segments for ligature integrity
     - _Requirements: 8.6, 8.8, 8.9, 8.10_
   
-  - [~] 9.3 Write property test for script detection accuracy
+  - [x] 9.3 Write property test for script detection accuracy
     - **Property: Script boundaries correctly identified for all valid Hindi-English text**
     - **Validates: Requirements 8.1, 8.2**
     - Generate random mixed Hinglish text
@@ -159,7 +159,7 @@ All implementation will be in JavaScript, building upon the existing InkFlow arc
     - Test edge cases (punctuation, numbers, mixed words)
     - _Requirements: 8.1, 8.2_
 
-- [~] 10. Improve Devanagari Rendering Quality
+- [x] 10. Improve Devanagari Rendering Quality
   - Audit current Devanagari font rendering for conjunct consonants
   - Identify problematic Unicode ranges (matras U+093E-U+094F, common conjuncts)
   - Implement fallback font substitution for zero-width/height glyphs
@@ -170,7 +170,7 @@ All implementation will be in JavaScript, building upon the existing InkFlow arc
   - Document font recommendations in user documentation
   - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 9.8, 9.9, 9.10_
 
-- [~] 11. Implement Hindi Grammar Correction
+- [x] 11. Implement Hindi Grammar Correction
   - Create `GrammarCorrector` class with language detection (>50% Devanagari = Hindi)
   - Add system prompt for Hindi/bilingual grammar correction
   - Send correction request to Hindi-capable AI model
@@ -181,20 +181,20 @@ All implementation will be in JavaScript, building upon the existing InkFlow arc
   - Preserve text formatting (line breaks, spacing, structure)
   - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 10.7, 10.8, 10.9, 10.10_
 
-- [~] 12. Checkpoint - AI and multilingual features complete
+- [x] 12. Checkpoint - AI and multilingual features complete
   - Ensure all AI workflows and Hindi support are functional, ask the user if questions arise.
 
 ### Part C: Collaborative & Advanced Features
 
-- [ ] 13. Implement Real-Time Collaborative Writing
-  - [~] 13.1 Set up WebSocket infrastructure
+- [x] 13. Implement Real-Time Collaborative Writing
+  - [x] 13.1 Set up WebSocket infrastructure
     - Create `CollaborativeEngine` class with WebSocket connection management
     - Implement connection recovery and state reconciliation logic
     - Add user presence tracking and cursor position syncing
     - Create collaboration UI panel in sidebar
     - _Component: CollaborativeEngine, Interface: initialize, connect, disconnect, getUserPresence_
   
-  - [~] 13.2 Implement Operational Transformation (OT)
+  - [x] 13.2 Implement Operational Transformation (OT)
     - Create `CollaborationOperation` data structure (id, type, position, content, userId, timestamp, vectorClock)
     - Implement `transformOperation()` method for conflict resolution
     - Handle INSERT, DELETE, REPLACE, CURSOR_MOVE operation types
@@ -202,80 +202,80 @@ All implementation will be in JavaScript, building upon the existing InkFlow arc
     - Apply transformed remote operations to maintain consistency
     - _Component: CollaborativeEngine, Interface: sendOperation, receiveOperation, transformOperation, applyOperation_
   
-  - [~] 13.3 Integrate collaboration with rendering pipeline
+  - [x] 13.3 Integrate collaboration with rendering pipeline
     - Wire OT operations to trigger incremental re-rendering
     - Display remote user cursors with color coding
     - Show operation acknowledgments and sync status
     - Handle concurrent edits across multiple users
     - _Component: CollaborativeEngine, Interface: getDocumentState_
   
-  - [~] 13.4 Write unit tests for OT conflict resolution
+  - [x] 13.4 Write unit tests for OT conflict resolution
     - Test INSERT vs INSERT at same position
     - Test DELETE vs INSERT at overlapping positions
     - Test concurrent edits from 3+ users
     - Verify vector clock monotonicity
     - _Component: CollaborativeEngine_
 
-- [ ] 14. Implement Smart Stroke Prediction
-  - [~] 14.1 Set up TensorFlow.js model infrastructure
+- [x] 14. Implement Smart Stroke Prediction
+  - [x] 14.1 Set up TensorFlow.js model infrastructure
     - Create `StrokePredictionEngine` class
     - Load pre-trained language model or configure model path
     - Initialize tokenizer with byte-pair encoding vocabulary
     - Set up model parameters (vocabSize, embeddingDim, temperature)
     - _Component: StrokePredictionEngine, Interface: initialize, loadModel, setTemperature_
   
-  - [~] 14.2 Implement prediction workflow
+  - [x] 14.2 Implement prediction workflow
     - Create rolling context buffer (last N=20 characters)
     - Implement `predict()` method to generate top-K predictions
     - Calculate confidence scores for each prediction
     - Create `PredictionRenderer` to display ghost text overlay
     - _Component: StrokePredictionEngine, Interface: predict, getConfidenceScore_
   
-  - [~] 14.3 Integrate predictions with input system
+  - [x] 14.3 Integrate predictions with input system
     - Update context buffer on each keystroke
     - Render predictions with opacity 0.3 as ghost overlay
     - Implement Tab key acceptance to insert top prediction
     - Update model state when predictions accepted
     - _Component: StrokePredictionEngine, Interface: updateContext, acceptPrediction_
 
-- [ ] 15. Implement Advanced Template System
-  - [~] 15.1 Create template parser and manager
+- [x] 15. Implement Advanced Template System
+  - [x] 15.1 Create template parser and manager
     - Create `TemplateManager` class
     - Implement template JSON parser for zones, guides, constraints
     - Validate zone boundaries and configuration
     - Create template repository interface for loading templates
     - _Component: TemplateManager, Interface: loadTemplate, parseTemplate, getZones_
   
-  - [~] 15.2 Implement template rendering
+  - [x] 15.2 Implement template rendering
     - Create `renderTemplateGuides()` function for static elements (dividers, labels, backgrounds)
     - Implement dynamic text zones with boundary enforcement
     - Add zone-constrained word wrap logic
     - Support active zone switching and highlighting
     - _Component: TemplateManager, Interface: renderTemplateGuides, setActiveZone, validateZoneContent_
   
-  - [~] 15.3 Create built-in templates
+  - [x] 15.3 Create built-in templates
     - Implement "Cornell Notes" template (cue column, notes area, summary section)
     - Implement "Two-Column" template
     - Implement "Meeting Notes" template with agenda/action zones
     - Add custom template creation and save functionality
     - _Component: TemplateManager, Interface: saveCustomTemplate_
 
-- [ ] 16. Implement Multi-Layer Canvas Architecture
-  - [~] 16.1 Create layer management system
+- [x] 16. Implement Multi-Layer Canvas Architecture
+  - [x] 16.1 Create layer management system
     - Create `LayerCompositor` class
     - Implement layer stack with z-index ordering
     - Create offscreen canvases for each layer
     - Add layer visibility and opacity controls
     - _Component: LayerCompositor, Interface: createLayer, deleteLayer, setLayerProperty, reorderLayers_
   
-  - [~] 16.2 Implement blend modes and composition
+  - [x] 16.2 Implement blend modes and composition
     - Implement blend mode rendering (normal, multiply, screen, overlay, darken, lighten)
     - Create `composite()` method to merge all visible layers
     - Apply per-layer opacity during composition
     - Handle layer reordering with immediate recomposite
     - _Component: LayerCompositor, Interface: composite, getLayerCanvas_
   
-  - [~] 16.3 Create layer UI controls
+  - [x] 16.3 Create layer UI controls
     - Add "Layer Manager" panel to sidebar
     - Implement layer visibility toggle buttons
     - Add opacity sliders per layer
@@ -283,7 +283,7 @@ All implementation will be in JavaScript, building upon the existing InkFlow arc
     - Create layer reordering drag-and-drop interface
     - _Component: LayerCompositor, Interface: exportLayerStack_
   
-  - [~] 16.4 Write integration tests for layer composition
+  - [x] 16.4 Write integration tests for layer composition
     - Test layer ordering with 3+ layers
     - Verify blend modes produce expected visual output
     - Test layer export and re-import preserves structure
