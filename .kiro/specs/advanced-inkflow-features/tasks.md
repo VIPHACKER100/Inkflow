@@ -289,18 +289,19 @@ All implementation will be in JavaScript, building upon the existing InkFlow arc
     - Test layer export and re-import preserves structure
     - _Component: LayerCompositor_
 
-- [ ] 17. Final Integration and Testing
-  - [~] 17.1 Integrate all features with main rendering pipeline
+- [x] 17. Final Integration and Testing
+  - [x] 17.1 Integrate all features with main rendering pipeline
     - Wire collaborative engine to update rendering on remote changes
     - Connect stroke prediction HUD to canvas viewport
     - Integrate template system with page layout logic
     - Connect layer compositor to export pipelines (PNG, PDF, SVG)
     - _Components: All_
   
-  - [~] 17.2 Optimize performance for combined features
+  - [x] 17.2 Optimize performance for combined features
     - Profile rendering performance with all features enabled
     - Implement incremental rendering for collaborative updates
     - Optimize ML model inference for stroke prediction
+
     - Cache template guides to reduce redraw overhead
     - Debounce layer composition triggers
     - _Requirements: Non-Functional - Performance_
