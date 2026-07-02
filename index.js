@@ -1706,41 +1706,37 @@ function renderText(text) {
   // Use requestAnimationFrame to allow DOM to settle first
   requestAnimationFrame(() => {
     pages.forEach((c, idx) => {
-      window.renderSpecificPage(idx);
+      c.dataset.rendered = 'false'; // force re-render
+      window.renderSpecificPage(idx, true);
     });
   });
 }
 
-window.renderSpecificPage = function(pageIdx) {
+window.renderSpecificPage = function(pageIdx, forceRedraw) {
   const canvas = pages[pageIdx];
-  if (!canvas || (canvas.dataset.rendered === 'true' && !arguments[1])) return;
+  if (!canvas) return;
+  if (canvas.dataset.rendered === 'true' && !forceRedraw && !arguments[1]) return;
   canvas.dataset.rendered = 'true';
 
-  let ctx = canvas.getContext('2d');
-  
-  // Layer compositor integration (Task 16)
+  // Always draw directly to the main canvas for reliability
+  const ctx = canvas.getContext('2d');
+  drawPaperBackground(ctx, S.paperStyle);
+  renderSmudgeEffects(ctx, pageIdx);
+
+  // Also update layer compositor background layer if available (for layer UI)
   if (window.layerCompositor) {
-    window.layerCompositor.clearPage(pageIdx);
-    // Draw background on background layer
-    const bgStack = window.layerCompositor.getStack(pageIdx);
-    const bgLayer = bgStack.layers.find(l => l.name === 'Background');
-    if (bgLayer) {
-      const bgCtx = bgLayer.canvas.getContext('2d');
-      drawPaperBackground(bgCtx, S.paperStyle);
-      renderSmudgeEffects(bgCtx, pageIdx);
-    }
-    // Redirect drawing to the content layer
-    const contentLayerId = window.layerCompositor.getContentLayerId(pageIdx);
-    const contentCanvas = window.layerCompositor.getLayerCanvas(pageIdx, contentLayerId);
-    if (contentCanvas) {
-      ctx = contentCanvas.getContext('2d');
-    }
-  } else {
-    drawPaperBackground(ctx, S.paperStyle);
-    renderSmudgeEffects(ctx, pageIdx);
+    try {
+      window.layerCompositor.clearPage(pageIdx);
+      const bgStack = window.layerCompositor.getStack(pageIdx);
+      const bgLayer = bgStack.layers.find(l => l.name === 'Background');
+      if (bgLayer) {
+        const bgCtx = bgLayer.canvas.getContext('2d');
+        drawPaperBackground(bgCtx, S.paperStyle);
+        renderSmudgeEffects(bgCtx, pageIdx);
+      }
+    } catch(e) { /* ignore compositor errors */ }
   }
 
-  const activeEditor = document.getElementById('editor-' + (pageIdx + 1));
   const pageItems = (window.currentRenderQueue || []).filter(item => item.pageIdx === pageIdx);
 
   if (S.cursiveMode && typeof cursiveConnector !== 'undefined') {
@@ -1748,7 +1744,6 @@ window.renderSpecificPage = function(pageIdx) {
   }
 
   pageItems.forEach((item) => {
-    if (document.activeElement === activeEditor) return;
 
     if (item.type === 'mermaid') {
       const diag = getDiagramImage(item.content);
@@ -1890,12 +1885,9 @@ window.renderSpecificPage = function(pageIdx) {
   // Draw template decorations on top of content
   drawLayoutDecorations(ctx, S.noteLayout);
 
-  // Composite all layers onto the main page canvas (Task 16)
-  if (window.layerCompositor) {
-    window.layerCompositor.composite(pageIdx, canvas.getContext('2d'));
-    if (typeof updateLayerUI === 'function' && pageIdx === currentLayerPage) {
-      updateLayerUI(pageIdx);
-    }
+  // Update layer UI if needed
+  if (window.layerCompositor && typeof updateLayerUI === 'function' && pageIdx === currentLayerPage) {
+    updateLayerUI(pageIdx);
   }
 };
 
@@ -3215,8 +3207,8 @@ async function initApp() {
     bgCtx.globalAlpha = 0.18;
     bgCtx.fillText('Start typing in the panel to the left…', S.margin, S.margin + S.fontSize + lineH);
     bgCtx.restore();
-    // Composite if using layer compositor
-    if (window.layerCompositor) {
+    // If we used a layer canvas, composite now; otherwise content is already on the main canvas
+    if (window.layerCompositor && bgCtx !== canvas.getContext('2d')) {
       window.layerCompositor.composite(0, canvas.getContext('2d'));
     }
   }
