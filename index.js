@@ -1662,24 +1662,25 @@ function renderText(text) {
   const { queue, pageTexts, pageCount } = layoutText(text);
 
   for (let i = 0; i < pageCount; i++) {
-    const canvas = createPage(i + 1);
+    createPage(i + 1);
     // We let renderSpecificPage handle the background and smudges
   }
 
-  // Setup Intersection Observer for lazy rendering
-  if (!window.pageObserver) {
-    window.pageObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        const wrapper = entry.target;
-        if (entry.isIntersecting) {
-          const pageIdx = parseInt(wrapper.dataset.pageIdx, 10);
-          if (!isNaN(pageIdx)) {
-            window.renderSpecificPage(pageIdx);
-          }
-        }
-      });
-    }, { rootMargin: '600px 0px' });
+  // Disconnect old observer before re-observing new pages
+  if (window.pageObserver) {
+    window.pageObserver.disconnect();
   }
+  window.pageObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const wrapper = entry.target;
+      if (entry.isIntersecting) {
+        const pageIdx = parseInt(wrapper.dataset.pageIdx, 10);
+        if (!isNaN(pageIdx)) {
+          window.renderSpecificPage(pageIdx);
+        }
+      }
+    });
+  }, { rootMargin: '600px 0px' });
 
   // Group queue by page and save globally for lazy rendering
   window.currentRenderQueue = queue;
@@ -1700,6 +1701,14 @@ function renderText(text) {
     wrapper.dataset.pageIdx = idx;
     window.pageObserver.observe(wrapper);
   });
+
+  // Immediately render all pages to avoid blank-until-scroll race condition
+  // Use requestAnimationFrame to allow DOM to settle first
+  requestAnimationFrame(() => {
+    pages.forEach((c, idx) => {
+      window.renderSpecificPage(idx);
+    });
+  });
 }
 
 window.renderSpecificPage = function(pageIdx) {
@@ -1716,7 +1725,9 @@ window.renderSpecificPage = function(pageIdx) {
     const bgStack = window.layerCompositor.getStack(pageIdx);
     const bgLayer = bgStack.layers.find(l => l.name === 'Background');
     if (bgLayer) {
-      drawPaperBackground(bgLayer.canvas.getContext('2d'), S.paperStyle);
+      const bgCtx = bgLayer.canvas.getContext('2d');
+      drawPaperBackground(bgCtx, S.paperStyle);
+      renderSmudgeEffects(bgCtx, pageIdx);
     }
     // Redirect drawing to the content layer
     const contentLayerId = window.layerCompositor.getContentLayerId(pageIdx);
@@ -1726,10 +1737,11 @@ window.renderSpecificPage = function(pageIdx) {
     }
   } else {
     drawPaperBackground(ctx, S.paperStyle);
+    renderSmudgeEffects(ctx, pageIdx);
   }
 
   const activeEditor = document.getElementById('editor-' + (pageIdx + 1));
-  const pageItems = window.currentRenderQueue.filter(item => item.pageIdx === pageIdx);
+  const pageItems = (window.currentRenderQueue || []).filter(item => item.pageIdx === pageIdx);
 
   if (S.cursiveMode && typeof cursiveConnector !== 'undefined') {
     renderCursiveConnections(pageItems);
@@ -3184,16 +3196,29 @@ async function initApp() {
   } else {
     // Show a blank ruled page with placeholder watermark
     const canvas = createPage(1);
-    const ctx = canvas.getContext('2d');
-    drawPaperBackground(ctx, S.paperStyle);
+    // If layer compositor is active, draw on background layer; else draw on canvas directly
+    let bgCtx;
+    if (window.layerCompositor) {
+      const bgStack = window.layerCompositor.getStack(0);
+      const bgLayer = bgStack.layers.find(l => l.name === 'Background');
+      bgCtx = bgLayer ? bgLayer.canvas.getContext('2d') : canvas.getContext('2d');
+    } else {
+      bgCtx = canvas.getContext('2d');
+    }
+    drawPaperBackground(bgCtx, S.paperStyle);
+    renderSmudgeEffects(bgCtx, 0);
     // Subtle placeholder text
-    ctx.save();
+    bgCtx.save();
     const lineH = S.fontSize * S.lineHeight;
-    ctx.font = `italic 18px "${S.font}"`;
-    ctx.fillStyle = S.inkColor;
-    ctx.globalAlpha = 0.18;
-    ctx.fillText('Start typing in the panel to the left…', S.margin, S.margin + S.fontSize + lineH);
-    ctx.restore();
+    bgCtx.font = `italic 18px "${S.font}"`;
+    bgCtx.fillStyle = S.inkColor;
+    bgCtx.globalAlpha = 0.18;
+    bgCtx.fillText('Start typing in the panel to the left…', S.margin, S.margin + S.fontSize + lineH);
+    bgCtx.restore();
+    // Composite if using layer compositor
+    if (window.layerCompositor) {
+      window.layerCompositor.composite(0, canvas.getContext('2d'));
+    }
   }
 }
 
@@ -3271,8 +3296,13 @@ function setupFileUpload() {
         if (progContainer) {
           setTimeout(() => { progContainer.style.display = 'none'; }, 500);
         }
+      } else if (ext === 'docx') {
+        if (typeof mammoth === 'undefined') {
+          throw new Error('Mammoth.js is required for DOCX support but failed to load.');
+        }
+        text = await extractTextFromDOCX(file);
       } else {
-        throw new Error('Unsupported file format. Please upload PDF, TXT, or MD.');
+        throw new Error('Unsupported file format. Please upload PDF, TXT, MD, or DOCX.');
       }
       
       if (!text.trim()) {
@@ -3308,6 +3338,20 @@ function setupFileUpload() {
       reader.onload = () => resolve(reader.result);
       reader.onerror = reject;
       reader.readAsText(file);
+    });
+  }
+
+  async function extractTextFromDOCX(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const arrayBuffer = event.target.result;
+        mammoth.extractRawText({ arrayBuffer: arrayBuffer })
+          .then(function(result) { resolve(result.value); })
+          .catch(function(err) { reject(err); });
+      };
+      reader.onerror = function(err) { reject(err); };
+      reader.readAsArrayBuffer(file);
     });
   }
 

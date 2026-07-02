@@ -328,6 +328,15 @@ All implementation will be in JavaScript, building upon the existing InkFlow arc
 - Hindi support requires Hindi-capable AI models (Claude 3+, GPT-4)
 - Template repository can start with local storage before adding cloud sync
 
+## Additional Enhancements
+
+- [x] 18. Add DOCX File Upload Support
+  - Add mammoth.js CDN script to `index.html` for client-side DOCX parsing
+  - Update file upload input to accept `.docx` files alongside PDF, TXT, MD
+  - Implement `extractTextFromDOCX()` function using mammoth.extractRawText API
+  - Add DOCX branch in `handleUploadedFile()` with proper error handling
+  - Update UI label to show "Supports PDF, TXT, MD, DOCX"
+
 ## Task Dependency Graph
 
 ```json
