@@ -143,14 +143,14 @@ Try pasting a paragraph of lecture notes!"></textarea>
             </optgroup>
           </select>
 
-          <label class="checkbox-label" style="margin-top: 8px;">
+          <label class="checkbox-label mt-8">
             <input type="checkbox" id="auto-switch-devanagari" checked title="Automatically switch to Devanagari fonts for Hindi text" onchange="onHinglishToggle()" />
             <span class="checkbox-custom"></span>
             <span class="checkbox-text">A/अ Auto-switch Script</span>
           </label>
 
           <!-- Phase 3.3 — Custom font upload -->
-          <div class="sb-label" style="margin-top:10px;">Upload Custom Font</div>
+          <div class="sb-label mt-10">Upload Custom Font</div>
           <input type="file" id="font-upload" accept=".ttf,.otf" title="Upload Custom Font" />
 
           <!-- Create Own Font Button -->
@@ -211,7 +211,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
           </div>
 
           <!-- Cursive Mode Toggle -->
-          <label class="checkbox-label" style="margin-top: 12px;">
+          <label class="checkbox-label mt-12">
             <input type="checkbox" id="cursive-mode-toggle" title="Enable cursive mode with connected letters" onchange="onCursiveModeToggle()" />
             <span class="checkbox-custom"></span>
             <span class="checkbox-text">🔗 Cursive Mode</span>
@@ -240,7 +240,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
           </div>
           
           <div id="collab-users-container" class="hidden">
-            <div class="sb-label" style="margin-top: 12px;">Active Users</div>
+            <div class="sb-label mt-12">Active Users</div>
             <ul id="collab-users-list" class="users-list">
               <!-- Users populated here -->
             </ul>
@@ -413,10 +413,10 @@ Try pasting a paragraph of lecture notes!"></textarea>
             <button class="btn" onclick="aiAction('assignment')">📝 Generate Assignment</button>
           </div>
           
-          <div id="recording-status-panel" class="hidden" style="margin-top: 10px; padding: 10px; background: var(--bg-alt); border-radius: 6px; display: flex; align-items: center; gap: 10px; font-size: 14px;">
+          <div id="recording-status-panel" class="hidden recording-status">
             <div class="pulsing-dot"></div>
             <span id="recording-timer">00:00</span>
-            <span id="recording-size" style="color: var(--text-muted); font-size: 12px;">0 KB</span>
+            <span id="recording-size" class="recording-size">0 KB</span>
           </div>
         </div>
       </div>
@@ -512,7 +512,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
             <span id="char-progress-percent">0%</span>
           </div>
           <div class="progress-track">
-            <div class="progress-fill" id="char-progress-fill" style="width: 0%"></div>
+            <div class="progress-fill" id="char-progress-fill"></div>
           </div>
         </div>
         
@@ -528,7 +528,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
           <div class="sketch-main">
             <div class="sketch-header">
               <span class="active-char-label">Current: <strong id="current-char-display">A</strong></span>
-              <div style="display: flex; gap: 4px;">
+              <div class="flex-gap-4">
                 <button class="btn sm" onclick="undoSketchStroke()" title="Undo last stroke">↶ Undo</button>
                 <button class="btn sm" onclick="clearSketchCanvas()" title="Clear canvas">🗑️ Clear</button>
               </div>
@@ -555,7 +555,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
             </div>
             
             <!-- Preview of current character -->
-            <div class="char-preview" id="char-preview-container" style="display: none;">
+            <div class="char-preview d-none" id="char-preview-container">
               <div class="preview-label">Saved Preview:</div>
               <canvas id="char-preview-canvas" width="48" height="48"></canvas>
             </div>
@@ -566,18 +566,18 @@ Try pasting a paragraph of lecture notes!"></textarea>
         <div class="project-actions">
           <button class="btn sm" onclick="exportFontProject()">💾 Save Progress (JSON)</button>
           <button class="btn sm" onclick="document.getElementById('import-font-project').click()">📂 Load Progress</button>
-          <input type="file" id="import-font-project" accept=".json" style="display: none;" onchange="importFontProject(event)" title="Import Font Project" />
+          <input type="file" id="import-font-project" accept=".json" class="d-none" onchange="importFontProject(event)" title="Import Font Project" />
         </div>
       </div>
 
       <!-- Upload Template Panel -->
       <div id="panel-template" class="tab-panel hidden">
         <p class="modal-desc">Download the template package (instructions + 2 sheets), write your letters clearly, scan/photo them, and align the grid overlay below.</p>
-        <div class="template-actions" style="margin-top: 8px; justify-content: center; gap: 8px;">
+        <div class="template-actions template-actions-extended">
           <button class="btn sm primary" onclick="generateDownloadTemplate()">📦 Download Template Package (3 sheets)</button>
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <span class="sb-label" style="margin: 0; font-size: 12px; color: var(--text-secondary);">Upload Sheet:</span>
-            <select id="upload-template-sheet-select" style="font-size: 12px; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--btn-border); background: var(--btn-bg); color: var(--text-primary); outline: none;" title="Select template sheet type">
+          <div class="flex-align-center-gap-6">
+            <span class="sb-label sheet-label">Upload Sheet:</span>
+            <select id="upload-template-sheet-select" class="sheet-select" title="Select template sheet type">
               <option value="letters">Letters (A-Z, a-z)</option>
               <option value="symbols">Numbers &amp; Symbols</option>
             </select>
@@ -643,22 +643,22 @@ Try pasting a paragraph of lecture notes!"></textarea>
      PHASE 11 — GRAMMAR CORRECTION MODAL
   ════════════════════════════════════════ -->
   <div id="grammar-modal" class="modal-overlay hidden">
-    <div class="modal-card" style="max-width: 800px; width: 90%;">
+    <div class="modal-card modal-card-lg">
       <div class="modal-header">
         <h3>✨ AI Grammar Correction <span id="grammar-lang-badge" class="badge">English</span></h3>
         <button class="modal-close" onclick="closeGrammarModal()">✕</button>
       </div>
-      <div class="modal-body" style="display: flex; gap: 20px; text-align: left;">
-        <div style="flex: 1;">
+      <div class="modal-body modal-body-flex">
+        <div class="flex-1">
           <h4>Original Text</h4>
-          <textarea id="grammar-original" class="text-input" readonly style="height: 300px; background: var(--bg-alt);"></textarea>
+          <textarea id="grammar-original" class="text-input grammar-textarea-readonly" readonly title="Original Text" placeholder="Original text"></textarea>
         </div>
-        <div style="flex: 1;">
+        <div class="flex-1">
           <h4>Corrected Text</h4>
-          <textarea id="grammar-corrected" class="text-input" style="height: 300px;"></textarea>
+          <textarea id="grammar-corrected" class="text-input grammar-textarea" title="Corrected Text" placeholder="Corrected text"></textarea>
         </div>
       </div>
-      <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+      <div class="modal-footer modal-footer-flex">
         <button class="btn" onclick="closeGrammarModal()">Cancel</button>
         <button class="btn primary" onclick="acceptGrammarCorrection()">✅ Accept Changes</button>
       </div>

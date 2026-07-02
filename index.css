@@ -102,8 +102,9 @@ body {
   right: 0;
   height: 56px;
   background: var(--toolbar-bg);
-  backdrop-filter: blur(20px) saturate(1.5);
   -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  backdrop-filter: blur(20px) saturate(1.5);
   border-bottom: 1px solid var(--sidebar-border);
   display: flex;
   align-items: center;
@@ -156,6 +157,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
 }
 
@@ -196,6 +198,7 @@ body {
   margin-left: 8px;
   cursor: pointer;
   font-weight: 500;
+  -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
 
@@ -215,6 +218,7 @@ body {
   z-index: 1001;
   border-radius: var(--radius);
   border: 1px solid var(--sidebar-border);
+  -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
 }
 
@@ -270,8 +274,9 @@ body {
 ════════════════════════════════════════════ */
 #sidebar {
   background: var(--sidebar-bg);
-  backdrop-filter: blur(24px) saturate(1.4);
   -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  backdrop-filter: blur(24px) saturate(1.4);
   border-right: 1px solid var(--sidebar-border);
   overflow-y: auto;
   overflow-x: hidden;
@@ -296,6 +301,7 @@ body {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-muted);
+  -webkit-user-select: none;
   user-select: none;
   transition: var(--transition);
 }
@@ -452,6 +458,7 @@ select:focus {
   cursor: pointer;
   font-size: 13px;
   color: var(--text-primary);
+  -webkit-user-select: none;
   user-select: none;
   transition: var(--transition);
 }
@@ -548,6 +555,7 @@ select:focus {
   font-family: var(--font-ui);
   font-size: 13px;
   font-weight: 500;
+  -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
   border: 1px solid transparent;
   z-index: 9999;
@@ -692,8 +700,9 @@ html.dark .export-toast--error   { color: #f07070; }
   overflow: hidden;
   box-sizing: border-box;
   cursor: text;
-  user-select: text;
   -webkit-user-select: text;
+  -webkit-user-select: text;
+  user-select: text;
   border-radius: 2px;
   transition: box-shadow 0.2s ease;
 }
@@ -719,8 +728,9 @@ html.dark .export-toast--error   { color: #f07070; }
   overflow: hidden;
   box-sizing: border-box;
   cursor: text;
-  user-select: text;
   -webkit-user-select: text;
+  -webkit-user-select: text;
+  user-select: text;
   caret-color: var(--ink-default);
   line-height: 1.4;
   opacity: 0.85;
@@ -772,6 +782,7 @@ html.dark .page-editor:focus {
   align-items: center;
   gap: 10px;
   background: var(--toolbar-bg);
+  -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
   border: 1px solid var(--sidebar-border);
   border-radius: 40px;
@@ -1089,6 +1100,7 @@ html.dark .drop-zone {
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.45);
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   z-index: 10000;
   display: flex;
@@ -1465,6 +1477,7 @@ html.dark .drop-zone {
   font-size: 140px;
   color: rgba(0, 0, 0, 0.05);
   font-family: serif;
+  -webkit-user-select: none;
   user-select: none;
   pointer-events: none;
   z-index: 1;
@@ -1888,6 +1901,7 @@ html.dark .drop-zone {
   border: 1px solid var(--sidebar-border);
   border-radius: 8px;
   z-index: 1000;
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
   backdrop-filter: blur(24px) saturate(1.4);
   margin-bottom: 8px;
 }
@@ -2289,6 +2303,7 @@ html.dark .drop-zone {
   opacity: 0.4;
   font-size: 12px;
   text-align: center;
+  -webkit-user-select: none;
   user-select: none;
 }
 
@@ -2301,6 +2316,7 @@ html.dark .drop-zone {
   opacity: 0.7;
   font-size: 13px;
   text-align: center;
+  -webkit-user-select: none;
   user-select: none;
 }
 
@@ -2341,6 +2357,7 @@ html.dark .drop-zone {
   opacity: 0.4;
   font-size: 11px;
   text-align: center;
+  -webkit-user-select: none;
   user-select: none;
 }
 
@@ -2359,3 +2376,23 @@ html.dark .drop-zone {
   gap: 6px;
   margin-top: 6px;
 }
+
+/* UI cleanup utilities extracted from inline styles */
+.mt-8 { margin-top: 8px; }
+.mt-10 { margin-top: 10px; }
+.mt-12 { margin-top: 12px; }
+.flex-gap-4 { display: flex; gap: 4px; }
+.flex-align-center-gap-6 { display: flex; align-items: center; gap: 6px; }
+.flex-1 { flex: 1; }
+.d-none { display: none !important; }
+.recording-status { margin-top: 10px; padding: 10px; background: var(--bg-alt); border-radius: 6px; display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.recording-size { color: var(--text-muted); font-size: 12px; }
+.template-actions-extended { margin-top: 8px; justify-content: center; gap: 8px; }
+.sheet-label { margin: 0; font-size: 12px; color: var(--text-secondary); }
+.sheet-select { font-size: 12px; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--btn-border); background: var(--btn-bg); color: var(--text-primary); outline: none; }
+.modal-card-lg { max-width: 800px; width: 90%; }
+.modal-body-flex { display: flex; gap: 20px; text-align: left; }
+.grammar-textarea { height: 300px; }
+.grammar-textarea-readonly { height: 300px; background: var(--bg-alt); }
+.modal-footer-flex { display: flex; justify-content: flex-end; gap: 10px; }
+#char-progress-fill { width: 0%; } /* Default fallback if style removed */
