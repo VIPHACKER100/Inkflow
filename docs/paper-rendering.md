@@ -39,16 +39,19 @@ Inkflow features A4 aspect ratio rendering ($794\text{px} \times 1123\text{px}$)
    ctx.fillRect(0, 0, w, h);
    ```
 3. **Paper Grain Noise**: Run 2,200 iterations drawing micro-rectangles (1–4px, opacity 0.018) in warm organic tones to mimic tactile paper fibers.
-4. **Margin Lines**: For `ruled` and `legal` styles, draw a vertical red margin guide (`#e08080`) at $x = \text{S.margin} - 10$.
-5. **Ruling Lines**: Draw horizontal lines separated by:
+4. **Margin Lines**: 
+   - For `ruled` style, draw double vertical red/pink margin lines at $x = \text{S.margin} - 10$ and $x = \text{S.margin} - 14$, and double horizontal red/pink margin lines at $y = \text{S.margin}$ and $y = \text{S.margin} - 4$ (`#ff4d6d`).
+   - For `legal` style, draw a single vertical red margin guide (`#e07070`) at $x = \text{S.margin} - 10$.
+5. **Date / Page No. Box**: For `ruled` style, draw a printed red/pink rounded header box at the top right of the page. Render the Date and Page Number inside this box in the selected handwriting font and ink color when the overlay inputs are not focused.
+6. **Ruling Lines**: Draw horizontal lines separated by:
    $$\Delta y = \text{S.fontSize} \times \text{S.lineHeight}$$
-6. **Grid Layouts**:
+7. **Grid Layouts**:
    - For `grid` sheets, draw vertical and horizontal lines at 28px increments.
    - For `dot_grid` sheets, draw 1.2px radius circles (dots) at 28px intervals.
    - For `engineering` sheets, draw minor lines (0.4px width, 0.18 opacity) every 10px, major lines (0.8px width, 0.4 opacity) every 50px, and reddish-brown margins at $x = \text{S.margin} - 10$ and $y = \text{S.margin}$.
    - For `music` sheets, draw sets of 5 staff lines (8px spacing, 72px spacing between staffs) with vertical brackets marking the start and end of each staff.
-7. **Layout Decorations**: Call `drawLayoutDecorations(ctx, S.noteLayout)` to paint any template guidelines (e.g., Cornell dividers and cues/notes/summary titles).
-8. **Edge Shadowing**: Layer a soft shadow border along the A4 sheet edges to create depth.
+8. **Layout Decorations**: Call `drawLayoutDecorations(ctx, S.noteLayout)` to paint any template guidelines (e.g., Cornell dividers and cues/notes/summary titles).
+9. **Edge Shadowing**: Layer a soft shadow border along the A4 sheet edges to create depth.
 
 ---
 
@@ -79,7 +82,7 @@ Each paper style defines a unique color palette:
 
 ```javascript
 const PAPER_CONFIGS = {
-  ruled:       { bg: '#f8f4ea', lineColor: '#c5b9a0', lineOpacity: 0.55, redLine: '#e08080' },
+  ruled:       { bg: '#faf9f5', lineColor: '#85add4', lineOpacity: 0.65, redLine: '#ff4d6d' },
   plain:       { bg: '#faf7f0', lineColor: null },
   grid:        { bg: '#f6f2ec', lineColor: '#c0b49a', lineOpacity: 0.35 },
   legal:       { bg: '#fef9c3', lineColor: '#c8b820', lineOpacity: 0.45, redLine: '#e07070' },

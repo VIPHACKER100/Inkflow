@@ -108,7 +108,7 @@ Bottom pill-style navigation for multi-page A4 transitions.
 ### Paper Backgrounds
 | Style | Color | Description |
 | :--- | :--- | :--- |
-| Ruled | `#f8f4ea` | Warm cream notebook with blue guidelines and red margin |
+| Ruled | `#faf9f5` | Bright off-white notebook with blue guidelines, double red margin, and header box |
 | Plain | `#faf7f0` | Clean blank ivory sheet |
 | Grid | `#f6f2ec` | Light grid paper with 28px square intervals |
 | Legal | `#fef9c3` | Bright yellow legal pad with red left margin |

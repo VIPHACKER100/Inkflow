@@ -4,6 +4,15 @@ All notable changes to Inkflow are documented in this file.
 
 ---
 
+## [1.2.2] — 2026-08-13
+
+### ✨ Added
+- **Classmate-Style Notebook Paper**: Overhauled the `Ruled` paper style to render a classmate-style notebook page, including double red vertical margin lines, double red horizontal margin lines, light blue guidelines, and a printed top-right header box.
+- **Interactive Handwriting Baking**: Added interactive on-screen Date and Page No. inputs that display text in the active handwriting font when focused, and bake the text onto the canvas in real-time on blur to support printing and exporting.
+- **State Persistence**: Persisted page-specific dates and page numbers across sessions and folders via `localStorage` and IndexedDB.
+
+---
+
 ## [1.2.1] — 2026-06-20
 
 ### ✨ Added
