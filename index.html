@@ -44,7 +44,9 @@
 
     <div class="toolbar-group">
       <span id="page-indicator-toolbar">Page 1 of 1</span>
-      <button class="dark-toggle" id="dark-toggle" aria-label="Toggle dark mode">
+      <button class="btn sm" id="btn-study-mode" onclick="toggleStudyMode()" title="Toggle Study Mode">📖 Study Mode</button>
+      <button class="btn sm" id="btn-open-flashcards" onclick="openFlashcardsModal()" title="Review Flashcards" style="display:none; margin-left: 5px;">🃏 Flashcards (<span id="flashcard-count-indicator">0</span>)</button>
+      <button class="dark-toggle" id="dark-toggle" aria-label="Toggle dark mode" style="margin-left: 8px;">
         <span id="dark-icon">☀️</span>
       </button>
     </div>
@@ -58,6 +60,25 @@
     <!-- PHASE 2.2 — GLASSMORPHISM SIDEBAR -->
     <aside id="sidebar">
 
+      <!-- ── NOTEBOOK EXPLORER SECTION ── -->
+      <div class="sb-section collapsed" id="sec-notebooks">
+        <div class="sb-section-header" onclick="toggleSection('sec-notebooks')">
+          📁 &nbsp;Notebooks &amp; Folders
+          <span class="sb-arrow">▾</span>
+        </div>
+        <div class="sb-body">
+          <div class="notebook-actions-row" style="display: flex; gap: 8px; margin-bottom: 10px;">
+            <button class="btn sm primary" onclick="createNewNotebook()" title="Create New Notebook" style="flex: 1;">＋ New Note</button>
+            <button class="btn sm" onclick="createNewFolder()" title="Create New Folder" style="flex: 1;">＋ Folder</button>
+          </div>
+          <!-- Notebook Folder Tree view -->
+          <div class="notebook-list" id="notebook-list-container" style="max-height: 250px; overflow-y: auto; padding-right: 4px;">
+            <!-- Dynamically populated from IndexedDB -->
+            <div class="notebook-loading" style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 10px;">Loading notebooks...</div>
+          </div>
+        </div>
+      </div>
+
       <!-- ── TEXT INPUT SECTION ── -->
       <div class="sb-section" id="sec-text">
         <div class="sb-section-header" onclick="toggleSection('sec-text')">
@@ -70,8 +91,9 @@
 The handwriting engine will render each character with natural variation, baseline wobble, and ink effects.
 
 Try pasting a paragraph of lecture notes!"></textarea>
-          <div class="action-buttons-row">
-            <button class="btn accent btn-render" onclick="triggerRender()">✦ Render</button>
+          <div class="action-buttons-row" style="display: flex; gap: 6px;">
+            <button class="btn accent btn-render" onclick="triggerRender()" style="flex: 1;">✦ Render</button>
+            <button class="btn" id="btn-voice" onclick="toggleVoiceInput()" title="Voice to Notes" style="display: flex; align-items: center; justify-content: center; width: 38px; padding: 0;"><i class="fa-solid fa-microphone"></i></button>
             <button class="btn" onclick="clearText()" title="Clear text">✕</button>
           </div>
 
@@ -191,6 +213,25 @@ Try pasting a paragraph of lecture notes!"></textarea>
           <button class="btn sm" id="btn-reset-defaults" onclick="resetToDefaults()">
             <i class="fa-solid fa-rotate-left"></i> &nbsp;Reset Defaults
           </button>
+        </div>
+      </div>
+
+      <!-- ── THEME PACKS SECTION ── -->
+      <div class="sb-section collapsed" id="sec-theme">
+        <div class="sb-section-header" onclick="toggleSection('sec-theme')">
+          🎨 &nbsp;Theme Packs
+          <span class="sb-arrow">▾</span>
+        </div>
+        <div class="sb-body">
+          <div class="sb-label">Notebook Theme</div>
+          <select id="theme-select" onchange="applyTheme(this.value)" title="Notebook Theme" style="width: 100%; padding: 8px 12px; border-radius: var(--radius); border: 1px solid var(--btn-border); background: var(--btn-bg); color: var(--text-primary); outline: none;">
+            <option value="default">Default Notebook</option>
+            <option value="vintage">Vintage Diary</option>
+            <option value="cute">Cute Pastel Notes</option>
+            <option value="science">Science Lab Notebook</option>
+            <option value="minimal">Minimal Noir</option>
+            <option value="scrapbook">Scrapbook Style</option>
+          </select>
         </div>
       </div>
 
@@ -338,6 +379,42 @@ Try pasting a paragraph of lecture notes!"></textarea>
           <div class="animation-buttons-row">
             <button class="btn accent btn-start" onclick="startAnimation()">▶ Start</button>
             <button class="btn" onclick="stopAnimation()">■ Stop</button>
+          </div>
+        </div>
+      </div>
+      <!-- ── THEME PACKS SECTION ── -->
+      <div class="sb-section collapsed" id="sec-themes">
+        <div class="sb-section-header" onclick="toggleSection('sec-themes')">
+          🎨 &nbsp;Theme Packs
+          <span class="sb-arrow">▾</span>
+        </div>
+        <div class="sb-body">
+          <div class="sb-label" style="margin-bottom:10px;">One-click Note Themes</div>
+          <div class="theme-pack-grid">
+            <button class="theme-pack-btn" onclick="applyTheme('default')" title="Default">
+              <span class="theme-swatch" style="background: linear-gradient(135deg, #faf9f5, #1c2340 80%);"></span>
+              <span>Default</span>
+            </button>
+            <button class="theme-pack-btn" onclick="applyTheme('vintage')" title="Vintage Diary">
+              <span class="theme-swatch" style="background: linear-gradient(135deg, #f2e8ce, #3c2f2f 80%);"></span>
+              <span>Vintage</span>
+            </button>
+            <button class="theme-pack-btn" onclick="applyTheme('cute')" title="Cute Pastel">
+              <span class="theme-swatch" style="background: linear-gradient(135deg, #faf7f0, #5d3f6a 80%);"></span>
+              <span>Pastel</span>
+            </button>
+            <button class="theme-pack-btn" onclick="applyTheme('science')" title="Science Lab">
+              <span class="theme-swatch" style="background: linear-gradient(135deg, #eef6ed, #1a331e 80%);"></span>
+              <span>Science</span>
+            </button>
+            <button class="theme-pack-btn" onclick="applyTheme('minimal')" title="Minimal Dark">
+              <span class="theme-swatch" style="background: linear-gradient(135deg, #1a1a2e, #e0e0e0 80%);"></span>
+              <span>Dark</span>
+            </button>
+            <button class="theme-pack-btn" onclick="applyTheme('scrapbook')" title="Scrapbook">
+              <span class="theme-swatch" style="background: linear-gradient(135deg, #f6f2ec, #1c3144 80%);"></span>
+              <span>Scrapbook</span>
+            </button>
           </div>
         </div>
       </div>
@@ -518,6 +595,44 @@ Try pasting a paragraph of lecture notes!"></textarea>
       </div>
     </div>
   </div>
+
+  <!-- ════════════════════════════════════════
+     STUDY FLASHCARDS MODAL
+  ════════════════════════════════════════ -->
+  <div id="flashcards-modal" class="modal-overlay hidden">
+    <div class="modal-card flashcard-modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3>🃏 Study Flashcards</h3>
+        <button class="modal-close" onclick="closeFlashcardsModal()">✕</button>
+      </div>
+      
+      <div class="modal-body flashcard-modal-body" style="display: flex; flex-direction: column; align-items: center; padding: 20px;">
+        <p class="modal-desc" style="text-align: center; margin-bottom: 20px;">Click the card to flip between Question and Answer.</p>
+        
+        <div class="flashcard-container" onclick="flipFlashcard()">
+          <div class="flashcard-inner" id="flashcard-inner">
+            <div class="flashcard-front">
+              <div class="flashcard-badge">QUESTION</div>
+              <div class="flashcard-text" id="flashcard-question-text">Question goes here...</div>
+            </div>
+            <div class="flashcard-back">
+              <div class="flashcard-badge">ANSWER</div>
+              <div class="flashcard-text" id="flashcard-answer-text">Answer goes here...</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="flashcard-controls" style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px; width: 100%; gap: 15px;">
+          <button class="btn" onclick="prevFlashcard()" style="flex: 1;">◀ Prev</button>
+          <span id="flashcard-progress" style="font-weight: bold; font-family: var(--font-ui); min-width: 90px; text-align: center;">Card 1 of 1</span>
+          <button class="btn" onclick="nextFlashcard()" style="flex: 1;">Next ▶</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating exit study mode button -->
+  <button id="btn-exit-study-mode" class="btn" onclick="toggleStudyMode()" style="display: none; position: fixed; bottom: 25px; right: 25px; z-index: 1000; box-shadow: 0 4px 16px rgba(0,0,0,0.18); font-weight: bold; background: var(--accent); color: white; border: none; border-radius: 40px; padding: 12px 24px; font-size: 14px; align-items: center; gap: 8px;">🚪 Exit Study Mode</button>
 
   <!-- Custom Script -->
   <script src="index.js"></script>

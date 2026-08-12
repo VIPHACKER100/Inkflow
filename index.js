@@ -17,6 +17,8 @@ const S = {
   currentPage: 0,
   noteLayout: 'standard',
   textAlignment: 'middle', // 'top', 'middle', 'bottom'
+  pageDates: {},
+  pageNos: {},
 };
 
 /* Canvas pages array */
@@ -24,6 +26,15 @@ let pages = [];
 let animFrameId = null;
 let isAnimating = false;
 let renderTimeout = null;
+
+/* Annotations & Study Features State */
+let parsedStickies = [];
+let parsedCallouts = [];
+let highlightRanges = [];
+let activeFlashcards = [];
+let currentFlashcardIndex = 0;
+let activeNotebookId = null;
+
 
 const TEMPLATE_SHEETS = {
   letters: [
@@ -236,6 +247,10 @@ function setPaper(btn) {
   document.querySelectorAll('.paper-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   S.paperStyle = btn.dataset.style;
+  // Toggle worksheet header visibility based on paper style
+  document.querySelectorAll('.worksheet-header').forEach(wh => {
+    wh.style.display = S.paperStyle === 'ruled' ? 'flex' : 'none';
+  });
   debounceRender();
 }
 
@@ -287,10 +302,97 @@ function createPage(pageNum) {
   editor.contentEditable = 'true';
   editor.setAttribute('aria-label', 'Edit Page ' + pageNum);
 
+  const worksheetHeader = document.createElement('div');
+  worksheetHeader.className = 'worksheet-header';
+  worksheetHeader.style.display = S.paperStyle === 'ruled' ? 'flex' : 'none';
+
+  const dateRow = document.createElement('div');
+  dateRow.className = 'worksheet-field-row';
+
+  const dateLabel = document.createElement('span');
+  dateLabel.className = 'worksheet-label';
+  dateLabel.textContent = 'Date :';
+
+  const dateInput = document.createElement('input');
+  dateInput.type = 'text';
+  dateInput.id = 'date-input-' + pageNum;
+  dateInput.className = 'worksheet-input-box';
+  dateInput.setAttribute('aria-label', 'Date');
+  dateInput.placeholder = 'Date';
+  dateInput.value = S.pageDates[pageNum] || '';
+  dateInput.style.color = 'transparent';
+  dateInput.style.fontFamily = getFontStack(containsDevanagari(dateInput.value));
+
+  dateRow.appendChild(dateLabel);
+  dateRow.appendChild(dateInput);
+
+  const pageRow = document.createElement('div');
+  pageRow.className = 'worksheet-field-row';
+
+  const pageLabel = document.createElement('span');
+  pageLabel.className = 'worksheet-label';
+  pageLabel.textContent = 'P. No. :';
+
+  const pageInput = document.createElement('input');
+  pageInput.type = 'text';
+  pageInput.id = 'page-input-' + pageNum;
+  pageInput.className = 'worksheet-input-box';
+  pageInput.setAttribute('aria-label', 'Page number');
+  pageInput.placeholder = 'P. No.';
+  pageInput.value = S.pageNos[pageNum] !== undefined ? S.pageNos[pageNum] : pageNum;
+  pageInput.style.color = 'transparent';
+  pageInput.style.fontFamily = getFontStack(containsDevanagari(String(pageInput.value)));
+
+  pageRow.appendChild(pageLabel);
+  pageRow.appendChild(pageInput);
+
+  worksheetHeader.appendChild(dateRow);
+  worksheetHeader.appendChild(pageRow);
+
+  // Focus/Blur/Input event listeners for Date Input
+  dateInput.addEventListener('focus', () => {
+    dateInput.style.color = S.inkColor;
+    dateInput.style.fontFamily = getFontStack(containsDevanagari(dateInput.value));
+    redrawPageCanvas(pageNum);
+  });
+
+  dateInput.addEventListener('blur', () => {
+    dateInput.style.color = 'transparent';
+    S.pageDates[pageNum] = dateInput.value;
+    autosave();
+    redrawPageCanvas(pageNum);
+  });
+
+  dateInput.addEventListener('input', () => {
+    dateInput.style.fontFamily = getFontStack(containsDevanagari(dateInput.value));
+    S.pageDates[pageNum] = dateInput.value;
+    autosave();
+  });
+
+  // Focus/Blur/Input event listeners for Page Input
+  pageInput.addEventListener('focus', () => {
+    pageInput.style.color = S.inkColor;
+    pageInput.style.fontFamily = getFontStack(containsDevanagari(pageInput.value));
+    redrawPageCanvas(pageNum);
+  });
+
+  pageInput.addEventListener('blur', () => {
+    pageInput.style.color = 'transparent';
+    S.pageNos[pageNum] = pageInput.value;
+    autosave();
+    redrawPageCanvas(pageNum);
+  });
+
+  pageInput.addEventListener('input', () => {
+    pageInput.style.fontFamily = getFontStack(containsDevanagari(pageInput.value));
+    S.pageNos[pageNum] = pageInput.value;
+    autosave();
+  });
+
   // Focus: clear canvas text (draw only background) and show overlay text
   editor.addEventListener('focus', () => {
     const ctx = canvas.getContext('2d');
-    drawPaperBackground(ctx, S.paperStyle);
+    drawPaperBackground(ctx, S.paperStyle, pageNum);
     editor.style.color = S.inkColor;
   });
 
@@ -329,6 +431,7 @@ function createPage(pageNum) {
   container.appendChild(marginText);
   wrapper.appendChild(label);
   wrapper.appendChild(container);
+  wrapper.appendChild(worksheetHeader);
 
   document.getElementById('page-container').appendChild(wrapper);
   pages.push(canvas);
@@ -337,6 +440,76 @@ function createPage(pageNum) {
   updateEditorStyles(editor, canvas);
 
   return canvas;
+}
+
+function redrawPageCanvas(pageNum) {
+  const canvas = pages[pageNum - 1];
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  // 1. Draw paper background (passing the page index so it paints Date & P.No.)
+  drawPaperBackground(ctx, S.paperStyle, pageNum);
+
+  // 2. Pre-process text and layout to get characters queue
+  const textInputVal = document.getElementById('text-input').value;
+  if (!textInputVal.trim()) return;
+  const { cleanText } = parseRichSyntax(sanitizeText(textInputVal));
+  const { queue } = layoutText(cleanText || textInputVal);
+
+  // 3. Draw characters for this specific page
+  queue.forEach((item) => {
+    if (item.pageIdx !== pageNum - 1) return;
+    if (item.isSticky || item.isCallout) return;
+
+    // Draw highlight
+    if (item.highlight) {
+      ctx.save();
+      ctx.globalAlpha = 0.28;
+      ctx.fillStyle = S._highlightColor || '#ffe066';
+      const hlW = ctx.measureText ? S.fontSize * 0.7 : 14;
+      const hlH = S.fontSize * 1.3;
+      ctx.fillRect(item.x - 1, item.y - S.fontSize * 0.85, hlW, hlH);
+      ctx.restore();
+    }
+
+    const v = item.v;
+    ctx.save();
+    ctx.translate(item.x, item.y);
+    ctx.rotate((v.tiltDeg * (item.isIndic ? 0.3 : 1) * Math.PI) / 180);
+    ctx.scale(v.scaleX, v.scaleY);
+
+    if (draftedGlyphs[item.ch]) {
+      const glyphImg = getCachedGlyphImage(item.ch, draftedGlyphs[item.ch]);
+      if (glyphImg) {
+        ctx.globalAlpha = v.opacity;
+        const drawSz = S.fontSize * 1.35;
+        ctx.drawImage(glyphImg, -drawSz / 2, -drawSz / 2, drawSz, drawSz);
+      } else {
+        const pxSize = S.fontSize * v.pressureMod;
+        ctx.font = `${Math.max(10, pxSize)}px ${item.fontStack}`;
+        ctx.globalAlpha = v.opacity;
+        ctx.fillStyle = S.inkColor;
+        ctx.fillText(item.ch, 0, 0);
+      }
+    } else {
+      const pxSize = S.fontSize * v.pressureMod;
+      ctx.font = `${Math.max(10, pxSize)}px ${item.fontStack}`;
+      ctx.globalAlpha = v.opacity;
+      if (S.bleed > 0.05) {
+        ctx.shadowColor = S.shadowColor || S.inkColor;
+        ctx.shadowBlur = S.bleed * 1.4;
+      } else {
+        ctx.shadowBlur = 0;
+      }
+      ctx.fillStyle = S.inkColor;
+      ctx.fillText(item.ch, 0, 0);
+    }
+    ctx.restore();
+  });
+
+  // 4. Draw stickies and callouts for this page
+  paintStickyNotes(queue, pageNum - 1);
+  paintCallouts(queue, pageNum - 1);
 }
 
 function updateEditorStyles(editor, canvas) {
@@ -416,13 +589,27 @@ function drawLayoutDecorations(ctx, noteLayout) {
   ctx.restore();
 }
 
-function drawPaperBackground(ctx, style) {
+function drawRoundedRect(ctx, x, y, width, height, radius) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+}
+
+function drawPaperBackground(ctx, style, pageNum = 1) {
   const w = PAGE_W, h = PAGE_H;
   ctx.clearRect(0, 0, w, h);
 
   // Paper colors per style
   const configs = {
-    ruled: { bg: '#f8f4ea', lineColor: '#c5b9a0', lineOpacity: 0.55, redLine: '#e08080' },
+    ruled: { bg: '#faf9f5', lineColor: '#85add4', lineOpacity: 0.65, redLine: '#ff4d6d' },
     plain: { bg: '#faf7f0', lineColor: null },
     grid: { bg: '#f6f2ec', lineColor: '#c0b49a', lineOpacity: 0.35 },
     legal: { bg: '#fef9c3', lineColor: '#c8b820', lineOpacity: 0.45, redLine: '#e07070' },
@@ -453,11 +640,134 @@ function drawPaperBackground(ctx, style) {
     ctx.restore();
   }
 
-  if (style === 'ruled' || style === 'legal') {
+  if (style === 'ruled') {
+    // Ruled paper (Classmate-style)
+    ctx.save();
+    ctx.globalAlpha = 0.6;
+    ctx.strokeStyle = c.redLine || '#ff4d6d';
+    ctx.lineWidth = 1.0;
+
+    // Double vertical red lines (separated by 4px)
+    ctx.beginPath();
+    ctx.moveTo(S.margin - 10, 0);
+    ctx.lineTo(S.margin - 10, h);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(S.margin - 14, 0);
+    ctx.lineTo(S.margin - 14, h);
+    ctx.stroke();
+
+    // Double horizontal red lines (separated by 4px)
+    ctx.beginPath();
+    ctx.moveTo(0, S.margin);
+    ctx.lineTo(w, S.margin);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(0, S.margin - 4);
+    ctx.lineTo(w, S.margin - 4);
+    ctx.stroke();
+
+    ctx.restore();
+
+    // Date & P. No. box in top-right header area
+    ctx.save();
+    ctx.strokeStyle = c.redLine || '#ff4d6d';
+    ctx.fillStyle = c.redLine || '#ff4d6d';
+    ctx.globalAlpha = 0.75;
+    ctx.lineWidth = 1.2;
+
+    const boxW = 145;
+    const boxH = 42;
+    const boxX = w - boxW - 30;
+    const boxY = 20;
+
+    // Draw the box
+    drawRoundedRect(ctx, boxX, boxY, boxW, boxH, 6);
+    ctx.stroke();
+
+    // Draw horizontal dividing line in the middle of the box
+    ctx.beginPath();
+    ctx.moveTo(boxX, boxY + boxH / 2);
+    ctx.lineTo(boxX + boxW, boxY + boxH / 2);
+    ctx.stroke();
+
+    // Draw Date and P. No. text inside the box
+    ctx.font = 'bold 9px sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('DATE:', boxX + 8, boxY + boxH / 4);
+    ctx.fillText('P. NO.:', boxX + 8, boxY + 3 * boxH / 4);
+
+    // Draw thin line for writing date and page number
+    ctx.lineWidth = 0.6;
+    ctx.globalAlpha = 0.4;
+    // Date line
+    ctx.beginPath();
+    ctx.moveTo(boxX + 42, boxY + boxH / 4 + 3);
+    ctx.lineTo(boxX + boxW - 8, boxY + boxH / 4 + 3);
+    ctx.stroke();
+    // P. No. line
+    ctx.beginPath();
+    ctx.moveTo(boxX + 48, boxY + 3 * boxH / 4 + 3);
+    ctx.lineTo(boxX + boxW - 8, boxY + 3 * boxH / 4 + 3);
+    ctx.stroke();
+
+    ctx.restore();
+
+    // Render handwriting inside the box (only if NOT focused)
+    const dateInput = document.getElementById('date-input-' + pageNum);
+    const pageInput = document.getElementById('page-input-' + pageNum);
+    
+    const isDateFocused = dateInput && (document.activeElement === dateInput);
+    const isPageFocused = pageInput && (document.activeElement === pageInput);
+
+    const dateText = S.pageDates[pageNum] !== undefined ? S.pageDates[pageNum] : '';
+    const pageText = S.pageNos[pageNum] !== undefined ? S.pageNos[pageNum] : pageNum;
+
+    if (dateText && !isDateFocused) {
+      ctx.save();
+      ctx.fillStyle = S.inkColor;
+      const isIndic = containsDevanagari(dateText);
+      ctx.font = `italic ${Math.max(12, S.fontSize * 0.62)}px ${getFontStack(isIndic)}`;
+      ctx.textBaseline = 'middle';
+      ctx.translate(boxX + 44, boxY + boxH / 4 - 1);
+      ctx.rotate(-1.2 * Math.PI / 180); // Small realistic handwriting angle
+      ctx.fillText(dateText, 0, 0);
+      ctx.restore();
+    }
+
+    if (pageText !== undefined && pageText !== '' && !isPageFocused) {
+      ctx.save();
+      ctx.fillStyle = S.inkColor;
+      const isIndic = containsDevanagari(String(pageText));
+      ctx.font = `italic ${Math.max(12, S.fontSize * 0.62)}px ${getFontStack(isIndic)}`;
+      ctx.textBaseline = 'middle';
+      ctx.translate(boxX + 50, boxY + 3 * boxH / 4 - 1);
+      ctx.rotate(1.0 * Math.PI / 180); // Small realistic handwriting angle
+      ctx.fillText(String(pageText), 0, 0);
+      ctx.restore();
+    }
+
+    // Horizontal ruled lines (blue/cyan)
+    ctx.save();
+    ctx.globalAlpha = c.lineOpacity;
+    ctx.strokeStyle = c.lineColor || '#85add4';
+    ctx.lineWidth = 0.8;
+    const lineSpacingPx = S.fontSize * S.lineHeight;
+    for (let y = S.margin + lineSpacingPx; y < h - 20; y += lineSpacingPx) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+  } else if (style === 'legal') {
     // Red margin line
     ctx.save();
     ctx.globalAlpha = 0.55;
-    ctx.strokeStyle = c.redLine || '#e08080';
+    ctx.strokeStyle = c.redLine || '#e07070';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(S.margin - 10, 0);
@@ -704,7 +1014,7 @@ function clearText() {
   S.text = '';
   clearPages();
   const canvas = createPage(1);
-  drawPaperBackground(canvas.getContext('2d'), S.paperStyle);
+  drawPaperBackground(canvas.getContext('2d'), S.paperStyle, 1);
   const editor = document.getElementById('editor-1');
   if (editor) {
     editor.innerText = '';
@@ -720,6 +1030,290 @@ function sanitizeText(str) {
   if (!str) return '';
   return str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\uE000-\uF8FF]/g, '');
 }
+
+/* ───────────────────────────────────────────
+   SYNTAX PARSING & PREPROCESSING FOR STUDY TOOLS
+─────────────────────────────────────────── */
+function parseRichSyntax(rawText) {
+  parsedStickies = [];
+  parsedCallouts = [];
+  highlightRanges = [];
+  activeFlashcards = [];
+  
+  if (!rawText) return { cleanText: '', flashcards: [] };
+  
+  // 1. Extract Flashcards: Q: and A:
+  const lines = rawText.split('\n');
+  let currentQ = null;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (/^(Q|q)\s*:/i.test(line)) {
+      currentQ = line.replace(/^(Q|q)\s*:/i, '').trim();
+    } else if (/^(A|a)\s*:/i.test(line) && currentQ) {
+      const currentA = line.replace(/^(A|a)\s*:/i, '').trim();
+      activeFlashcards.push({ q: currentQ, a: currentA });
+      currentQ = null;
+    }
+  }
+  
+  // Update flashcards indicator UI
+  const fcBtn = document.getElementById('btn-open-flashcards');
+  const fcIndicator = document.getElementById('flashcard-count-indicator');
+  if (fcBtn && fcIndicator) {
+    if (activeFlashcards.length > 0) {
+      fcBtn.style.display = 'inline-flex';
+      fcIndicator.textContent = activeFlashcards.length;
+    } else {
+      fcBtn.style.display = 'none';
+    }
+  }
+
+  // 2. Parse Sticky Notes: [sticky:color] content [sticky]
+  let textWithStickies = rawText.replace(/\[sticky:?(\w*)\](.*?)\[sticky\]/gs, (match, color, content) => {
+    parsedStickies.push({
+      color: color || 'yellow',
+      text: content.trim()
+    });
+    return '\uFFF0';
+  });
+
+  // 3. Parse Callouts: [callout:type] content [callout]
+  let textWithCallouts = textWithStickies.replace(/\[callout:?(\w*)\](.*?)\[callout\]/gs, (match, type, content) => {
+    parsedCallouts.push({
+      type: type || 'info',
+      text: content.trim()
+    });
+    return '\uFFF1';
+  });
+
+  // 4. Parse Highlights: ==content==
+  let cleanText = '';
+  let i = 0;
+  let inHighlight = false;
+  let highlightStart = -1;
+
+  while (i < textWithCallouts.length) {
+    if (textWithCallouts.startsWith('==', i)) {
+      if (inHighlight) {
+        highlightRanges.push({
+          start: highlightStart,
+          end: cleanText.length
+        });
+        inHighlight = false;
+      } else {
+        highlightStart = cleanText.length;
+        inHighlight = true;
+      }
+      i += 2;
+    } else {
+      cleanText += textWithCallouts[i];
+      i++;
+    }
+  }
+
+  if (inHighlight) {
+    highlightRanges.push({
+      start: highlightStart,
+      end: cleanText.length
+    });
+  }
+
+  return { cleanText, flashcards: activeFlashcards };
+}
+
+function splitRawTextIntoPages(rawText, cleanPageTexts) {
+  if (!rawText) return [];
+  const rawPages = [];
+  let rawIdx = 0;
+
+  for (let p = 0; p < cleanPageTexts.length; p++) {
+    const cleanPage = cleanPageTexts[p];
+    if (!cleanPage) {
+      rawPages.push('');
+      continue;
+    }
+
+    let matchedClean = '';
+    let pageRaw = '';
+
+    while (rawIdx < rawText.length && matchedClean.length < cleanPage.length) {
+      const rawChar = rawText[rawIdx];
+      const cleanChar = cleanPage[matchedClean.length];
+
+      if (rawChar === cleanChar) {
+        pageRaw += rawChar;
+        matchedClean += cleanChar;
+        rawIdx++;
+      } else {
+        pageRaw += rawChar;
+        rawIdx++;
+      }
+    }
+
+    if (p < cleanPageTexts.length - 1) {
+      const nextCleanStart = cleanPageTexts[p + 1][0];
+      while (rawIdx < rawText.length && rawText[rawIdx] !== nextCleanStart) {
+        pageRaw += rawText[rawIdx];
+        rawIdx++;
+      }
+    } else {
+      while (rawIdx < rawText.length) {
+        pageRaw += rawText[rawIdx];
+        rawIdx++;
+      }
+    }
+
+    rawPages.push(pageRaw);
+  }
+
+  return rawPages;
+}
+
+/* ───────────────────────────────────────────
+   CANVAS DRAWING OF STICKY NOTES & CALLOUTS
+─────────────────────────────────────────── */
+function paintStickyNotes(queue, targetPageIdx = null) {
+  const stickies = parsedStickies;
+  if (!stickies || stickies.length === 0) return;
+
+  queue.forEach((item) => {
+    if (!item.isSticky) return;
+    if (targetPageIdx !== null && item.pageIdx !== targetPageIdx) return;
+    const canvas = pages[item.pageIdx];
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const sticky = stickies[item.stickyIdx];
+    if (!sticky) return;
+
+    // Sticky colors mapping
+    const colors = {
+      yellow: { bg: '#fffde7', border: '#fff59d', text: '#5d4037' },
+      cyan: { bg: '#e0f7fa', border: '#b2ebf2', text: '#006064' },
+      pink: { bg: '#fce4ec', border: '#f8bbd0', text: '#880e4f' },
+      mint: { bg: '#e8f5e9', border: '#c8e6c9', text: '#1b5e20' }
+    };
+    const c = colors[sticky.color.toLowerCase()] || colors.yellow;
+
+    ctx.save();
+    
+    // Deterministic position and tilt
+    const hash = (item.x * 3 + item.y * 7) % 100;
+    const x = PAGE_W - 165 + (hash % 10 - 5); // float in right margin
+    const y = item.y - 30 + (hash % 6 - 3);
+    const tilt = ((hash % 8) - 4) * Math.PI / 180;
+
+    ctx.translate(x + 65, y + 55);
+    ctx.rotate(tilt);
+
+    // Drop shadow
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.08)';
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetX = 2;
+    ctx.shadowOffsetY = 4;
+
+    // Sticky paper box
+    ctx.fillStyle = c.bg;
+    ctx.strokeStyle = c.border;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(-65, -55, 130, 110, 4);
+    ctx.fill();
+    ctx.stroke();
+
+    // Turn off shadow for text
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+
+    // Text drawing
+    ctx.fillStyle = c.text;
+    ctx.font = `11px "Caveat", "Indie Flower", "Shadows Into Light", sans-serif`;
+    ctx.textAlign = 'left';
+
+    drawWrappedText(ctx, sticky.text, -55, -35, 110, 14, 6);
+
+    ctx.restore();
+  });
+}
+
+function paintCallouts(queue, targetPageIdx = null) {
+  const callouts = parsedCallouts;
+  if (!callouts || callouts.length === 0) return;
+
+  queue.forEach((item) => {
+    if (!item.isCallout) return;
+    if (targetPageIdx !== null && item.pageIdx !== targetPageIdx) return;
+    const canvas = pages[item.pageIdx];
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const callout = callouts[item.calloutIdx];
+    if (!callout) return;
+
+    const types = {
+      warning: { bg: '#fff3e0', border: '#ffe0b2', text: '#e65100', icon: '⚠️' },
+      info: { bg: '#e3f2fd', border: '#bbdefb', text: '#0d47a1', icon: 'ℹ️' },
+      formula: { bg: '#f3e5f5', border: '#e1bee7', text: '#4a148c', icon: '📐' }
+    };
+    const c = types[callout.type.toLowerCase()] || types.info;
+
+    ctx.save();
+    
+    // Left margin tag placement
+    const hash = (item.x * 2 + item.y * 5) % 100;
+    const x = 12 + (hash % 6 - 3);
+    const y = item.y - 25;
+    const tilt = ((hash % 4) - 2) * Math.PI / 180;
+
+    ctx.translate(x + 75, y + 25);
+    ctx.rotate(tilt);
+
+    // Box outline
+    ctx.fillStyle = c.bg;
+    ctx.strokeStyle = c.border;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(-75, -25, 150, 50, 6);
+    ctx.fill();
+    ctx.stroke();
+
+    // Draw icon
+    ctx.font = '14px sans-serif';
+    ctx.fillText(c.icon, -65, 5);
+
+    // Draw text
+    ctx.fillStyle = c.text;
+    ctx.font = `10px "Caveat", "Indie Flower", sans-serif`;
+    ctx.textAlign = 'left';
+    drawWrappedText(ctx, callout.text, -45, -10, 110, 12, 3);
+
+    ctx.restore();
+  });
+}
+
+function drawWrappedText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
+  const words = text.split(' ');
+  let line = '';
+  let linesDrawn = 0;
+  
+  for (let n = 0; n < words.length; n++) {
+    const testLine = line + words[n] + ' ';
+    const metrics = ctx.measureText(testLine);
+    const testWidth = metrics.width;
+    if (testWidth > maxWidth && n > 0) {
+      ctx.fillText(line, x, y);
+      line = words[n] + ' ';
+      y += lineHeight;
+      linesDrawn++;
+      if (linesDrawn >= maxLines) return;
+    } else {
+      line = testLine;
+    }
+  }
+  ctx.fillText(line, x, y);
+}
+
+
 
 function getGraphemes(text) {
   if (!text) return [];
@@ -770,6 +1364,8 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
   let pageIdx = 0;
   let charIndex = 0;
   let lineCharIndex = 0;
+  let stickyCounter = 0;
+  let calloutCounter = 0;
   const words = text.split(' ');
 
   for (let wi = 0; wi < words.length; wi++) {
@@ -797,6 +1393,7 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
           }
         }
         currentPageText += '\n';
+        charIndex++;
       }
 
       const lineWord = lines[li];
@@ -843,6 +1440,8 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
         const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
         const cy = y + (v.baselineOff * 0.4) + wobble + alignOffset;
 
+        const isHighlighted = highlightRanges.some(r => charIndex >= r.start && charIndex < r.start + lineWord.length);
+
         queue.push({
           ch: lineWord,
           x,
@@ -850,7 +1449,8 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
           v,
           pageIdx,
           isIndic: true,
-          fontStack
+          fontStack,
+          highlight: isHighlighted
         });
 
         x += ctx.measureText(lineWord).width + v.spacingExtra;
@@ -894,15 +1494,28 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
           const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
           const cy = y + v.baselineOff + wobble + alignOffset;
 
-          queue.push({
+          const isHighlighted = highlightRanges.some(r => charIndex >= r.start && charIndex < r.end);
+
+          let item = {
             ch,
             x,
             y: cy,
             v,
             pageIdx,
             isIndic: false,
-            fontStack
-          });
+            fontStack,
+            highlight: isHighlighted
+          };
+
+          if (ch === '\uFFF0') {
+            item.isSticky = true;
+            item.stickyIdx = stickyCounter++;
+          } else if (ch === '\uFFF1') {
+            item.isCallout = true;
+            item.calloutIdx = calloutCounter++;
+          }
+
+          queue.push(item);
 
           x += ctx.measureText(ch).width + v.spacingExtra;
           charIndex++;
@@ -917,6 +1530,7 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
         x += ctx.measureText(' ').width + S.wordSpacing;
         if (wi < words.length - 1) {
           currentPageText += ' ';
+          charIndex++;
         }
       }
     }
@@ -942,10 +1556,14 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
   let ySummary = PAGE_H - 170;
 
   let pageIdx = 0;
+  let charIndex = 0;
+  let stickyCounter = 0;
+  let calloutCounter = 0;
 
   const lines = text.split('\n');
 
   for (let li = 0; li < lines.length; li++) {
+    if (li > 0) charIndex++; // account for split \n
     const rawLine = lines[li];
     let type = 'note';
     let lineText = rawLine;
@@ -971,8 +1589,34 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
         yCues += lineH * 0.5;
       }
       currentPageText += '\n';
+      // If empty line, we still consumed it, but lineText has length 0.
       continue;
     }
+
+    // Skip the prefix tags in charIndex since we stripped them for cleanText
+    // Wait! Did parseRichSyntax strip the '== ' cue and summary prefixes?
+    // Ah! parseRichSyntax only handles highlights ==text== and sticky/callout tags.
+    // Cornell cues ('? ' or 'cue:') and summary ('== ' or 'summary:') are stripped in layoutTextCornell itself!
+    // So rawLine's prefix was removed.
+    // If rawLine starts with '? ' (length 2) or '== ' (length 3), we should adjust charIndex by adding the length of the prefix
+    // because in cleanText, these prefixes were NOT stripped by parseRichSyntax!
+    // Wait! Is that correct?
+    // Yes! parseRichSyntax is run on the *entire* raw text before layoutText. It output cleanText.
+    // So the cleanText still contains the Cornell prefixes like '? ' or '== '!
+    // Then layoutTextCornell receives cleanText, and splits it by lines, and detects prefixes!
+    // So yes, cleanText still had these prefixes, which layoutTextCornell now parses and strips.
+    // So we must increment charIndex by the length of the prefix we strip here!
+    let prefixLength = 0;
+    if (rawLine.trim().startsWith('? ')) {
+      prefixLength = rawLine.indexOf('? ') + 2;
+    } else if (rawLine.toLowerCase().trim().startsWith('cue:')) {
+      prefixLength = rawLine.toLowerCase().indexOf('cue:') + 4;
+    } else if (rawLine.trim().startsWith('== ')) {
+      prefixLength = rawLine.indexOf('== ') + 3;
+    } else if (rawLine.toLowerCase().trim().startsWith('summary:')) {
+      prefixLength = rawLine.toLowerCase().indexOf('summary:') + 8;
+    }
+    charIndex += prefixLength;
 
     const words = lineText.split(' ');
     let x = margin;
@@ -1020,7 +1664,14 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
 
     for (let wi = 0; wi < words.length; wi++) {
       const word = words[wi];
-      if (!word) continue;
+      if (!word) {
+        // If multiple spaces occurred
+        if (wi < words.length - 1) {
+          currentPageText += ' ';
+          charIndex++;
+        }
+        continue;
+      }
 
       const wordIsIndic = containsDevanagari(word);
       const fontStack = getFontStack(wordIsIndic);
@@ -1076,6 +1727,8 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
         const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
         const cy = y + (v.baselineOff * 0.4) + wobble + alignOffset;
 
+        const isHighlighted = highlightRanges.some(r => charIndex >= r.start && charIndex < r.start + word.length);
+
         queue.push({
           ch: word,
           x,
@@ -1084,10 +1737,12 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
           pageIdx,
           isIndic: true,
           fontStack,
-          cornellType: type
+          cornellType: type,
+          highlight: isHighlighted
         });
 
         x += ctx.measureText(word).width + v.spacingExtra;
+        charIndex += word.length;
         lineCharIndex += word.length;
         currentPageText += word;
       } else {
@@ -1131,7 +1786,9 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
           const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
           const cy = y + v.baselineOff + wobble + alignOffset;
 
-          queue.push({
+          const isHighlighted = highlightRanges.some(r => charIndex >= r.start && charIndex < r.end);
+
+          let item = {
             ch,
             x,
             y: cy,
@@ -1139,19 +1796,32 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
             pageIdx,
             isIndic: false,
             fontStack,
-            cornellType: type
-          });
+            cornellType: type,
+            highlight: isHighlighted
+          };
+
+          if (ch === '\uFFF0') {
+            item.isSticky = true;
+            item.stickyIdx = stickyCounter++;
+          } else if (ch === '\uFFF1') {
+            item.isCallout = true;
+            item.calloutIdx = calloutCounter++;
+          }
+
+          queue.push(item);
 
           x += ctx.measureText(ch).width + v.spacingExtra;
+          charIndex++;
           lineCharIndex++;
           currentPageText += ch;
         }
       }
 
       ctx.font = `${S.fontSize}px ${fontStack}`;
-      x += ctx.measureText(' ').width + S.wordSpacing;
       if (wi < words.length - 1) {
+        x += ctx.measureText(' ').width + S.wordSpacing;
         currentPageText += ' ';
+        charIndex++;
       }
     }
 
@@ -1175,6 +1845,8 @@ function layoutText(text) {
     return { queue: [], pageTexts: [], pageCount: 1 };
   }
 
+  const { cleanText } = parseRichSyntax(text);
+
   // Use a temporary canvas context to measure text sizes properly
   const tmpCanvas = document.createElement('canvas');
   tmpCanvas.width = PAGE_W;
@@ -1182,9 +1854,9 @@ function layoutText(text) {
   const ctx = tmpCanvas.getContext('2d');
 
   if (S.noteLayout === 'twocolumn') {
-    return layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevanagari, getFontStack, getCharVariation, getGraphemes, ctx);
+    return layoutTextTwoColumn(cleanText, S, PAGE_W, PAGE_H, sanitizeText, containsDevanagari, getFontStack, getCharVariation, getGraphemes, ctx);
   } else if (S.noteLayout === 'cornell') {
-    return layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevanagari, getFontStack, getCharVariation, getGraphemes, ctx);
+    return layoutTextCornell(cleanText, S, PAGE_W, PAGE_H, sanitizeText, containsDevanagari, getFontStack, getCharVariation, getGraphemes, ctx);
   }
 
   const queue = [];
@@ -1202,7 +1874,9 @@ function layoutText(text) {
   let pageIdx = 0;
   let charIndex = 0;
   let lineCharIndex = 0;
-  const words = text.split(' ');
+  let stickyCounter = 0;
+  let calloutCounter = 0;
+  const words = cleanText.split(' ');
 
   for (let wi = 0; wi < words.length; wi++) {
     const word = words[wi];
@@ -1221,6 +1895,7 @@ function layoutText(text) {
           y = margin + S.fontSize + lineH; // Skip 1st line on new page
         }
         currentPageText += '\n';
+        charIndex++;
       }
 
       const lineWord = lines[li];
@@ -1252,6 +1927,8 @@ function layoutText(text) {
         const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
         const cy = y + (v.baselineOff * 0.4) + wobble + alignOffset;
 
+        const isHighlighted = highlightRanges.some(r => charIndex >= r.start && charIndex < r.start + lineWord.length);
+
         queue.push({
           ch: lineWord,
           x,
@@ -1259,7 +1936,8 @@ function layoutText(text) {
           v,
           pageIdx,
           isIndic: true,
-          fontStack
+          fontStack,
+          highlight: isHighlighted
         });
 
         x += ctx.measureText(lineWord).width + v.spacingExtra;
@@ -1291,15 +1969,28 @@ function layoutText(text) {
           const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
           const cy = y + v.baselineOff + wobble + alignOffset;
 
-          queue.push({
+          const isHighlighted = highlightRanges.some(r => charIndex >= r.start && charIndex < r.end);
+
+          let item = {
             ch,
             x,
             y: cy,
             v,
             pageIdx,
             isIndic: false,
-            fontStack
-          });
+            fontStack,
+            highlight: isHighlighted
+          };
+
+          if (ch === '\uFFF0') {
+            item.isSticky = true;
+            item.stickyIdx = stickyCounter++;
+          } else if (ch === '\uFFF1') {
+            item.isCallout = true;
+            item.calloutIdx = calloutCounter++;
+          }
+
+          queue.push(item);
 
           x += ctx.measureText(ch).width + v.spacingExtra;
           charIndex++;
@@ -1314,6 +2005,7 @@ function layoutText(text) {
         x += ctx.measureText(' ').width + S.wordSpacing;
         if (wi < words.length - 1) {
           currentPageText += ' ';
+          charIndex++;
         }
       }
     }
@@ -1353,7 +2045,7 @@ function renderText(text) {
   clearPages();
   if (!text.trim()) {
     const canvas = createPage(1);
-    drawPaperBackground(canvas.getContext('2d'), S.paperStyle);
+    drawPaperBackground(canvas.getContext('2d'), S.paperStyle, 1);
     const editor = document.getElementById('editor-1');
     if (editor) {
       editor.innerText = '';
@@ -1362,12 +2054,16 @@ function renderText(text) {
     return;
   }
 
-  const { queue, pageTexts, pageCount } = layoutText(text);
+  // Pre-process rich syntax before layout
+  const { cleanText } = parseRichSyntax(text);
+  const layoutInput = cleanText || text;
+
+  const { queue, pageTexts, pageCount } = layoutText(layoutInput);
 
   for (let i = 0; i < pageCount; i++) {
     const canvas = createPage(i + 1);
     const ctx = canvas.getContext('2d');
-    drawPaperBackground(ctx, S.paperStyle);
+    drawPaperBackground(ctx, S.paperStyle, i + 1);
   }
 
   queue.forEach((item) => {
@@ -1379,6 +2075,20 @@ function renderText(text) {
     const activeEditor = document.getElementById('editor-' + (item.pageIdx + 1));
     if (document.activeElement === activeEditor) return;
 
+    // Skip rendering placeholder chars for stickies/callouts
+    if (item.isSticky || item.isCallout) return;
+
+    // Draw highlight background BEFORE character
+    if (item.highlight) {
+      ctx.save();
+      ctx.globalAlpha = 0.28;
+      ctx.fillStyle = S._highlightColor || '#ffe066';
+      const hlW = ctx.measureText ? S.fontSize * 0.7 : 14;
+      const hlH = S.fontSize * 1.3;
+      ctx.fillRect(item.x - 1, item.y - S.fontSize * 0.85, hlW, hlH);
+      ctx.restore();
+    }
+
     ctx.save();
     ctx.translate(item.x, item.y);
     ctx.rotate((v.tiltDeg * (item.isIndic ? 0.3 : 1) * Math.PI) / 180);
@@ -1386,24 +2096,12 @@ function renderText(text) {
 
     // Check if custom glyph exists
     if (draftedGlyphs[item.ch]) {
-      // Images decode asynchronously, but ctx.restore() below runs
-      // synchronously right after this block — by the time onload fired,
-      // the translate/rotate/scale for THIS character was already popped
-      // off the stack, so drawImage used to land at whatever transform was
-      // left after the *entire* queue finished (effectively the canvas
-      // origin), not at item.x/item.y. That's why drafted glyphs vanished
-      // from their correct spot instead of just rendering plainly.
-      // Fix: cache the decoded image and only ever drawImage() once it's
-      // ready, synchronously, inside the current transform.
       const glyphImg = getCachedGlyphImage(item.ch, draftedGlyphs[item.ch]);
       if (glyphImg) {
         ctx.globalAlpha = v.opacity;
-        // Scale the glyph image proportionally with the font size
         const drawSz = S.fontSize * 1.35;
         ctx.drawImage(glyphImg, -drawSz / 2, -drawSz / 2, drawSz, drawSz);
       } else {
-        // Not decoded yet — draw the system-font glyph for this pass so
-        // nothing goes blank; a re-render is queued once it's ready.
         const pxSize = S.fontSize * v.pressureMod;
         ctx.font = `${Math.max(10, pxSize)}px ${item.fontStack}`;
         ctx.globalAlpha = v.opacity;
@@ -1428,6 +2126,11 @@ function renderText(text) {
     }
     ctx.restore();
   });
+
+  // ── POST-PASS: Draw Sticky Notes ──
+  paintStickyNotes(queue);
+  // ── POST-PASS: Draw Callout Boxes ──
+  paintCallouts(queue);
 
   pages.forEach((c, idx) => {
     const editor = document.getElementById('editor-' + (idx + 1));
@@ -1475,12 +2178,16 @@ function startAnimation() {
   if (!text.trim()) return;
   isAnimating = true;
 
+  // Pre-process rich syntax before layout
+  const { cleanText } = parseRichSyntax(text);
+  const layoutInput = cleanText || text;
+
   // Clear and recreate pages with backgrounds
   clearPages();
-  const { queue, pageTexts, pageCount } = layoutText(text);
+  const { queue, pageTexts, pageCount } = layoutText(layoutInput);
   for (let i = 0; i < pageCount; i++) {
     const c = createPage(i + 1);
-    drawPaperBackground(c.getContext('2d'), S.paperStyle);
+    drawPaperBackground(c.getContext('2d'), S.paperStyle, i + 1);
   }
 
   let idx = 0;
@@ -1501,6 +2208,21 @@ function startAnimation() {
       if (!canvas) continue;
       const ctx = canvas.getContext('2d');
       const v = item.v;
+
+      // Skip sticky/callout placeholders in animation
+      if (item.isSticky || item.isCallout) continue;
+
+      // Draw highlight BEFORE character
+      if (item.highlight) {
+        ctx.save();
+        ctx.globalAlpha = 0.28;
+        ctx.fillStyle = S._highlightColor || '#ffe066';
+        const hlW = ctx.measureText ? S.fontSize * 0.7 : 14;
+        const hlH = S.fontSize * 1.3;
+        ctx.fillRect(item.x - 1, item.y - S.fontSize * 0.85, hlW, hlH);
+        ctx.restore();
+      }
+
       ctx.save();
       ctx.translate(item.x, item.y);
       ctx.rotate((v.tiltDeg * (item.isIndic ? 0.3 : 1) * Math.PI) / 180);
@@ -2212,8 +2934,56 @@ function autosave() {
       pressure: S.pressure,
       paperStyle: S.paperStyle,
       noteLayout: S.noteLayout,
+      activeNotebookId: activeNotebookId,
+      pageDates: S.pageDates,
+      pageNos: S.pageNos
     };
     localStorage.setItem('inkflow-state', JSON.stringify(state));
+
+    // Save to active notebook in IndexedDB if exists
+    if (activeNotebookId) {
+      const titleInput = document.getElementById('text-input').value.split('\n')[0].replace(/[#*?]/g, '').trim().substring(0, 30) || 'Untitled Note';
+      const notebook = {
+        id: activeNotebookId,
+        title: titleInput,
+        content: S.text,
+        updatedAt: new Date().toISOString(),
+        settings: {
+          font: S.font,
+          fontSize: S.fontSize,
+          lineHeight: S.lineHeight,
+          wordSpacing: S.wordSpacing,
+          margin: S.margin,
+          rotationMax: S.rotationMax,
+          inkColor: S.inkColor,
+          bleed: S.bleed,
+          pressure: S.pressure,
+          paperStyle: S.paperStyle,
+          noteLayout: S.noteLayout,
+          pageDates: S.pageDates,
+          pageNos: S.pageNos
+        }
+      };
+      
+      getNotebooksDB().then(db => {
+        const tx = db.transaction(NOTEBOOKS_STORE, 'readonly');
+        tx.objectStore(NOTEBOOKS_STORE).get(activeNotebookId).onsuccess = (e) => {
+          const existing = e.target.result;
+          if (existing) {
+            notebook.folder = existing.folder;
+            notebook.tags = existing.tags;
+            notebook.createdAt = existing.createdAt;
+          } else {
+            notebook.folder = 'Drafts';
+            notebook.tags = [];
+            notebook.createdAt = new Date().toISOString();
+          }
+          saveNotebook(notebook).then(() => {
+            renderNotebooksList();
+          });
+        };
+      }).catch(err => console.error("Error autosaving notebook in DB:", err));
+    }
   }, 1000);
 }
 
@@ -2232,6 +3002,9 @@ async function restoreState() {
 
   try {
     const state = JSON.parse(raw);
+    if (state.activeNotebookId) {
+      activeNotebookId = state.activeNotebookId;
+    }
     if (state.text) {
       document.getElementById('text-input').value = state.text;
       S.text = state.text;
@@ -2273,6 +3046,10 @@ async function restoreState() {
       const select = document.getElementById('layout-select');
       if (select) select.value = state.noteLayout;
     }
+
+    // Restore pageDates and pageNos
+    if (state.pageDates) S.pageDates = state.pageDates;
+    if (state.pageNos) S.pageNos = state.pageNos;
 
     // 2. Migrate draftedGlyphs if they exist in localStorage state
     if (state.draftedGlyphs && Object.keys(state.draftedGlyphs).length > 0) {
@@ -2344,23 +3121,46 @@ async function initApp() {
   setupFileUpload();
   initHandFontedStudio();
 
-  // Render initial state or blank page
-  if (S.text) {
-    renderText(S.text);
-  } else {
-    // Show a blank ruled page with placeholder watermark
-    const canvas = createPage(1);
-    const ctx = canvas.getContext('2d');
-    drawPaperBackground(ctx, S.paperStyle);
-    // Subtle placeholder text
-    ctx.save();
-    const lineH = S.fontSize * S.lineHeight;
-    ctx.font = `italic 18px "${S.font}"`;
-    ctx.fillStyle = S.inkColor;
-    ctx.globalAlpha = 0.18;
-    ctx.fillText('Start typing in the panel to the left…', S.margin, S.margin + S.fontSize + lineH);
-    ctx.restore();
+  // Load and render notebooks explorer
+  try {
+    const list = await getAllNotebooks();
+    if (list.length === 0) {
+      // Create first welcome note
+      const welcomeNote = {
+        id: 'welcome-note',
+        title: 'Welcome to Inkflow',
+        content: S.text,
+        folder: 'Drafts',
+        tags: ['welcome'],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        settings: {
+          font: S.font,
+          fontSize: S.fontSize,
+          lineHeight: S.lineHeight,
+          wordSpacing: S.wordSpacing,
+          margin: S.margin,
+          rotationMax: S.rotationMax,
+          inkColor: S.inkColor,
+          bleed: S.bleed,
+          pressure: S.pressure,
+          paperStyle: S.paperStyle,
+          noteLayout: S.noteLayout
+        }
+      };
+      await saveNotebook(welcomeNote);
+      activeNotebookId = 'welcome-note';
+    } else {
+      if (!activeNotebookId && list.length > 0) {
+        activeNotebookId = list[0].id;
+      }
+    }
+    await loadNotebook(activeNotebookId);
+  } catch (err) {
+    console.error("Error initializing notebooks explorer:", err);
   }
+  
+  renderNotebooksList();
 }
 
 // Wire all slider controls to autosave
@@ -3830,3 +4630,542 @@ async function buildCustomFont() {
     progressDiv.classList.add('hidden');
   }
 }
+
+/* ───────────────────────────────────────────
+   THEME PACKS ENGINE
+─────────────────────────────────────────── */
+const THEMES = {
+  default: { paperStyle: 'ruled', inkColor: '#1c2340', rotationMax: 1, bleed: 0.5, pressure: 0.12, fontSize: 22 },
+  vintage: { paperStyle: 'vintage', inkColor: '#3c2f2f', rotationMax: 3, bleed: 0.8, pressure: 0.15, fontSize: 22 },
+  cute: { paperStyle: 'plain', inkColor: '#5d3f6a', rotationMax: 1.5, bleed: 0.4, pressure: 0.10, fontSize: 22 },
+  science: { paperStyle: 'engineering', inkColor: '#1a331e', rotationMax: 0, bleed: 0.3, pressure: 0.08, fontSize: 20 },
+  minimal: { paperStyle: 'dark', inkColor: '#e0e0e0', rotationMax: 0.8, bleed: 0.2, pressure: 0.10, fontSize: 22 },
+  scrapbook: { paperStyle: 'dot_grid', inkColor: '#1c3144', rotationMax: 2.2, bleed: 0.6, pressure: 0.14, fontSize: 24 }
+};
+
+function applyTheme(themeId) {
+  const theme = THEMES[themeId];
+  if (!theme) return;
+  
+  S.activeTheme = themeId;
+  S.paperStyle = theme.paperStyle;
+  S.inkColor = theme.inkColor;
+  S.rotationMax = theme.rotationMax;
+  S.bleed = theme.bleed;
+  S.pressure = theme.pressure;
+  S.fontSize = theme.fontSize;
+  
+  if (themeId === 'minimal') {
+    S._highlightColor = '#8d6e63'; // warmer brown for dark theme
+  } else {
+    S._highlightColor = '#ffe066';
+  }
+  
+  // Sync UI paper selector
+  const paperGrid = document.querySelector('.paper-grid');
+  if (paperGrid) {
+    const btns = paperGrid.querySelectorAll('.paper-btn');
+    btns.forEach(btn => {
+      if (btn.dataset.style === theme.paperStyle) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+  }
+  
+  // Sync UI ink color picker
+  const colorInput = document.getElementById('ink-color');
+  const colorLabel = document.getElementById('ink-color-label');
+  if (colorInput) {
+    colorInput.value = theme.inkColor;
+  }
+  if (colorLabel) {
+    colorLabel.textContent = `${theme.inkColor}`;
+  }
+  
+  // Sync UI sliders
+  const sliderSize = document.getElementById('font-size-slider');
+  if (sliderSize) {
+    sliderSize.value = theme.fontSize;
+    const valSize = document.getElementById('fs-val');
+    if (valSize) valSize.textContent = theme.fontSize;
+  }
+  const sliderRot = document.getElementById('rotation-slider');
+  if (sliderRot) {
+    sliderRot.value = theme.rotationMax;
+    const valRot = document.getElementById('rot-val');
+    if (valRot) valRot.textContent = theme.rotationMax;
+  }
+  const sliderBleed = document.getElementById('bleed-slider');
+  if (sliderBleed) {
+    sliderBleed.value = theme.bleed;
+    const valBleed = document.getElementById('bleed-val');
+    if (valBleed) valBleed.textContent = theme.bleed;
+  }
+  const sliderPress = document.getElementById('pressure-slider');
+  if (sliderPress) {
+    sliderPress.value = theme.pressure;
+    const valPress = document.getElementById('pressure-val');
+    if (valPress) valPress.textContent = theme.pressure;
+  }
+  // Toggle worksheet header visibility based on paper style
+  document.querySelectorAll('.worksheet-header').forEach(wh => {
+    wh.style.display = S.paperStyle === 'ruled' ? 'flex' : 'none';
+  });
+  
+  debounceRender();
+  autosave();
+}
+
+/* ───────────────────────────────────────────
+   STUDY MODE ENGINE
+─────────────────────────────────────────── */
+function toggleStudyMode() {
+  document.body.classList.toggle('study-mode-active');
+  const isActive = document.body.classList.contains('study-mode-active');
+  S.isStudyMode = isActive;
+  
+  const floatingBtn = document.getElementById('btn-exit-study-mode');
+  const toolbarBtn = document.getElementById('btn-study-mode');
+  
+  if (floatingBtn) {
+    floatingBtn.style.display = isActive ? 'inline-flex' : 'none';
+  }
+  
+  if (toolbarBtn) {
+    if (isActive) {
+      toolbarBtn.classList.add('active');
+    } else {
+      toolbarBtn.classList.remove('active');
+    }
+  }
+}
+
+/* ───────────────────────────────────────────
+   FLASHCARDS REVIEW DECK ENGINE
+─────────────────────────────────────────── */
+function openFlashcardsModal() {
+  if (activeFlashcards.length === 0) return;
+  currentFlashcardIndex = 0;
+  
+  const modal = document.getElementById('flashcards-modal');
+  if (modal) {
+    modal.classList.remove('hidden');
+  }
+  
+  const inner = document.getElementById('flashcard-inner');
+  if (inner) {
+    inner.classList.remove('flipped');
+  }
+  
+  updateFlashcardUI();
+}
+
+function closeFlashcardsModal() {
+  const modal = document.getElementById('flashcards-modal');
+  if (modal) {
+    modal.classList.add('hidden');
+  }
+}
+
+function flipFlashcard() {
+  const inner = document.getElementById('flashcard-inner');
+  if (inner) {
+    inner.classList.toggle('flipped');
+  }
+}
+
+function nextFlashcard() {
+  if (activeFlashcards.length === 0) return;
+  currentFlashcardIndex = (currentFlashcardIndex + 1) % activeFlashcards.length;
+  
+  const inner = document.getElementById('flashcard-inner');
+  if (inner) {
+    inner.classList.remove('flipped');
+  }
+  
+  setTimeout(updateFlashcardUI, 150);
+}
+
+function prevFlashcard() {
+  if (activeFlashcards.length === 0) return;
+  currentFlashcardIndex = (currentFlashcardIndex - 1 + activeFlashcards.length) % activeFlashcards.length;
+  
+  const inner = document.getElementById('flashcard-inner');
+  if (inner) {
+    inner.classList.remove('flipped');
+  }
+  
+  setTimeout(updateFlashcardUI, 150);
+}
+
+function updateFlashcardUI() {
+  const card = activeFlashcards[currentFlashcardIndex];
+  if (!card) return;
+  
+  const qEl = document.getElementById('flashcard-question-text');
+  const aEl = document.getElementById('flashcard-answer-text');
+  const progEl = document.getElementById('flashcard-progress');
+  
+  if (qEl) qEl.textContent = card.q;
+  if (aEl) aEl.textContent = card.a;
+  if (progEl) progEl.textContent = `Card ${currentFlashcardIndex + 1} of ${activeFlashcards.length}`;
+}
+
+/* ───────────────────────────────────────────
+   VOICE TO NOTES (SPEECH TO TEXT) ENGINE
+─────────────────────────────────────────── */
+let voiceRecognition = null;
+let isVoiceActive = false;
+
+function initVoiceToNotes() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const micBtn = document.getElementById('btn-voice');
+  
+  if (!SpeechRecognition) {
+    if (micBtn) {
+      micBtn.disabled = true;
+      micBtn.style.opacity = '0.5';
+      micBtn.title = 'Voice input not supported in this browser';
+    }
+    return;
+  }
+  
+  voiceRecognition = new SpeechRecognition();
+  voiceRecognition.continuous = true;
+  voiceRecognition.interimResults = false;
+  voiceRecognition.lang = 'en-US';
+  
+  voiceRecognition.onstart = () => {
+    isVoiceActive = true;
+    if (micBtn) {
+      micBtn.classList.add('accent');
+      micBtn.style.boxShadow = '0 0 10px var(--accent)';
+      micBtn.innerHTML = '<i class="fa-solid fa-microphone-lines"></i>';
+    }
+  };
+  
+  voiceRecognition.onend = () => {
+    isVoiceActive = false;
+    if (micBtn) {
+      micBtn.classList.remove('accent');
+      micBtn.style.boxShadow = 'none';
+      micBtn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+    }
+  };
+  
+  voiceRecognition.onerror = (e) => {
+    console.error('Speech recognition error:', e);
+    toggleVoiceInput();
+  };
+  
+  voiceRecognition.onresult = (event) => {
+    const lastResultIdx = event.results.length - 1;
+    const transcript = event.results[lastResultIdx][0].transcript;
+    
+    const inputEl = document.getElementById('text-input');
+    if (inputEl) {
+      const spacing = inputEl.value.trim().length > 0 ? '\n' : '';
+      inputEl.value = inputEl.value + spacing + transcript.trim();
+      S.text = inputEl.value;
+      debounceRender();
+      autosave();
+    }
+  };
+}
+
+function toggleVoiceInput() {
+  if (!voiceRecognition) {
+    initVoiceToNotes();
+  }
+  
+  if (!voiceRecognition) return;
+  
+  if (isVoiceActive) {
+    voiceRecognition.stop();
+  } else {
+    try {
+      voiceRecognition.start();
+    } catch (err) {
+      console.error('Failed to start speech recognition:', err);
+    }
+  }
+}
+
+// Auto-initialize voice API on load
+setTimeout(initVoiceToNotes, 500);
+
+/* ───────────────────────────────────────────
+   NOTEBOOKS & FOLDERS INDEXEDDB PERSISTENCE
+─────────────────────────────────────────── */
+const NOTEBOOKS_DB_NAME = 'InkflowDB';
+const NOTEBOOKS_DB_VERSION = 1;
+const NOTEBOOKS_STORE = 'notebooks';
+let notebooksDbInstance = null;
+
+function getNotebooksDB() {
+  if (notebooksDbInstance) return Promise.resolve(notebooksDbInstance);
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(NOTEBOOKS_DB_NAME, NOTEBOOKS_DB_VERSION);
+    request.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(NOTEBOOKS_STORE)) {
+        db.createObjectStore(NOTEBOOKS_STORE, { keyPath: 'id' });
+      }
+    };
+    request.onsuccess = (e) => {
+      notebooksDbInstance = e.target.result;
+      resolve(notebooksDbInstance);
+    };
+    request.onerror = (e) => {
+      reject(e.target.error);
+    };
+  });
+}
+
+function saveNotebook(notebook) {
+  return getNotebooksDB().then(db => {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(NOTEBOOKS_STORE, 'readwrite');
+      const store = tx.objectStore(NOTEBOOKS_STORE);
+      const req = store.put(notebook);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  });
+}
+
+function getAllNotebooks() {
+  return getNotebooksDB().then(db => {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(NOTEBOOKS_STORE, 'readonly');
+      const store = tx.objectStore(NOTEBOOKS_STORE);
+      const req = store.getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+    });
+  });
+}
+
+function deleteNotebook(id) {
+  return getNotebooksDB().then(db => {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(NOTEBOOKS_STORE, 'readwrite');
+      const store = tx.objectStore(NOTEBOOKS_STORE);
+      const req = store.delete(id);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  });
+}
+
+/* ───────────────────────────────────────────
+   NOTEBOOK ACTIONS & EXPLORER PANEL UI
+─────────────────────────────────────────── */
+async function createNewNotebook() {
+  const name = prompt('Enter notebook title:', 'New Notebook');
+  if (!name) return;
+  
+  const id = 'note-' + Date.now();
+  const folder = prompt('Enter folder name:', 'Drafts') || 'Drafts';
+  const newNote = {
+    id: id,
+    title: name,
+    content: '# ' + name + '\nStart writing notes...',
+    folder: folder,
+    tags: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    settings: {
+      font: S.font,
+      fontSize: S.fontSize,
+      lineHeight: S.lineHeight,
+      wordSpacing: S.wordSpacing,
+      margin: S.margin,
+      rotationMax: S.rotationMax,
+      inkColor: S.inkColor,
+      bleed: S.bleed,
+      pressure: S.pressure,
+      paperStyle: S.paperStyle,
+      noteLayout: S.noteLayout,
+      pageDates: {},
+      pageNos: {}
+    }
+  };
+  
+  await saveNotebook(newNote);
+  activeNotebookId = id;
+  await loadNotebook(id);
+  renderNotebooksList();
+}
+
+async function createNewFolder() {
+  const folderName = prompt('Enter folder name:');
+  if (!folderName) return;
+  
+  const id = 'note-' + Date.now();
+  const newNote = {
+    id: id,
+    title: 'Untitled Note',
+    content: 'Start writing notes...',
+    folder: folderName,
+    tags: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    settings: {
+      font: S.font,
+      fontSize: S.fontSize,
+      lineHeight: S.lineHeight,
+      wordSpacing: S.wordSpacing,
+      margin: S.margin,
+      rotationMax: S.rotationMax,
+      inkColor: S.inkColor,
+      bleed: S.bleed,
+      pressure: S.pressure,
+      paperStyle: S.paperStyle,
+      noteLayout: S.noteLayout,
+      pageDates: {},
+      pageNos: {}
+    }
+  };
+  
+  await saveNotebook(newNote);
+  activeNotebookId = id;
+  await loadNotebook(id);
+  renderNotebooksList();
+}
+
+async function loadNotebook(id) {
+  if (!id) return;
+  try {
+    const db = await getNotebooksDB();
+    const tx = db.transaction(NOTEBOOKS_STORE, 'readonly');
+    tx.objectStore(NOTEBOOKS_STORE).get(id).onsuccess = (e) => {
+      const notebook = e.target.result;
+      if (!notebook) return;
+      
+      activeNotebookId = id;
+      
+      // Load content
+      document.getElementById('text-input').value = notebook.content;
+      S.text = notebook.content;
+      
+      // Load settings if they exist
+      if (notebook.settings) {
+        Object.keys(notebook.settings).forEach(key => {
+          S[key] = notebook.settings[key];
+        });
+        
+        // Sync UI inputs
+        const sliderMap = [
+          ['font-size-slider', 'fs-val', 'fontSize'],
+          ['line-spacing', 'ls-val', 'lineHeight'],
+          ['word-spacing', 'ws-val', 'wordSpacing'],
+          ['margin-slider', 'mg-val', 'margin'],
+          ['rotation-slider', 'rot-val', 'rotationMax'],
+          ['bleed-slider', 'bleed-val', 'bleed'],
+          ['pressure-slider', 'pressure-val', 'pressure'],
+        ];
+        sliderMap.forEach(([sid, valId, key]) => {
+          if (notebook.settings[key] !== undefined) {
+            const el = document.getElementById(sid);
+            if (el) { el.value = notebook.settings[key]; document.getElementById(valId).textContent = notebook.settings[key]; }
+          }
+        });
+        
+        const inkSelect = document.getElementById('ink-color');
+        const inkLabel = document.getElementById('ink-color-label');
+        if (inkSelect && notebook.settings.inkColor) {
+          inkSelect.value = notebook.settings.inkColor;
+          if (inkLabel) inkLabel.textContent = notebook.settings.inkColor;
+        }
+
+        const layoutSelect = document.getElementById('layout-select');
+        if (layoutSelect && notebook.settings.noteLayout) {
+          layoutSelect.value = notebook.settings.noteLayout;
+        }
+        
+        document.querySelectorAll('.paper-btn').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.style === S.paperStyle);
+        });
+      }
+      
+      // Render text
+      renderText(notebook.content);
+      
+      // Highlight selection in explorer
+      renderNotebooksList();
+    };
+  } catch (err) {
+    console.error("Error loading notebook:", err);
+  }
+}
+
+async function deleteNotebookClicked(id, event) {
+  event.stopPropagation();
+  if (!confirm('Are you sure you want to delete this note?')) return;
+  
+  await deleteNotebook(id);
+  
+  if (activeNotebookId === id) {
+    const remaining = await getAllNotebooks();
+    if (remaining.length > 0) {
+      activeNotebookId = remaining[0].id;
+      await loadNotebook(activeNotebookId);
+    } else {
+      activeNotebookId = null;
+      clearText();
+    }
+  }
+  renderNotebooksList();
+}
+
+function renderNotebooksList() {
+  getAllNotebooks().then(notes => {
+    const container = document.getElementById('notebook-list-container');
+    if (!container) return;
+    
+    if (notes.length === 0) {
+      container.innerHTML = '<div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 10px;">No notebooks yet. Click "New Note" above to create one.</div>';
+      return;
+    }
+    
+    // Group notes by folder
+    const groups = {};
+    notes.forEach(note => {
+      const folder = note.folder || 'Uncategorized';
+      if (!groups[folder]) groups[folder] = [];
+      groups[folder].push(note);
+    });
+    
+    container.innerHTML = '';
+    
+    Object.keys(groups).forEach(folder => {
+      const folderHeader = document.createElement('div');
+      folderHeader.className = 'folder-header';
+      folderHeader.innerHTML = `<i class="fa-solid fa-folder-open" style="margin-right:6px; color:var(--accent);"></i> ${folder}`;
+      container.appendChild(folderHeader);
+      
+      groups[folder].forEach(note => {
+        const item = document.createElement('div');
+        item.className = 'notebook-item';
+        if (note.id === activeNotebookId) {
+          item.classList.add('active');
+        }
+        
+        item.onclick = () => loadNotebook(note.id);
+        
+        item.innerHTML = `
+          <span>📝 ${note.title}</span>
+          <div class="notebook-item-actions">
+            <button onclick="deleteNotebookClicked('${note.id}', event)" title="Delete note"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    });
+  });
+}
+
+
