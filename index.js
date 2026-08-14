@@ -19,6 +19,7 @@ const S = {
   textAlignment: 'middle', // 'top', 'middle', 'bottom'
   pageDates: {},
   pageNos: {},
+  showHeaderBox: true,
 };
 
 /* Canvas pages array */
@@ -247,10 +248,30 @@ function setPaper(btn) {
   document.querySelectorAll('.paper-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   S.paperStyle = btn.dataset.style;
-  // Toggle worksheet header visibility based on paper style
+  
+  if (S.paperStyle === 'clean') {
+    const cleanFonts = ['Kalam', 'Amita', 'Noto Sans Devanagari', 'Noto Serif Devanagari', 'Hind', 'Tiro Devanagari Hindi', 'Baloo 2', 'Martel', 'Roboto', 'Arial'];
+    if (!cleanFonts.includes(S.font)) {
+      S.font = 'Kalam';
+      const fontSelect = document.getElementById('font-select');
+      if (fontSelect) {
+        fontSelect.value = 'Kalam';
+        fontSelect.style.fontFamily = 'Kalam';
+      }
+    }
+  }
+
+  // Toggle worksheet header visibility based on paper style and header toggle checkbox state
+  const showHeader = (S.paperStyle === 'ruled' || S.paperStyle === 'clean') && S.showHeaderBox !== false;
   document.querySelectorAll('.worksheet-header').forEach(wh => {
-    wh.style.display = S.paperStyle === 'ruled' ? 'flex' : 'none';
+    wh.style.display = showHeader ? 'flex' : 'none';
   });
+
+  const headerToggleContainer = document.getElementById('header-toggle-container');
+  if (headerToggleContainer) {
+    headerToggleContainer.style.display = (S.paperStyle === 'ruled' || S.paperStyle === 'clean') ? 'flex' : 'none';
+  }
+
   debounceRender();
 }
 
@@ -466,9 +487,10 @@ function redrawPageCanvas(pageNum) {
       ctx.save();
       ctx.globalAlpha = 0.28;
       ctx.fillStyle = S._highlightColor || '#ffe066';
-      const hlW = ctx.measureText ? S.fontSize * 0.7 : 14;
-      const hlH = S.fontSize * 1.3;
-      ctx.fillRect(item.x - 1, item.y - S.fontSize * 0.85, hlW, hlH);
+      const hlFs = item.fontSize || S.fontSize;
+      const hlW = hlFs * 0.7;
+      const hlH = hlFs * 1.3;
+      ctx.fillRect(item.x - 1, item.y - hlFs * 0.85, hlW, hlH);
       ctx.restore();
     }
 
@@ -478,24 +500,30 @@ function redrawPageCanvas(pageNum) {
     ctx.rotate((v.tiltDeg * (item.isIndic ? 0.3 : 1) * Math.PI) / 180);
     ctx.scale(v.scaleX, v.scaleY);
 
-    if (draftedGlyphs[item.ch]) {
+    // In clean mode, bypass custom drafted glyphs
+    const useGlyph = S.paperStyle !== 'clean' && draftedGlyphs[item.ch];
+    if (useGlyph) {
       const glyphImg = getCachedGlyphImage(item.ch, draftedGlyphs[item.ch]);
       if (glyphImg) {
         ctx.globalAlpha = v.opacity;
         const drawSz = S.fontSize * 1.35;
         ctx.drawImage(glyphImg, -drawSz / 2, -drawSz / 2, drawSz, drawSz);
       } else {
-        const pxSize = S.fontSize * v.pressureMod;
-        ctx.font = `${Math.max(10, pxSize)}px ${item.fontStack}`;
+        const fontSize = item.fontSize || S.fontSize;
+        const weight = item.isBold ? 'bold ' : '';
+        const pxSize = fontSize * v.pressureMod;
+        ctx.font = `${weight}${Math.max(10, pxSize)}px ${item.fontStack}`;
         ctx.globalAlpha = v.opacity;
         ctx.fillStyle = S.inkColor;
         ctx.fillText(item.ch, 0, 0);
       }
     } else {
-      const pxSize = S.fontSize * v.pressureMod;
-      ctx.font = `${Math.max(10, pxSize)}px ${item.fontStack}`;
+      const fontSize = item.fontSize || S.fontSize;
+      const weight = item.isBold ? 'bold ' : '';
+      const pxSize = fontSize * v.pressureMod;
+      ctx.font = `${weight}${Math.max(10, pxSize)}px ${item.fontStack}`;
       ctx.globalAlpha = v.opacity;
-      if (S.bleed > 0.05) {
+      if (S.paperStyle !== 'clean' && S.bleed > 0.05) {
         ctx.shadowColor = S.shadowColor || S.inkColor;
         ctx.shadowBlur = S.bleed * 1.4;
       } else {
@@ -610,6 +638,7 @@ function drawPaperBackground(ctx, style, pageNum = 1) {
   // Paper colors per style
   const configs = {
     ruled: { bg: '#faf9f5', lineColor: '#85add4', lineOpacity: 0.65, redLine: '#ff4d6d' },
+    clean: { bg: '#faf9f5', lineColor: '#85add4', lineOpacity: 0.65, redLine: '#ff4d6d' },
     plain: { bg: '#faf7f0', lineColor: null },
     grid: { bg: '#f6f2ec', lineColor: '#c0b49a', lineOpacity: 0.35 },
     legal: { bg: '#fef9c3', lineColor: '#c8b820', lineOpacity: 0.45, redLine: '#e07070' },
@@ -627,7 +656,7 @@ function drawPaperBackground(ctx, style, pageNum = 1) {
   ctx.fillRect(0, 0, w, h);
 
   // Subtle paper texture (noise-like grain using very small rects)
-  if (style !== 'dark') {
+  if (style !== 'dark' && style !== 'clean') {
     ctx.save();
     ctx.globalAlpha = 0.018;
     for (let i = 0; i < 2200; i++) {
@@ -640,7 +669,7 @@ function drawPaperBackground(ctx, style, pageNum = 1) {
     ctx.restore();
   }
 
-  if (style === 'ruled') {
+  if (style === 'ruled' || style === 'clean') {
     // Ruled paper (Classmate-style)
     ctx.save();
     ctx.globalAlpha = 0.6;
@@ -664,6 +693,7 @@ function drawPaperBackground(ctx, style, pageNum = 1) {
     ctx.lineTo(w, S.margin);
     ctx.stroke();
 
+    // Double horizontal red lines (separated by 4px)
     ctx.beginPath();
     ctx.moveTo(0, S.margin - 4);
     ctx.lineTo(w, S.margin - 4);
@@ -671,82 +701,84 @@ function drawPaperBackground(ctx, style, pageNum = 1) {
 
     ctx.restore();
 
-    // Date & P. No. box in top-right header area
-    ctx.save();
-    ctx.strokeStyle = c.redLine || '#ff4d6d';
-    ctx.fillStyle = c.redLine || '#ff4d6d';
-    ctx.globalAlpha = 0.75;
-    ctx.lineWidth = 1.2;
-
-    const boxW = 145;
-    const boxH = 42;
-    const boxX = w - boxW - 30;
-    const boxY = 20;
-
-    // Draw the box
-    drawRoundedRect(ctx, boxX, boxY, boxW, boxH, 6);
-    ctx.stroke();
-
-    // Draw horizontal dividing line in the middle of the box
-    ctx.beginPath();
-    ctx.moveTo(boxX, boxY + boxH / 2);
-    ctx.lineTo(boxX + boxW, boxY + boxH / 2);
-    ctx.stroke();
-
-    // Draw Date and P. No. text inside the box
-    ctx.font = 'bold 9px sans-serif';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('DATE:', boxX + 8, boxY + boxH / 4);
-    ctx.fillText('P. NO.:', boxX + 8, boxY + 3 * boxH / 4);
-
-    // Draw thin line for writing date and page number
-    ctx.lineWidth = 0.6;
-    ctx.globalAlpha = 0.4;
-    // Date line
-    ctx.beginPath();
-    ctx.moveTo(boxX + 42, boxY + boxH / 4 + 3);
-    ctx.lineTo(boxX + boxW - 8, boxY + boxH / 4 + 3);
-    ctx.stroke();
-    // P. No. line
-    ctx.beginPath();
-    ctx.moveTo(boxX + 48, boxY + 3 * boxH / 4 + 3);
-    ctx.lineTo(boxX + boxW - 8, boxY + 3 * boxH / 4 + 3);
-    ctx.stroke();
-
-    ctx.restore();
-
-    // Render handwriting inside the box (only if NOT focused)
-    const dateInput = document.getElementById('date-input-' + pageNum);
-    const pageInput = document.getElementById('page-input-' + pageNum);
-    
-    const isDateFocused = dateInput && (document.activeElement === dateInput);
-    const isPageFocused = pageInput && (document.activeElement === pageInput);
-
-    const dateText = S.pageDates[pageNum] !== undefined ? S.pageDates[pageNum] : '';
-    const pageText = S.pageNos[pageNum] !== undefined ? S.pageNos[pageNum] : pageNum;
-
-    if (dateText && !isDateFocused) {
+    if (S.showHeaderBox !== false) {
+      // Date & P. No. box in top-right header area
       ctx.save();
-      ctx.fillStyle = S.inkColor;
-      const isIndic = containsDevanagari(dateText);
-      ctx.font = `italic ${Math.max(12, S.fontSize * 0.62)}px ${getFontStack(isIndic)}`;
-      ctx.textBaseline = 'middle';
-      ctx.translate(boxX + 44, boxY + boxH / 4 - 1);
-      ctx.rotate(-1.2 * Math.PI / 180); // Small realistic handwriting angle
-      ctx.fillText(dateText, 0, 0);
-      ctx.restore();
-    }
+      ctx.strokeStyle = c.redLine || '#ff4d6d';
+      ctx.fillStyle = c.redLine || '#ff4d6d';
+      ctx.globalAlpha = 0.75;
+      ctx.lineWidth = 1.2;
 
-    if (pageText !== undefined && pageText !== '' && !isPageFocused) {
-      ctx.save();
-      ctx.fillStyle = S.inkColor;
-      const isIndic = containsDevanagari(String(pageText));
-      ctx.font = `italic ${Math.max(12, S.fontSize * 0.62)}px ${getFontStack(isIndic)}`;
+      const boxW = 145;
+      const boxH = 42;
+      const boxX = w - boxW - 30;
+      const boxY = 20;
+
+      // Draw the box
+      drawRoundedRect(ctx, boxX, boxY, boxW, boxH, 6);
+      ctx.stroke();
+
+      // Draw horizontal dividing line in the middle of the box
+      ctx.beginPath();
+      ctx.moveTo(boxX, boxY + boxH / 2);
+      ctx.lineTo(boxX + boxW, boxY + boxH / 2);
+      ctx.stroke();
+
+      // Draw Date and P. No. text inside the box
+      ctx.font = 'bold 9px sans-serif';
       ctx.textBaseline = 'middle';
-      ctx.translate(boxX + 50, boxY + 3 * boxH / 4 - 1);
-      ctx.rotate(1.0 * Math.PI / 180); // Small realistic handwriting angle
-      ctx.fillText(String(pageText), 0, 0);
+      ctx.fillText('DATE:', boxX + 8, boxY + boxH / 4);
+      ctx.fillText('P. NO.:', boxX + 8, boxY + 3 * boxH / 4);
+
+      // Draw thin line for writing date and page number
+      ctx.lineWidth = 0.6;
+      ctx.globalAlpha = 0.4;
+      // Date line
+      ctx.beginPath();
+      ctx.moveTo(boxX + 42, boxY + boxH / 4 + 3);
+      ctx.lineTo(boxX + boxW - 8, boxY + boxH / 4 + 3);
+      ctx.stroke();
+      // P. No. line
+      ctx.beginPath();
+      ctx.moveTo(boxX + 48, boxY + 3 * boxH / 4 + 3);
+      ctx.lineTo(boxX + boxW - 8, boxY + 3 * boxH / 4 + 3);
+      ctx.stroke();
+
       ctx.restore();
+
+      // Render handwriting inside the box (only if NOT focused)
+      const dateInput = document.getElementById('date-input-' + pageNum);
+      const pageInput = document.getElementById('page-input-' + pageNum);
+      
+      const isDateFocused = dateInput && (document.activeElement === dateInput);
+      const isPageFocused = pageInput && (document.activeElement === pageInput);
+
+      const dateText = S.pageDates[pageNum] !== undefined ? S.pageDates[pageNum] : '';
+      const pageText = S.pageNos[pageNum] !== undefined ? S.pageNos[pageNum] : pageNum;
+
+      if (dateText && !isDateFocused) {
+        ctx.save();
+        ctx.fillStyle = S.inkColor;
+        const isIndic = containsDevanagari(dateText);
+        ctx.font = `italic ${Math.max(12, S.fontSize * 0.62)}px ${getFontStack(isIndic)}`;
+        ctx.textBaseline = 'middle';
+        ctx.translate(boxX + 44, boxY + boxH / 4 - 1);
+        ctx.rotate(-1.2 * Math.PI / 180); // Small realistic handwriting angle
+        ctx.fillText(dateText, 0, 0);
+        ctx.restore();
+      }
+
+      if (pageText !== undefined && pageText !== '' && !isPageFocused) {
+        ctx.save();
+        ctx.fillStyle = S.inkColor;
+        const isIndic = containsDevanagari(String(pageText));
+        ctx.font = `italic ${Math.max(12, S.fontSize * 0.62)}px ${getFontStack(isIndic)}`;
+        ctx.textBaseline = 'middle';
+        ctx.translate(boxX + 50, boxY + 3 * boxH / 4 - 1);
+        ctx.rotate(1.0 * Math.PI / 180); // Small realistic handwriting angle
+        ctx.fillText(String(pageText), 0, 0);
+        ctx.restore();
+      }
     }
 
     // Horizontal ruled lines (blue/cyan)
@@ -1435,8 +1467,16 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
       }
 
       if (wordIsIndic) {
-        const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
-        const wobble = Math.sin(lineCharIndex * 0.04) * 0.4 * (S.fontSize / 22);
+        const v = S.paperStyle === 'clean' ? {
+          tiltDeg: 0,
+          scaleY: 1,
+          scaleX: 1,
+          baselineOff: 0,
+          spacingExtra: 0,
+          pressureMod: 1,
+          opacity: 1
+        } : getCharVariation(S.rotationMax, S.pressure, S.fontSize);
+        const wobble = S.paperStyle === 'clean' ? 0 : Math.sin(lineCharIndex * 0.04) * 0.4 * (S.fontSize / 22);
         const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
         const cy = y + (v.baselineOff * 0.4) + wobble + alignOffset;
 
@@ -1450,7 +1490,9 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
           pageIdx,
           isIndic: true,
           fontStack,
-          highlight: isHighlighted
+          highlight: isHighlighted,
+          fontSize: S.fontSize,
+          isBold: false
         });
 
         x += ctx.measureText(lineWord).width + v.spacingExtra;
@@ -1461,7 +1503,15 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
         const graphemes = getGraphemes(lineWord);
         for (let ci = 0; ci < graphemes.length; ci++) {
           const ch = graphemes[ci];
-          const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
+          const v = S.paperStyle === 'clean' ? {
+            tiltDeg: 0,
+            scaleY: 1,
+            scaleX: 1,
+            baselineOff: 0,
+            spacingExtra: 0,
+            pressureMod: 1,
+            opacity: 1
+          } : getCharVariation(S.rotationMax, S.pressure, S.fontSize);
 
           ctx.font = `${S.fontSize}px ${fontStack}`;
           const charWidth = ctx.measureText(ch).width + v.spacingExtra;
@@ -1490,7 +1540,7 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
             }
           }
 
-          const wobble = Math.sin(lineCharIndex * 0.04) * 0.8 * (S.fontSize / 22);
+          const wobble = S.paperStyle === 'clean' ? 0 : Math.sin(lineCharIndex * 0.04) * 0.8 * (S.fontSize / 22);
           const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
           const cy = y + v.baselineOff + wobble + alignOffset;
 
@@ -1504,7 +1554,9 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
             pageIdx,
             isIndic: false,
             fontStack,
-            highlight: isHighlighted
+            highlight: isHighlighted,
+            fontSize: S.fontSize,
+            isBold: false
           };
 
           if (ch === '\uFFF0') {
@@ -1722,8 +1774,16 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
       }
 
       if (wordIsIndic) {
-        const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
-        const wobble = Math.sin(lineCharIndex * 0.04) * 0.4 * (S.fontSize / 22);
+        const v = S.paperStyle === 'clean' ? {
+          tiltDeg: 0,
+          scaleY: 1,
+          scaleX: 1,
+          baselineOff: 0,
+          spacingExtra: 0,
+          pressureMod: 1,
+          opacity: 1
+        } : getCharVariation(S.rotationMax, S.pressure, S.fontSize);
+        const wobble = S.paperStyle === 'clean' ? 0 : Math.sin(lineCharIndex * 0.04) * 0.4 * (S.fontSize / 22);
         const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
         const cy = y + (v.baselineOff * 0.4) + wobble + alignOffset;
 
@@ -1738,7 +1798,9 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
           isIndic: true,
           fontStack,
           cornellType: type,
-          highlight: isHighlighted
+          highlight: isHighlighted,
+          fontSize: S.fontSize,
+          isBold: false
         });
 
         x += ctx.measureText(word).width + v.spacingExtra;
@@ -1749,7 +1811,15 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
         const graphemes = getGraphemes(word);
         for (let ci = 0; ci < graphemes.length; ci++) {
           const ch = graphemes[ci];
-          const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
+          const v = S.paperStyle === 'clean' ? {
+            tiltDeg: 0,
+            scaleY: 1,
+            scaleX: 1,
+            baselineOff: 0,
+            spacingExtra: 0,
+            pressureMod: 1,
+            opacity: 1
+          } : getCharVariation(S.rotationMax, S.pressure, S.fontSize);
 
           ctx.font = `${S.fontSize}px ${fontStack}`;
           const charWidth = ctx.measureText(ch).width + v.spacingExtra;
@@ -1782,7 +1852,7 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
             }
           }
 
-          const wobble = Math.sin(lineCharIndex * 0.04) * 0.8 * (S.fontSize / 22);
+          const wobble = S.paperStyle === 'clean' ? 0 : Math.sin(lineCharIndex * 0.04) * 0.8 * (S.fontSize / 22);
           const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
           const cy = y + v.baselineOff + wobble + alignOffset;
 
@@ -1797,7 +1867,9 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
             isIndic: false,
             fontStack,
             cornellType: type,
-            highlight: isHighlighted
+            highlight: isHighlighted,
+            fontSize: S.fontSize,
+            isBold: false
           };
 
           if (ch === '\uFFF0') {
@@ -1839,6 +1911,309 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
   return { queue, pageTexts, pageCount: pageIdx + 1 };
 }
 
+function parseStructuredContent(text) {
+  const lines = text.split('\n');
+  const blocks = [];
+  let questionCounter = 1;
+  let activeParagraph = null;
+
+  function commitParagraph() {
+    if (activeParagraph) {
+      blocks.push(activeParagraph);
+      activeParagraph = null;
+    }
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    if (trimmed === '') {
+      commitParagraph();
+      continue;
+    }
+
+    // 1. Check for heading level 2 (subheading)
+    if (trimmed.startsWith('##')) {
+      commitParagraph();
+      const content = trimmed.substring(2).trim();
+      blocks.push({ type: 'subheading', text: content });
+      continue;
+    }
+
+    // 2. Check for heading level 1
+    if (trimmed.startsWith('#')) {
+      commitParagraph();
+      const content = trimmed.substring(1).trim();
+      blocks.push({ type: 'heading', text: content });
+      continue;
+    }
+
+    // 3. Check for bullet points
+    const bulletMatch = line.match(/^(\s*)([\-\*])\s+(.*)/);
+    if (bulletMatch) {
+      commitParagraph();
+      const indent = bulletMatch[1];
+      const content = bulletMatch[3].trim();
+      const level = (indent.length >= 2 || indent.includes('\t')) ? 2 : 1;
+      blocks.push({ type: 'bullet', text: content, level: level });
+      continue;
+    }
+
+    // 4. Check for questions
+    const questionMatch = trimmed.match(/^Q(\d+)?[\.:\-\s]+(.*)/i);
+    if (questionMatch) {
+      commitParagraph();
+      const explicitNum = questionMatch[1];
+      const content = questionMatch[2].trim();
+      let num = explicitNum ? parseInt(explicitNum, 10) : questionCounter++;
+      if (explicitNum) {
+        questionCounter = Math.max(questionCounter, num + 1);
+      }
+      blocks.push({ type: 'question', text: content, questionNum: num });
+      continue;
+    }
+
+    // 5. Otherwise, paragraph text
+    if (activeParagraph) {
+      activeParagraph.text += ' ' + trimmed;
+    } else {
+      activeParagraph = { type: 'paragraph', text: trimmed };
+    }
+  }
+
+  commitParagraph();
+  return blocks;
+}
+
+function layoutTextCleanStandard(cleanText, S, PAGE_W, PAGE_H, ctx) {
+  const blocks = parseStructuredContent(cleanText);
+  const queue = [];
+  const pageTexts = [];
+  let currentPageText = '';
+
+  const margin = S.margin;
+  const rightMargin = PAGE_W - margin;
+
+  let pageIdx = 0;
+  let charIndex = 0;
+  let stickyCounter = 0;
+  let calloutCounter = 0;
+
+  // Skipped top line: start at margin + S.fontSize + lineH
+  let y = margin + S.fontSize + (S.fontSize * S.lineHeight);
+
+  for (let bi = 0; bi < blocks.length; bi++) {
+    const block = blocks[bi];
+
+    // Determine block style
+    let blockFontSize = S.fontSize;
+    let isBold = false;
+    if (block.type === 'heading') {
+      blockFontSize = Math.round(S.fontSize * 1.35);
+      isBold = true;
+    } else if (block.type === 'subheading') {
+      blockFontSize = Math.round(S.fontSize * 1.15);
+      isBold = true;
+    } else if (block.type === 'question') {
+      blockFontSize = Math.round(S.fontSize * 1.05);
+      isBold = true;
+    }
+
+    const lineH = blockFontSize * S.lineHeight;
+
+    // Spacings
+    let topSp = 10;
+    let botSp = 10;
+    if (block.type === 'heading') {
+      topSp = 24;
+      botSp = 8;
+    } else if (block.type === 'subheading') {
+      topSp = 18;
+      botSp = 6;
+    } else if (block.type === 'question') {
+      topSp = 16;
+      botSp = 8;
+    } else if (block.type === 'bullet') {
+      topSp = 4;
+      botSp = 4;
+    } else if (block.type === 'paragraph') {
+      topSp = 12;
+      botSp = 8;
+    }
+
+    // Apply top spacing (unless we are at the top of a page)
+    const isPageTop = Math.abs(y - (margin + blockFontSize + lineH)) < 1 || Math.abs(y - (margin + S.fontSize + (S.fontSize * S.lineHeight))) < 1;
+    if (!isPageTop) {
+      y += topSp;
+    }
+
+    // Page break check before starting the block
+    if (y + lineH > PAGE_H - margin) {
+      pageTexts.push(currentPageText);
+      currentPageText = '';
+      pageIdx++;
+      y = margin + blockFontSize + lineH;
+    }
+
+    // Set left and right boundaries
+    let leftBoundary = margin;
+    if (block.type === 'bullet') {
+      leftBoundary = margin + (block.level === 2 ? 48 : 24);
+    }
+
+    let x = leftBoundary;
+
+    // Font stack for this block
+    const wordIsIndic = containsDevanagari(block.text);
+    const fontStack = getFontStack(wordIsIndic);
+    ctx.font = `${isBold ? 'bold ' : ''}${blockFontSize}px ${fontStack}`;
+
+    // If it's a bullet block, draw the bullet glyph first
+    if (block.type === 'bullet') {
+      const bulletChar = block.level === 2 ? '◦' : '•';
+      const bulletX = margin + (block.level === 2 ? 24 : 8);
+      
+      const v = {
+        tiltDeg: 0,
+        scaleY: 1,
+        scaleX: 1,
+        baselineOff: 0,
+        spacingExtra: 0,
+        pressureMod: 1,
+        opacity: 1
+      };
+
+      queue.push({
+        ch: bulletChar,
+        x: bulletX,
+        y: y,
+        v,
+        pageIdx,
+        isIndic: false,
+        fontStack,
+        highlight: false,
+        isBold: isBold,
+        fontSize: blockFontSize
+      });
+    }
+
+    // If it's a question block, let's prepend the question number if not already present
+    let textToLayout = block.text;
+    if (block.type === 'question') {
+      const numPrefix = `Q${block.questionNum}. `;
+      if (!textToLayout.startsWith(numPrefix) && !/^\s*Q\d+/i.test(textToLayout)) {
+        textToLayout = numPrefix + textToLayout;
+      }
+    }
+
+    const words = textToLayout.split(' ');
+
+    for (let wi = 0; wi < words.length; wi++) {
+      const word = words[wi];
+      if (!word) {
+        if (wi < words.length - 1) {
+          currentPageText += ' ';
+          charIndex++;
+        }
+        continue;
+      }
+
+      ctx.font = `${isBold ? 'bold ' : ''}${blockFontSize}px ${fontStack}`;
+      const wordWidth = ctx.measureText(word).width + S.wordSpacing;
+
+      // Word wrap check
+      if (x + wordWidth > rightMargin && x > leftBoundary) {
+        x = leftBoundary;
+        y += lineH;
+        // Check page break
+        if (y + lineH > PAGE_H - margin) {
+          pageTexts.push(currentPageText);
+          currentPageText = '';
+          pageIdx++;
+          y = margin + blockFontSize + lineH;
+        }
+      }
+
+      // Lay out characters in the word
+      const graphemes = getGraphemes(word);
+      for (let ci = 0; ci < graphemes.length; ci++) {
+        const ch = graphemes[ci];
+
+        ctx.font = `${isBold ? 'bold ' : ''}${blockFontSize}px ${fontStack}`;
+        const charWidth = ctx.measureText(ch).width;
+
+        // Char-level wrap check
+        if (x + charWidth > rightMargin && x > leftBoundary) {
+          x = leftBoundary;
+          y += lineH;
+          if (y + lineH > PAGE_H - margin) {
+            pageTexts.push(currentPageText);
+            currentPageText = '';
+            pageIdx++;
+            y = margin + blockFontSize + lineH;
+          }
+        }
+
+        const isHighlighted = highlightRanges.some(r => charIndex >= r.start && charIndex < r.end);
+
+        const v = {
+          tiltDeg: 0,
+          scaleY: 1,
+          scaleX: 1,
+          baselineOff: 0,
+          spacingExtra: 0,
+          pressureMod: 1,
+          opacity: 1
+        };
+
+        let item = {
+          ch,
+          x,
+          y,
+          v,
+          pageIdx,
+          isIndic: false,
+          fontStack,
+          highlight: isHighlighted,
+          isBold: isBold,
+          fontSize: blockFontSize
+        };
+
+        if (ch === '\uFFF0') {
+          item.isSticky = true;
+          item.stickyIdx = stickyCounter++;
+        } else if (ch === '\uFFF1') {
+          item.isCallout = true;
+          item.calloutIdx = calloutCounter++;
+        }
+
+        queue.push(item);
+
+        x += charWidth;
+        charIndex++;
+        currentPageText += ch;
+      }
+
+      // Space after word
+      ctx.font = `${isBold ? 'bold ' : ''}${blockFontSize}px ${fontStack}`;
+      const spaceWidth = ctx.measureText(' ').width + S.wordSpacing;
+      x += spaceWidth;
+      if (wi < words.length - 1) {
+        currentPageText += ' ';
+        charIndex++;
+      }
+    }
+
+    // Apply bottom spacing after the block
+    y += botSp;
+    currentPageText += '\n';
+  }
+
+  pageTexts.push(currentPageText);
+  return { queue, pageTexts, pageCount: pageIdx + 1 };
+}
+
 function layoutText(text) {
   text = sanitizeText(text);
   if (!text.trim()) {
@@ -1852,6 +2227,10 @@ function layoutText(text) {
   tmpCanvas.width = PAGE_W;
   tmpCanvas.height = PAGE_H;
   const ctx = tmpCanvas.getContext('2d');
+
+  if (S.paperStyle === 'clean' && S.noteLayout === 'standard') {
+    return layoutTextCleanStandard(cleanText, S, PAGE_W, PAGE_H, ctx);
+  }
 
   if (S.noteLayout === 'twocolumn') {
     return layoutTextTwoColumn(cleanText, S, PAGE_W, PAGE_H, sanitizeText, containsDevanagari, getFontStack, getCharVariation, getGraphemes, ctx);
@@ -1937,7 +2316,9 @@ function layoutText(text) {
           pageIdx,
           isIndic: true,
           fontStack,
-          highlight: isHighlighted
+          highlight: isHighlighted,
+          fontSize: S.fontSize,
+          isBold: false
         });
 
         x += ctx.measureText(lineWord).width + v.spacingExtra;
@@ -1979,7 +2360,9 @@ function layoutText(text) {
             pageIdx,
             isIndic: false,
             fontStack,
-            highlight: isHighlighted
+            highlight: isHighlighted,
+            fontSize: S.fontSize,
+            isBold: false
           };
 
           if (ch === '\uFFF0') {
@@ -2083,9 +2466,10 @@ function renderText(text) {
       ctx.save();
       ctx.globalAlpha = 0.28;
       ctx.fillStyle = S._highlightColor || '#ffe066';
-      const hlW = ctx.measureText ? S.fontSize * 0.7 : 14;
-      const hlH = S.fontSize * 1.3;
-      ctx.fillRect(item.x - 1, item.y - S.fontSize * 0.85, hlW, hlH);
+      const hlFs = item.fontSize || S.fontSize;
+      const hlW = hlFs * 0.7;
+      const hlH = hlFs * 1.3;
+      ctx.fillRect(item.x - 1, item.y - hlFs * 0.85, hlW, hlH);
       ctx.restore();
     }
 
@@ -2094,27 +2478,32 @@ function renderText(text) {
     ctx.rotate((v.tiltDeg * (item.isIndic ? 0.3 : 1) * Math.PI) / 180);
     ctx.scale(v.scaleX, v.scaleY);
 
-    // Check if custom glyph exists
-    if (draftedGlyphs[item.ch]) {
+    // In clean mode, bypass custom drafted glyphs
+    const useGlyph = S.paperStyle !== 'clean' && draftedGlyphs[item.ch];
+    if (useGlyph) {
       const glyphImg = getCachedGlyphImage(item.ch, draftedGlyphs[item.ch]);
       if (glyphImg) {
         ctx.globalAlpha = v.opacity;
         const drawSz = S.fontSize * 1.35;
         ctx.drawImage(glyphImg, -drawSz / 2, -drawSz / 2, drawSz, drawSz);
       } else {
-        const pxSize = S.fontSize * v.pressureMod;
-        ctx.font = `${Math.max(10, pxSize)}px ${item.fontStack}`;
+        const fontSize = item.fontSize || S.fontSize;
+        const weight = item.isBold ? 'bold ' : '';
+        const pxSize = fontSize * v.pressureMod;
+        ctx.font = `${weight}${Math.max(10, pxSize)}px ${item.fontStack}`;
         ctx.globalAlpha = v.opacity;
         ctx.fillStyle = S.inkColor;
         ctx.fillText(item.ch, 0, 0);
       }
     } else {
       // Fallback to system font
-      const pxSize = S.fontSize * v.pressureMod;
-      ctx.font = `${Math.max(10, pxSize)}px ${item.fontStack}`;
+      const fontSize = item.fontSize || S.fontSize;
+      const weight = item.isBold ? 'bold ' : '';
+      const pxSize = fontSize * v.pressureMod;
+      ctx.font = `${weight}${Math.max(10, pxSize)}px ${item.fontStack}`;
       ctx.globalAlpha = v.opacity;
 
-      if (S.bleed > 0.05) {
+      if (S.paperStyle !== 'clean' && S.bleed > 0.05) {
         ctx.shadowColor = S.shadowColor || S.inkColor;
         ctx.shadowBlur = S.bleed * 1.4;
       } else {
@@ -2217,9 +2606,10 @@ function startAnimation() {
         ctx.save();
         ctx.globalAlpha = 0.28;
         ctx.fillStyle = S._highlightColor || '#ffe066';
-        const hlW = ctx.measureText ? S.fontSize * 0.7 : 14;
-        const hlH = S.fontSize * 1.3;
-        ctx.fillRect(item.x - 1, item.y - S.fontSize * 0.85, hlW, hlH);
+        const hlFs = item.fontSize || S.fontSize;
+        const hlW = hlFs * 0.7;
+        const hlH = hlFs * 1.3;
+        ctx.fillRect(item.x - 1, item.y - hlFs * 0.85, hlW, hlH);
         ctx.restore();
       }
 
@@ -2227,10 +2617,17 @@ function startAnimation() {
       ctx.translate(item.x, item.y);
       ctx.rotate((v.tiltDeg * (item.isIndic ? 0.3 : 1) * Math.PI) / 180);
       ctx.scale(v.scaleX, v.scaleY);
-      const pxSize = S.fontSize * v.pressureMod;
-      ctx.font = `${Math.max(10, pxSize)}px ${item.fontStack}`;
+      const fontSize = item.fontSize || S.fontSize;
+      const weight = item.isBold ? 'bold ' : '';
+      const pxSize = fontSize * v.pressureMod;
+      ctx.font = `${weight}${Math.max(10, pxSize)}px ${item.fontStack}`;
       ctx.globalAlpha = v.opacity;
-      if (S.bleed > 0.05) { ctx.shadowColor = S.inkColor; ctx.shadowBlur = S.bleed * 1.4; }
+      if (S.paperStyle !== 'clean' && S.bleed > 0.05) {
+        ctx.shadowColor = S.inkColor;
+        ctx.shadowBlur = S.bleed * 1.4;
+      } else {
+        ctx.shadowBlur = 0;
+      }
       ctx.fillStyle = S.inkColor;
       ctx.fillText(item.ch, 0, 0);
       ctx.restore();
@@ -2936,7 +3333,8 @@ function autosave() {
       noteLayout: S.noteLayout,
       activeNotebookId: activeNotebookId,
       pageDates: S.pageDates,
-      pageNos: S.pageNos
+      pageNos: S.pageNos,
+      showHeaderBox: S.showHeaderBox
     };
     localStorage.setItem('inkflow-state', JSON.stringify(state));
 
@@ -2961,7 +3359,8 @@ function autosave() {
           paperStyle: S.paperStyle,
           noteLayout: S.noteLayout,
           pageDates: S.pageDates,
-          pageNos: S.pageNos
+          pageNos: S.pageNos,
+          showHeaderBox: S.showHeaderBox
         }
       };
       
@@ -3050,6 +3449,11 @@ async function restoreState() {
     // Restore pageDates and pageNos
     if (state.pageDates) S.pageDates = state.pageDates;
     if (state.pageNos) S.pageNos = state.pageNos;
+    if (state.showHeaderBox !== undefined) {
+      S.showHeaderBox = state.showHeaderBox;
+      const headerToggle = document.getElementById('header-toggle');
+      if (headerToggle) headerToggle.checked = S.showHeaderBox;
+    }
 
     // 2. Migrate draftedGlyphs if they exist in localStorage state
     if (state.draftedGlyphs && Object.keys(state.draftedGlyphs).length > 0) {
@@ -3085,6 +3489,16 @@ async function restoreState() {
       if (btn) btn.classList.add('drafted');
     }
   });
+
+  // Update header and toggle visibility in UI based on restored paper style and checkbox state
+  const showHeader = (S.paperStyle === 'ruled' || S.paperStyle === 'clean') && S.showHeaderBox !== false;
+  document.querySelectorAll('.worksheet-header').forEach(wh => {
+    wh.style.display = showHeader ? 'flex' : 'none';
+  });
+  const headerToggleContainer = document.getElementById('header-toggle-container');
+  if (headerToggleContainer) {
+    headerToggleContainer.style.display = (S.paperStyle === 'ruled' || S.paperStyle === 'clean') ? 'flex' : 'none';
+  }
 
   // Optionally redraw if studio is open
   if (typeof drawStudioCanvas === 'function') drawStudioCanvas();
@@ -3170,6 +3584,19 @@ async function initApp() {
   });
 fontSelect.addEventListener('change', autosave);
 inkColorInput.addEventListener('change', autosave);
+
+const headerToggle = document.getElementById('header-toggle');
+if (headerToggle) {
+  headerToggle.addEventListener('change', function() {
+    S.showHeaderBox = this.checked;
+    const showHeader = (S.paperStyle === 'ruled' || S.paperStyle === 'clean') && S.showHeaderBox !== false;
+    document.querySelectorAll('.worksheet-header').forEach(wh => {
+      wh.style.display = showHeader ? 'flex' : 'none';
+    });
+    autosave();
+    debounceRender();
+  });
+}
 
 // Boot
 initApp();
@@ -3320,6 +3747,7 @@ function resetToDefaults() {
     pressure: 0.12,
     paperStyle: 'ruled',
     textAlignment: 'middle',
+    showHeaderBox: true,
   };
 
   // Apply state
@@ -3371,6 +3799,19 @@ function resetToDefaults() {
   // Update Paper styles active classes
   document.querySelectorAll('.paper-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.style === defaults.paperStyle);
+  });
+
+  // Reset Header checkbox
+  const headerToggle = document.getElementById('header-toggle');
+  if (headerToggle) headerToggle.checked = true;
+
+  const headerToggleContainer = document.getElementById('header-toggle-container');
+  if (headerToggleContainer) {
+    headerToggleContainer.style.display = 'flex'; // 'ruled' is the default
+  }
+
+  document.querySelectorAll('.worksheet-header').forEach(wh => {
+    wh.style.display = 'flex';
   });
 
   // Save & Render
