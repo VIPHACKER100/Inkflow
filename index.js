@@ -547,7 +547,7 @@ function updateEditorStyles(editor, canvas) {
   editor.style.fontFamily = getFontStack(containsDevanagari(editor.innerText));
   editor.style.fontSize = (S.fontSize * scale) + 'px';
   editor.style.lineHeight = S.lineHeight;
-  editor.style.paddingTop = (S.margin * scale) + 'px';
+  editor.style.paddingTop = ((S.margin + (S.fontSize * S.lineHeight)) * scale) + 'px';
   editor.style.paddingLeft = (S.margin * scale) + 'px';
   editor.style.paddingRight = (S.margin * scale) + 'px';
   editor.style.paddingBottom = (S.margin * scale) + 'px';
@@ -2000,8 +2000,8 @@ function layoutTextCleanStandard(cleanText, S, PAGE_W, PAGE_H, ctx) {
   let stickyCounter = 0;
   let calloutCounter = 0;
 
-  // Skipped top line: start at margin + S.fontSize + lineH
-  let y = margin + S.fontSize + (S.fontSize * S.lineHeight);
+  // Skipped top line: start at margin + 2 * lineH (matching ruled grid lines)
+  let y = margin + (S.fontSize * S.lineHeight) * 2;
 
   for (let bi = 0; bi < blocks.length; bi++) {
     const block = blocks[bi];
@@ -2043,7 +2043,7 @@ function layoutTextCleanStandard(cleanText, S, PAGE_W, PAGE_H, ctx) {
     }
 
     // Apply top spacing (unless we are at the top of a page)
-    const isPageTop = Math.abs(y - (margin + blockFontSize + lineH)) < 1 || Math.abs(y - (margin + S.fontSize + (S.fontSize * S.lineHeight))) < 1;
+    const isPageTop = Math.abs(y - (margin + (S.fontSize * S.lineHeight) * 2)) < 1 || Math.abs(y - (margin + (blockFontSize * S.lineHeight) * 2)) < 1;
     if (!isPageTop) {
       y += topSp;
     }
@@ -2053,7 +2053,7 @@ function layoutTextCleanStandard(cleanText, S, PAGE_W, PAGE_H, ctx) {
       pageTexts.push(currentPageText);
       currentPageText = '';
       pageIdx++;
-      y = margin + blockFontSize + lineH;
+      y = margin + (blockFontSize * S.lineHeight) * 2;
     }
 
     // Set left and right boundaries
@@ -2131,7 +2131,7 @@ function layoutTextCleanStandard(cleanText, S, PAGE_W, PAGE_H, ctx) {
           pageTexts.push(currentPageText);
           currentPageText = '';
           pageIdx++;
-          y = margin + blockFontSize + lineH;
+          y = margin + (blockFontSize * S.lineHeight) * 2;
         }
       }
 
@@ -2151,7 +2151,7 @@ function layoutTextCleanStandard(cleanText, S, PAGE_W, PAGE_H, ctx) {
             pageTexts.push(currentPageText);
             currentPageText = '';
             pageIdx++;
-            y = margin + blockFontSize + lineH;
+            y = margin + (blockFontSize * S.lineHeight) * 2;
           }
         }
 
@@ -2205,8 +2205,8 @@ function layoutTextCleanStandard(cleanText, S, PAGE_W, PAGE_H, ctx) {
       }
     }
 
-    // Apply bottom spacing after the block
-    y += botSp;
+    // Apply line height + bottom spacing after the block
+    y += lineH + botSp;
     currentPageText += '\n';
   }
 
@@ -2247,8 +2247,8 @@ function layoutText(text) {
   let x = margin;
   const lineH = S.fontSize * S.lineHeight;
   
-  // Skip the 1st line of every page
-  let y = margin + S.fontSize + lineH;
+  // Skip the 1st line of every page, starting on line 2 grid baseline
+  let y = margin + lineH * 2;
 
   let pageIdx = 0;
   let charIndex = 0;
@@ -2271,7 +2271,7 @@ function layoutText(text) {
           pageTexts.push(currentPageText);
           currentPageText = '';
           pageIdx++;
-          y = margin + S.fontSize + lineH; // Skip 1st line on new page
+          y = margin + lineH * 2; // Skip 1st line on new page
         }
         currentPageText += '\n';
         charIndex++;
@@ -2296,7 +2296,7 @@ function layoutText(text) {
           pageTexts.push(currentPageText);
           currentPageText = '';
           pageIdx++;
-          y = margin + S.fontSize + lineH; // Skip 1st line on new page
+          y = margin + lineH * 2; // Skip 1st line on new page
         }
       }
 
@@ -2342,7 +2342,7 @@ function layoutText(text) {
               pageTexts.push(currentPageText);
               currentPageText = '';
               pageIdx++;
-              y = margin + S.fontSize + lineH;
+              y = margin + lineH * 2;
             }
           }
 
