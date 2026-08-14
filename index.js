@@ -3014,6 +3014,21 @@ async function aiAction(type) {
    Reads directly from the canvas elements at full native resolution.
    For single-page docs: one file. For multi-page: one file per page.
 ─────────────────────────────────────────── */
+/**
+ * Renders a canvas to a high-DPI off-screen canvas at the given scale factor
+ * and returns it. Used by all export paths to boost output resolution.
+ */
+function _upscaleCanvas(src, scale) {
+  const hq = document.createElement('canvas');
+  hq.width  = src.width  * scale;
+  hq.height = src.height * scale;
+  const ctx = hq.getContext('2d');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(src, 0, 0, hq.width, hq.height);
+  return hq;
+}
+
 async function exportImage(format) {
   if (!pages || pages.length === 0) {
     showExportToast('Nothing to export — add some text first.', 'warn');
@@ -3025,14 +3040,18 @@ async function exportImage(format) {
     await new Promise(r => setTimeout(r, 320));
   }
 
+  // PNG is lossless; JPEG quality raised to 0.97 for near-lossless output.
+  // Both formats are upscaled 2× for higher DPI (≈150 DPI on A4 canvas).
+  const EXPORT_SCALE = 2;
   const mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
-  const quality  = format === 'png' ? 1.0 : 0.93;
+  const quality  = format === 'png' ? 1.0 : 0.97;
   const ext      = format === 'png' ? 'png' : 'jpg';
 
   try {
     if (pages.length === 1) {
       showExportToast('Exporting ' + ext.toUpperCase() + '…', 'info');
-      pages[0].toBlob((blob) => {
+      const hq = _upscaleCanvas(pages[0], EXPORT_SCALE);
+      hq.toBlob((blob) => {
         if (!blob) {
           showExportToast('Export failed: Blob generation failed', 'error');
           return;
@@ -3046,11 +3065,9 @@ async function exportImage(format) {
       for (let i = 0; i < pages.length; i++) {
         showExportToast(`Exporting ${ext.toUpperCase()} (Page ${i + 1}/${pages.length})…`, 'info');
         await new Promise((resolve) => {
-          pages[i].toBlob((blob) => {
-            if (!blob) {
-              resolve();
-              return;
-            }
+          const hq = _upscaleCanvas(pages[i], EXPORT_SCALE);
+          hq.toBlob((blob) => {
+            if (!blob) { resolve(); return; }
             const url = URL.createObjectURL(blob);
             triggerDownload(url, `inkflow-notes-page${i + 1}.${ext}`);
             setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -3085,19 +3102,25 @@ async function exportPDF() {
 
   try {
     const { jsPDF } = window.jspdf;
+    // Use high-quality PNG (lossless) embedded in the PDF with no re-compression
+    // for the sharpest possible output. Pages are upscaled 2× before encoding.
+    const PDF_SCALE = 2;
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
       format: 'a4',
-      compress: true,
+      compress: false, // avoid double-compression on top of PNG
     });
 
     for (let i = 0; i < pages.length; i++) {
       showExportToast(`Building PDF (Page ${i + 1}/${pages.length})…`, 'info');
       await new Promise(r => setTimeout(r, 60));
       if (i > 0) doc.addPage();
-      const imgData = pages[i].toDataURL('image/jpeg', 0.93);
-      doc.addImage(imgData, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+      const hq = _upscaleCanvas(pages[i], PDF_SCALE);
+      const imgData = hq.toDataURL('image/png', 1.0);
+      // 'NONE' compression preserves pixel-perfect quality at the cost of a
+      // slightly larger file, which is ideal for print/archive use.
+      doc.addImage(imgData, 'PNG', 0, 0, 210, 297, undefined, 'NONE');
     }
 
     doc.save('inkflow-notes.pdf');
