@@ -4,6 +4,57 @@ All notable changes to Inkflow are documented in this file.
 
 ---
 
+## [1.4.0] — 2026-08-15
+
+### ✨ Added
+- **Clean Paper Style**: New `clean` paper style that bypasses custom drafted glyphs, ink bleed, and rotation chaos for a crisp, typographic look. When active (with the Standard layout), text is rendered through a structured content parser (`parseStructuredContent`) supporting Markdown-style `#` headings, `##` subheadings, `-`/`*` bullet lists (nested levels), and auto-numbered `Q1.` / `Q.` question blocks.
+- **Clean Style Font Restrictions**: Selecting `clean` paper automatically switches to a permitted font (Kalam or one of the clean/Devanagari set) when an unsupported handwriting font is active.
+- **Configurable Header Visibility**: New "Show Date & P. No. Header" checkbox toggles the printed header box on `ruled` and `clean` pages. The `S.showHeaderBox` flag persists across sessions.
+- **Structured Study Syntax**: The text parser now recognizes `[sticky:color]…[sticky]` notes, `[callout:type]…[callout]` boxes, `==highlight==` ranges, and `Q:`/`A:` flashcard pairs. Stickies float in the right margin (yellow/cyan/pink/mint), callouts attach to the left margin (warning/info/formula), and highlights are drawn behind their characters.
+- **Study Mode**: New toolbar toggle that dims editing chrome for review, with a floating "Exit Study Mode" button.
+- **Flashcard Review Deck**: `Q:`/`A:` pairs are collected into a flashcard deck. A toolbar button opens the flip-card review modal with prev/next navigation and a progress counter.
+- **Voice to Notes**: Speech-to-text input (Web Speech API) appends transcribed notes to the text area. Automatically disabled in browsers without `SpeechRecognition` support.
+- **Notebooks & Folders Explorer**: New sidebar section with persistent notebooks stored in IndexedDB (`InkflowDB` → `notebooks` store). Supports creating notes/folders, loading, and deleting notes. A "Welcome to Inkflow" note is auto-created on first boot, and the active notebook is autosaved on every change.
+- **Theme Packs**: Six one-click themes (Default, Vintage Diary, Cute Pastel, Science Lab, Minimal Noir, Scrapbook) that apply paper style, ink color, rotation, bleed, pressure, and font size presets together.
+- **Text Vertical Alignment**: New Upper / Middle / Lower alignment control (`setTextAlignment`) that shifts handwriting relative to the ruled grid lines via `getAlignmentOffset()`.
+- **Auto-Fit Font Size**: `autoFitFontSize()` binary-searches the font size (14–52px) that fits the current text within one page and applies it.
+- **High-Resolution Exports**: All image/PDF exports now upscale canvases 2× via `_upscaleCanvas()` (~150 DPI) for sharper output. PNG stays lossless (quality 1.0), JPG quality raised to 0.97, and PDF embeds lossless PNG with `compress: false` and `NONE` compression.
+- **Glyph Image Cache**: `glyphImageCache` decodes drafted-glyph data URLs once and only draws them when fully ready, eliminating race conditions between async image loads and `ctx.restore()`.
+- **Blank Glyph Pruning**: `pruneBlankGlyphs()` scans glyph data for visible ink (`glyphHasInk`) on boot and after imports, removing stale blank entries from memory and IndexedDB so they no longer render as invisible characters.
+- **3-Sheet Template Package**: `generateDownloadTemplate()` now downloads an instructions cover sheet plus the Letters and Numbers & Symbols grid sheets (staggered downloads).
+
+### ♻️ Changed
+- **Editor Top Padding**: Inline page-editor top padding now accounts for `margin + fontSize × lineHeight` so typed text aligns with the ruled grid baselines (first line skipped).
+- **Export Pipeline**: JPG default quality updated from 0.93 to 0.97; PDF encoding switched from JPEG/`FAST` to lossless PNG/`NONE`.
+- **`parseRichSyntax()`**: Extended beyond highlight extraction to also produce `parsedStickies`, `parsedCallouts`, `highlightRanges`, and `activeFlashcards` arrays.
+- **`layoutText()`**: Gains a structured-content route (`layoutTextCleanStandard`) used when `paperStyle === 'clean'` and `noteLayout === 'standard'`.
+- **Autosave**: Now persists `activeNotebookId`, `pageDates`, `pageNos`, and `showHeaderBox`, and mirrors the current note into the active notebook in IndexedDB.
+
+---
+
+## [1.3.0] — 2026-06-15
+
+### ✨ Added
+- **Multi-Sheet HandFonting Templates**: Extended custom handwriting font coverage by dividing templates into two sheets: `Letters` (52 upper/lowercase letters) and `Numbers & Symbols` (32 standard numbers, symbols, and punctuation marks: `0–9` and standard symbols/punctuation: `. , ? ! @ # $ % ^ & * ( ) - _ + = / : ; ' "`).
+- **Tabbed HandFonted Studio UI**: Interactive sheet tabs inside the Live Sketchpad modal and a dropdown selector inside the Scan Template upload tab to switch sheets. Each sheet retains separate grid alignment offsets (`X, Y, W, H`) and uploaded alignment image states.
+- **IndexedDB Glyph Storage**: Migrated custom character drafts from `localStorage` to `IndexedDB` (`InkflowDB` → `draftedGlyphs` store), bypassing the 5MB browser quota limit and preventing browser data crashes.
+- **IndexedDB Auto-Migration**: Included a transparent boot migration script in `restoreState()` that transfers any pre-existing custom glyphs from `localStorage` into the IndexedDB store, clearing the old keys automatically.
+- **Dotted Paper Grid**: New "Dot Grid" paper style rendering dots on a beige background (`#f6f2ec`).
+- **Engineering Paper Style**: New "Engineering" paper style on pale green background (`#eef6ed`) with minor/major grid lines and reddish-brown margins.
+- **Music Staff Paper Style**: New "Music Staff" paper style drawing groups of 5-line staffs with vertical bracket endpoints.
+- **Cornell Note Layout**: New "Cornell Study Notes" layout template. Divides the page into visual cues, main notes, and summary sections, drawing dividing lines dynamically. Lines starting with `? ` or `cue:` automatically render in the Cues sidebar, and lines starting with `== ` or `summary:` render in the bottom Summary footer.
+- **Two-Column Note Layout**: New "Two-Column Grid" layout template that wraps and flows text across two columns per page before breaking to the next page.
+- **Page Layout UI Section**: Added a new collapsed "Page Layout" section in the sidebar with a note layout template selector.
+- **Character-Level Soft Wrapping**: All layout engines (Standard, Two-Column, Cornell, and Clean) now perform per-character wrap checks. Long continuous strings without spaces (e.g. URLs, unbroken text) wrap at the right margin instead of overflowing off the page.
+
+### ♻️ Changed
+- **`initApp()` & `restoreState()`**: Upgraded to async/await to support asynchronous IndexedDB initialization and glyph retrieval.
+- **`cropTemplateCell()`**: Signature updated to `cropTemplateCell(index, sheetName)` to support slicing character cells from multiple templates.
+- **`generateDownloadTemplate()`**: Updated to dynamically name files and draw guide characters depending on the active sheet.
+- **`layoutText()` Engine**: Now includes character-level overflow detection in all layout modes; characters exceeding the right boundary trigger a soft line break with page-break checks.
+
+---
+
 ## [1.2.2] — 2026-08-13
 
 ### ✨ Added
@@ -21,7 +72,7 @@ All notable changes to Inkflow are documented in this file.
 - **Glyph Pruning for Custom Fonts**: The font synthesizer now uses blank-cell detection (brightness/alpha checks) to skip empty cells in handwriting templates, preventing "invisible" character bugs in generated `.ttf` files.
 
 ### ♻️ Changed
-- **"Line Height" Control Bar**: Renamed and upgraded "Line Spacing" to "Line Height", with an expanded scale range of $1.0$ to $3.5$ for more precise vertical typography.
+- **"Line Spacing" Range**: Slider range tightened to **1.2 – 3.0** (default 1.5) for more precise vertical typography.
 - **Automatic First-Line Skip**: The layout engine now defaults all handwritten text to start from the **second line** of the page (skipping the first ruled line), providing a more natural notebook aesthetic.
 
 ---
@@ -52,7 +103,7 @@ All notable changes to Inkflow are documented in this file.
 - **`buildCharQueue(text)`**: Simplified to a thin wrapper (`return layoutText(text).queue`), delegating all coordinate computation to `layoutText()`.
 - **`renderText()`**: Updated to use `layoutText()` for all layout computation, then render the returned `queue` and sync `pageTexts` to editors.
 - **`clearText()`**: Restored and fully implemented: clears textarea, resets `S.text`, creates a blank canvas page with paper background, clears all page editors, and calls `autosave()`.
-- **Export pipeline**: Migrated from `html2canvas` (screenshot-based) to native `canvas.toBlob()` / `canvas.toDataURL()` methods, removing the html2canvas dependency for exports and improving accuracy.
+- **Export pipeline**: Migrated from `html2canvas` (screenshot-based) to native `canvas.toBlob()` / `canvas.toDataURL()` methods for exports. *Note: the `html2canvas` CDN script is still loaded in `index.html` but is no longer used by any export path.*
 - **`updateEditorStyles(editor, canvas)`**: New helper to keep page editor styles (font, padding, size) in sync whenever the canvas is resized or settings change.
 
 ---
@@ -96,7 +147,7 @@ All notable changes to Inkflow are documented in this file.
 - **Template Grid Generator** — Downloadable 8×8 blank handwriting template (64 characters)
 - **Scan Upload & Alignment** — Upload scanned sheets with interactive grid overlay sliders
 - **Moore-Neighbor Contour Tracing** — Raster-to-vector boundary extraction
-- **RDP Curve Simplification** — Ramer-Douglas-Peucker path smoothing (ε = 1.0)
+- **RDP Curve Simplification** — Ramer-Douglas-Peucker path smoothing
 - **OpenType Font Compiler** — Client-side TrueType font compilation via opentype.js
 - **Dynamic Font Registration** — CSS FontFace registration and instant activation
 
@@ -115,26 +166,3 @@ All notable changes to Inkflow are documented in this file.
 - Extended character sets (diacritics, special symbols)
 - Localization support (i18n)
 - Bullet / Mind-map templates for AI output note styling
-
----
-
-## [1.3.0] — 2026-06-15
-
-### ✨ Added
-- **Multi-Sheet HandFonting Templates**: Extended custom handwriting font coverage by dividing templates into two sheets: `Letters` (52 upper/lowercase letters) and `Numbers & Symbols` (32 standard numbers, symbols, and punctuation marks: `0–9` and standard symbols/punctuation: `. , ? ! @ # $ % ^ & * ( ) - _ + = / : ; ' "`).
-- **Tabbed HandFonted Studio UI**: Interactive sheet tabs inside the Live Sketchpad modal and a dropdown selector inside the Scan Template upload tab to switch sheets. Each sheet retains separate grid alignment offsets (`X, Y, W, H`) and uploaded alignment image states.
-- **IndexedDB Glyph Storage**: Migrated custom character drafts from `localStorage` to `IndexedDB` (`InkflowDB` -> `draftedGlyphs` store), bypassing the 5MB browser quota limit and preventing browser data crashes.
-- **IndexedDB Auto-Migration**: Included a transparent boot migration script in `restoreState()` that transfers any pre-existing custom glyphs from `localStorage` into the IndexedDB store, clearing the old keys automatically.
-- **Dotted Paper Grid**: New "Dot Grid" paper style rendering dots at 28px intervals on a beige background (`#f6f2ec`).
-- **Engineering Paper Style**: New "Engineering" paper style on pale green background (`#eef6ed`) with 10px minor grid lines, 50px major grid lines, and reddish-brown margins.
-- **Music Staff Paper Style**: New "Music Staff" paper style drawing groups of 5-line staffs with 8px spacing, 72px staff-to-staff spacing, and vertical bracket endpoints.
-- **Cornell Note Layout**: New "Cornell Study Notes" layout template. Divides the page into visual cues, main notes, and summary sections, drawing dividing lines dynamically. Lines starting with `? ` or `cue:` automatically render in the Cues sidebar, and lines starting with `== ` or `summary:` render in the bottom Summary footer.
-- **Two-Column Note Layout**: New "Two-Column Grid" layout template that wraps and flows text across two columns per page before breaking to the next page.
-- **Page Layout UI Section**: Added a new collapsed "Page Layout" section in the sidebar with a note layout template selector.
-- **Character-Level Soft Wrapping**: All three layout engines (Standard, Two-Column, and Cornell) now perform per-character wrap checks. Long continuous strings without spaces (e.g. URLs, unbroken text) wrap at the right margin instead of overflowing off the page.
-
-### ♻️ Changed
-- **`initApp()` & `restoreState()`**: Upgraded to async/await to support asynchronous IndexedDB initialization and glyph retrieval.
-- **`cropTemplateCell()`**: Signature updated to `cropTemplateCell(index, sheetName)` to support slicing character cells from multiple templates.
-- **`generateDownloadTemplate()`**: Updated to dynamically name files and draw guide characters depending on the active sheet.
-- **`layoutText()` Engine**: Now includes character-level overflow detection in all layout modes; characters exceeding the right boundary trigger a soft line break with page-break checks.

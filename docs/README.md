@@ -2,7 +2,7 @@
 
 Welcome to the **Inkflow** documentation hub. This folder contains all technical, design, and operational documentation for the project.
 
-**Current Version**: 1.2.2 — Classmate-Style Ruled Notebook, Date/Page No. Baking, State Persistence
+**Current Version**: 1.4.0 — Clean Paper Style, Study Tools, Notebooks, Theme Packs, High-Res Exports
 
 ---
 
@@ -13,25 +13,25 @@ Welcome to the **Inkflow** documentation hub. This folder contains all technical
 | Document | Description |
 | :--- | :--- |
 | [System Architecture](./system-architecture.md) | High-level component map, data flow, rendering pipeline |
-| [State Management](./state-management.md) | Global config schema, dual input paths, hydration loop, localStorage |
-| [Handwriting Engine](./handwriting-engine.md) | Unified `layoutText()`, per-character transforms, Indic script support |
-| [Paper Rendering](./paper-rendering.md) | Background styles, grain texture shader, ruling/grid math |
+| [State Management](./state-management.md) | Global config schema, dual input paths, hydration loop, localStorage + IndexedDB |
+| [Handwriting Engine](./handwriting-engine.md) | Unified `layoutText()`, per-character transforms, Indic script support, rich study syntax |
+| [Paper Rendering](./paper-rendering.md) | Background styles, grain texture shader, ruling/grid math, header box |
 | [Animation Engine](./animation-engine.md) | Live writing animation, auto-scroll, pen tracking |
-| [Export Pipelines](./export-pipelines.md) | Blob-based PNG/JPG/SVG, PDF, clipboard copy, toast notifications |
+| [Export Pipelines](./export-pipelines.md) | 2×-upscaled Blob-based PNG/JPG/SVG, lossless PDF, clipboard copy, toast notifications |
 
 ### 🤖 Integrations
 
 | Document | Description |
 | :--- | :--- |
-| [AI Integration](./ai-integration.md) | OpenRouter + Anthropic multi-provider, SSE streaming, dynamic models |
-| [Custom Font Suite](./custom-font-suite.md) | HandFonted Studio: tracing, RDP smoothing, OpenType compilation |
+| [AI Integration](./ai-integration.md) | OpenRouter + Anthropic multi-provider, SSE streaming, dynamic models, 5 workflows |
+| [Custom Font Suite](./custom-font-suite.md) | HandFonted Studio: tracing, RDP smoothing, OpenType compilation, IndexedDB glyphs |
 
 ### 🎨 Design & UX
 
 | Document | Description |
 | :--- | :--- |
-| [UI Design System](./ui-design-system.md) | CSS custom properties, theme tokens, layout grid structure |
-| [UX Interactions](./ux-interactions.md) | Responsive layout, inline editing, collapsible panels, debounced rendering |
+| [UI Design System](./ui-design-system.md) | CSS custom properties, theme tokens, layout grid structure, theme packs |
+| [UX Interactions](./ux-interactions.md) | Responsive layout, inline editing, collapsible panels, debounced rendering, study tools |
 
 ### 📘 Guides & References
 

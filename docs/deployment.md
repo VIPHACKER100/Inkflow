@@ -1,80 +1,78 @@
 # 🌐 Deployment Guide
 
-Options and best practices for hosting Inkflow in production.
+Inkflow is a fully static, client-side web application. There is no build step, no server, and no backend — deployment is just serving four files.
 
 ---
 
-## Static Hosting (Recommended)
+## Requirements
 
-Inkflow is a pure static site — no server-side runtime required. Any static hosting service works perfectly.
+- **Runtime**: Any modern browser (Chrome, Edge, Firefox, Safari). No Node.js required.
+- **Web server**: Any static host (GitHub Pages, Netlify, Vercel, Cloudflare Pages, Apache, nginx, S3).
+- **Minimum files**:
+  - `index.html` (app shell)
+  - `index.css` (styles)
+  - `index.js` (application logic)
 
-### GitHub Pages
+---
+
+## CDN Dependencies (Loaded Automatically)
+
+All third-party libraries load from CDNs at runtime — nothing is vendored:
+
+| Library | Version | Purpose | Source |
+| :--- | :--- | :--- | :--- |
+| html2canvas | 1.4.1 | Canvas rasterization for exports | `cdnjs.cloudflare.com` |
+| jsPDF | 2.5.1 | PDF generation (UMD build) | `cdnjs.cloudflare.com` |
+| Font Awesome | 6.4.0 | UI icons | `cdnjs.cloudflare.com` |
+| Google Fonts | — | Handwriting + UI font families | `fonts.googleapis.com` |
+| opentype.js | 1.3.4 | Custom font building (lazy-loaded) | `cdnjs.cloudflare.com` |
+| pdf.js | 3.4.120 | PDF file import (lazy-loaded) | `cdnjs.cloudflare.com` |
+
+The last two are lazy-loaded only when the relevant feature is first used (`ensureOpentypeLoaded()` for HandFonted Studio, `extractTextFromPDF()` for PDF import).
+
+---
+
+## Quick Deploy Options
+
+### 1. Local (Offline Preview)
 ```bash
-# Push to a GitHub repository
-git add .
-git commit -m "Deploy Inkflow"
-git push origin main
+# Python
+python -m http.server 8000
 
-# Enable Pages in Settings → Pages → Source: main branch
+# Node
+npx serve .
 ```
-Your app will be live at `https://username.github.io/inkflow/`
+Open `http://localhost:8000`.
 
-### Netlify
-1. Drag and drop the project folder to [app.netlify.com/drop](https://app.netlify.com/drop)
-2. Or connect your GitHub repo for automatic deployments
-3. No build command needed — deploy as-is
+### 2. GitHub Pages
+Push the repo, then in **Settings → Pages** set the source to the `main` branch root. The site appears at `https://<user>.github.io/Inkflow/`.
 
-### Vercel
-```bash
-npx vercel --prod
-```
-
-### Cloudflare Pages
-1. Connect GitHub repo in Cloudflare dashboard
-2. Build command: (leave empty)
-3. Output directory: `/`
+### 3. Netlify / Vercel / Cloudflare Pages
+Connect the repository — each detects a static site with no build step. Deploy command: `none`. Publish directory: repository root.
 
 ---
 
-## CDN Dependencies
+## AI Integration Considerations
 
-Inkflow loads these libraries from CDN at runtime:
+The AI features (OpenRouter / Anthropic) call third-party APIs from the browser. CORS is generally open for these providers, so no proxy is required for personal use. If a network blocks these hosts, AI buttons will show a "connection error" status — the rest of the app continues to work normally.
 
-| Library | CDN | Fallback Strategy |
-| :--- | :--- | :--- |
-| Google Fonts | fonts.googleapis.com | System fonts fallback |
-| Font Awesome | cdnjs.cloudflare.com | Unicode emoji fallback |
-| jsPDF | cdn.jsdelivr.net | PDF export disabled |
-| opentype.js | cdn.jsdelivr.net | Custom font disabled |
-
-### Self-Hosting Dependencies
-For air-gapped or offline deployments, download all CDN assets locally:
-
-```bash
-mkdir vendor
-# Download each library and update script/link tags in index.html
-```
+> **Security note**: users must provide their own API key (stored only in `localStorage`). Never ship a key inside the repo.
 
 ---
 
-## Production Checklist
+## Continuous Security Analysis
 
-- [ ] Test all export formats (PNG, JPG, PDF, Print)
-- [ ] Verify custom font creation works end-to-end
-- [ ] Test on mobile viewport (< 768px)
-- [ ] Verify dark mode toggle
-- [ ] Check AI integration with valid API key
-- [ ] Validate localStorage persistence across sessions
-- [ ] Test cross-browser: Chrome, Firefox, Safari, Edge
-- [ ] Minify CSS and JS for production (optional)
-- [ ] Add favicon and meta tags for SEO
-- [ ] Set up HTTPS for secure context features
+The repo includes `.github/workflows/codeql.yml` — a GitHub CodeQL Advanced workflow that runs static analysis on every push and pull request (scheduled weekly as well). After pushing to GitHub, enable **Settings → Security → Code security** to receive scan alerts.
 
 ---
 
-## Environment Notes
+## Verification Checklist
 
-- **No `.env` files**: API keys are entered by the user at runtime
-- **No build step**: Deploy the source files directly
-- **No external database**: All general settings persist in browser `localStorage`, and custom handwriting glyphs persist in `IndexedDB`
-- **CORS**: AI features require the `anthropic-dangerous-direct-browser-access` header
+Before shipping an update:
+
+- [ ] `index.html`, `index.css`, `index.js` all present and the app loads
+- [ ] No localhost references remain in CDN/API URLs
+- [ ] `localStorage` and IndexedDB persist across reloads (state + notebooks + custom glyphs)
+- [ ] Exports (PNG/JPG/PDF/SVG/Copy/Print) produce correct output
+- [ ] Dark mode, paper styles, and theme packs render correctly
+- [ ] AI features fail gracefully when offline

@@ -8,10 +8,15 @@ Complete reference for all user-configurable controls in Inkflow.
 
 | Control | Range | Default | Effect |
 | :--- | :--- | :--- | :--- |
-| **Font Family** | Dropdown (12+ fonts) | Caveat | Handwriting font used for rendering |
+| **Font Family** | Dropdown (14+ fonts) | Caveat | Handwriting font used for rendering |
 | **Font Size** | 14px – 52px | 22px | Character size on canvas |
 | **Line Height** | 1.2 – 3.0 | 1.5 | Vertical spacing between lines |
 | **Word Spacing** | -2px – 14px | 1px | Horizontal gap between words |
+| **Auto-Fit** | — | — | Binary-searches a font size that fits the current text on one page |
+| **Text Alignment** | Upper / Middle / Lower | Middle | Vertical position of handwriting relative to the grid lines |
+| **Custom Font Upload** | `.ttf` / `.otf` | — | Loads a local font; remembered via `localStorage` (`inkflow-fonts`) |
+
+> Devanagari content automatically falls back to `Noto Sans Devanagari` / `Hind` when the selected font lacks Indic glyphs.
 
 ---
 
@@ -19,15 +24,18 @@ Complete reference for all user-configurable controls in Inkflow.
 
 | Style | Description | Best For |
 | :--- | :--- | :--- |
-| **Ruled** | Cream background, blue lines, red margin | Standard notebook notes |
+| **Ruled** | Off-white notebook with blue guidelines, double red margin lines, printed Date/P. No. box | Standard notebook notes |
+| **Clean** | Same ruling as Ruled but crisp, typographic text (no rotation/bleed/drafted glyphs), structured headings & bullets | Lecture notes, study handouts |
 | **Plain** | Clean ivory, no lines | Freeform writing, letters |
-| **Grid** | Light grid at 28px intervals | Math, diagrams, engineering |
+| **Grid** | Light grid at `fontSize × lineHeight` intervals | Math, diagrams, engineering |
 | **Legal** | Yellow background, dense ruled lines | Legal documents, formal notes |
 | **Vintage** | Aged parchment with vignette | Creative writing, journals |
-| **Dark** | Indigo slate, neon guide lines | Dark mode, presentations |
-| **Dot Grid** | Dotted background at 28px intervals | Technical sketches, diagrams, bullet journaling |
-| **Engineering** | Pale green grid (10px minor / 50px major lines) with reddish margins | Math calculations, structural designs, graphing |
-| **Music Staff** | Sets of 5-line staffs, vertical bracket endpoints | Writing sheet music, music notation |
+| **Dark** | Indigo slate, muted guide lines | Dark mode, presentations |
+| **Dot Grid** | Dotted background at grid intervals | Technical sketches, bullet journaling |
+| **Engineering** | Pale green grid (minor + major lines) with reddish margins | Math calculations, graphing |
+| **Music Staff** | Sets of 5-line staffs, bracket endpoints | Writing sheet music |
+
+> Ruled and Clean styles also expose the **Show Date & P. No. Header** checkbox, and let you edit the date/page number directly on each page.
 
 ---
 
@@ -37,7 +45,20 @@ Complete reference for all user-configurable controls in Inkflow.
 | :--- | :--- | :--- |
 | **Standard (Flowing)** | Default single-column layout where text flows naturally and wraps. | Standard text |
 | **Two-Column Grid** | Splits the page into two equal-width columns. Text fills the left column first, then the right column, before breaking to the next page. | Standard text |
-| **Cornell Study Notes** | Divides the page into three areas: "Cues / Questions" (left column), "Main Notes" (right column), and "Summary" (bottom footer). | Prefix a line with `? ` or `cue:` to place it in the Cues column.<br>Prefix a line with `== ` or `summary:` to place it in the bottom Summary area.<br>All other lines automatically flow into the Main Notes area. |
+| **Cornell Study Notes** | Divides the page into "Cues / Questions" (left column), "Main Notes" (right column), and "Summary" (bottom footer). | Prefix a line with `? ` or `cue:` → Cues column.<br>Prefix a line with `== ` or `summary:` → Summary area.<br>Other lines flow into Main Notes. |
+
+> **Clean style** additionally parses structured content: `#` headings, `##` subheadings, `-` / `*` bullets (nested levels), and `Q1.` / `Q.` auto-numbered questions.
+
+---
+
+## Study Syntax (rich note markup)
+
+| Syntax | Rendered As |
+| :--- | :--- |
+| `[sticky:yellow] text [sticky]` | Sticky note floating in the right margin (colors: `yellow`, `cyan`, `pink`, `mint`) |
+| `[callout:warning] text [callout]` | Boxed tag in the left margin (types: `warning`, `info`, `formula`) |
+| `==text==` | Translucent highlight behind characters |
+| `Q: question` followed by `A: answer` | Flashcards in the review deck (toolbar 🃏 button) |
 
 ---
 
@@ -46,19 +67,28 @@ Complete reference for all user-configurable controls in Inkflow.
 | Control | Range | Default | Effect |
 | :--- | :--- | :--- | :--- |
 | **Ink Color** | Color picker (hex) | `#1c2340` | Color of all rendered text |
+| **Ink Presets** | Navy / Black / Blue / Purple / Red / Green | — | One-click ink colors |
 | **Rotation Max** | 0° – 12° | 1.0° | Maximum character tilt angle |
 | **Ink Bleed** | 0.0 – 2.5 | 0.5 | Shadow blur simulating ink spread |
 | **Pen Pressure** | 0.0 – 0.3 | 0.12 | Stroke thickness variation |
 | **Margin** | 20px – 100px | 80px | Page boundary padding |
 
-### Preset Combinations
+---
 
-| Preset | Rotation | Bleed | Pressure | Style |
-| :--- | :--- | :--- | :--- | :--- |
-| **Clean & Neat** | 0.5° | 0.2 | 0.05 | Careful student writing |
-| **Natural** | 1.0° | 0.5 | 0.12 | Default — realistic handwriting |
-| **Messy & Quick** | 4.0° | 1.0 | 0.20 | Rushed lecture notes |
-| **Calligraphic** | 1.5° | 0.8 | 0.25 | Stylized pen writing |
+## Theme Packs
+
+One-click theme presets applied via `applyTheme(themeId)`:
+
+| Theme | Paper Style | Ink | Rotation | Bleed | Pressure | Font Size |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Default** | Ruled | `#1c2340` | 1.0 | 0.5 | 0.12 | 22 |
+| **Vintage Diary** | Vintage | `#3c2f2f` | 3.0 | 0.8 | 0.15 | 22 |
+| **Cute Pastel** | Plain | `#5d3f6a` | 1.5 | 0.4 | 0.10 | 22 |
+| **Science Lab** | Engineering | `#1a331e` | 0 | 0.3 | 0.08 | 20 |
+| **Minimal Noir** | Dark | `#e0e0e0` | 0.8 | 0.2 | 0.10 | 22 |
+| **Scrapbook** | Dot Grid | `#1c3144` | 2.2 | 0.6 | 0.14 | 24 |
+
+The **Reset Defaults** button restores factory settings for all of the above.
 
 ---
 
@@ -76,13 +106,26 @@ The viewport auto-scrolls to keep the pen cursor visible during animation.
 
 ---
 
+## Study & Productivity Features
+
+| Feature | Description |
+| :--- | :--- |
+| **Study Mode** | Toolbar toggle that dims editing chrome for review; floating exit button |
+| **Flashcards** | `Q:`/`A:` pairs collected into a flip-card review deck with prev/next |
+| **Voice to Notes** | Microphone button uses the Web Speech API to append transcribed notes |
+| **Notebooks & Folders** | IndexedDB-backed explorer to create, load, and delete notes, grouped by folder |
+| **File Upload** | Drag-and-drop `.txt`, `.md`, `.pdf`; PDFs extracted via pdf.js with a progress bar |
+
+---
+
 ## AI Configuration
 
 | Setting | Description |
 | :--- | :--- |
 | **AI Provider** | OpenRouter (100+ models) or Anthropic (direct) |
 | **Model** | Selected from provider's model list (auto-fetched for OpenRouter) |
-| **API Key** | Your OpenRouter or Anthropic API key (stored in browser only) |
+| **API Key** | Your OpenRouter or Anthropic API key (entered at runtime, stored in browser only) |
+| **Smart Arrange** | Restructures text into organized, readable notes |
 | **Summarize** | Converts text to bullet-point notes |
 | **Fix Grammar** | Corrects spelling and phrasing |
 | **Lecture → Notes** | Transforms transcripts to study notes |
@@ -94,20 +137,9 @@ The viewport auto-scrolls to keep the pen cursor visible during animation.
 
 | Format | Quality | Use Case |
 | :--- | :--- | :--- |
-| **PNG** | Lossless, native canvas | Digital sharing, presentations |
-| **JPG** | 93% JPEG, smaller size | Email attachments, web upload |
+| **PNG** | Lossless, 2× upscaled (~150 DPI) | Digital sharing, presentations |
+| **JPG** | 97% JPEG, 2× upscaled | Email attachments, web upload |
 | **SVG** | PNG embedded in SVG wrapper | Vector-aware applications |
-| **PDF** | Multi-page A4, 93% JPEG | Printing, submission, archival |
+| **PDF** | Multi-page A4, lossless PNG embed | Printing, submission, archival |
 | **Copy** | PNG to system clipboard | Quick paste into other apps |
 | **Print** | Native OS dialog | Direct hardcopy printing |
-
----
-
-## File Upload
-
-| Format | Method |
-| :--- | :--- |
-| **TXT / MD** | FileReader API — direct text extraction |
-| **PDF** | pdf.js (CDN-loaded) — page-by-page text extraction with progress bar |
-
-Drag-and-drop is supported on the upload zone.

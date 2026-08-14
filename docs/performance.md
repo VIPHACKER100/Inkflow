@@ -1,114 +1,62 @@
 # ⚡ Performance
 
-This document covers Inkflow's performance characteristics, optimization techniques, and rendering budget.
+This document covers Inkflow's performance characteristics and the techniques that keep it fast.
 
 ---
 
-## Rendering Performance
+## Architecture-Level Wins
 
-### Unified Layout Engine
-All layout computation (word-wrap, page breaks, character coordinates) is performed once inside `layoutText()`, producing a pre-computed queue. Both static rendering and animation consume this queue without redundant recalculation.
-
-### Debounced Rendering
-All text input changes are filtered through a 280ms debouncer:
-
-```javascript
-function debounceRender() {
-  clearTimeout(renderTimeout);
-  renderTimeout = setTimeout(() => renderText(S.text), 280);
-}
-```
-
-### Canvas vs DOM Rendering
-Inkflow renders text on `<canvas>` elements rather than DOM text nodes:
-- **Faster repaints**: Canvas redraws are GPU-accelerated
-- **No layout thrashing**: No DOM reflow calculations
-- **Precise control**: Per-pixel character positioning
-- **Export-ready**: Canvas directly exports to image/PDF via `toBlob()`/`toDataURL()`
-
-### Paper Grain Shader
-The 2,200-iteration paper grain noise loop runs once per background paint (not per frame). Cost: ~2-5ms per page.
+- **Single-file vanilla JS** (≈5,600 lines, zero runtime dependencies beyond CDN libs) — no framework overhead, no virtual DOM.
+- **Persistent page canvases**: characters are drawn once onto each A4 canvas and stay there; re-renders only occur on setting changes, not on scroll/export.
+- **Debounced rendering**: editor/textarea changes trigger `debounceRender()` — a 280ms trailing debounce around `renderText(S.text)`, so typing never re-lays-out per keystroke.
+- **Debounced autosave**: `autosave()` debounces 1000ms before serializing settings to `localStorage` and the active notebook to IndexedDB — writes are batched and non-blocking.
+- **IndexedDB for heavy assets**: custom glyph images (`draftedGlyphs`) and notebooks (`notebooks`) live in IndexedDB, keeping `localStorage` small.
 
 ---
 
-## Memory Management
+## Rendering Pipeline
 
-### Canvas Allocation
-- Each page creates one `<canvas>` element (794×1123px)
-- At 4 bytes/pixel: ~3.4MB per canvas
-- 10-page document: ~34MB canvas memory
-- Canvases are reused on re-render, not re-created
+### Layout
+`layoutText()` runs a single pass over the text to produce the character queue, wrapping, and page breaks — reused identically by render, animation, auto-fit, and export. No DOM reads/writes during layout.
 
-### Blob URL Lifecycle
-Export Blob URLs are revoked after 1 second via `URL.revokeObjectURL()`, preventing memory leaks from accumulated object URLs.
+### Draw
+Characters are drawn with `ctx.fillText()` using precomputed per-character variation. The clean paper style skips variation for crisp typographic output.
 
-### State Serialization
-- `autosave()` runs at most once per second (1000ms debounce)
-- Only serializes the config object — not canvas pixel data
-- localStorage limit: ~5MB (sufficient for text + settings)
-- Custom glyph data (`draftedGlyphs`) is stored in `IndexedDB` (`InkflowDB` -> `draftedGlyphs` store), bypassing the 5MB localStorage limit and preventing quota crashes
+### Glyph Image Cache
+Drafted glyphs are decoded lazily into an in-memory `glyphImageCache` (index.js:2407) and reused across pages — a full multi-page note only decodes each custom character once. `pruneBlankGlyphs()` purges blank entries from the cache too.
 
 ---
 
-## Animation Performance
+## Measured Characteristics
 
-### requestAnimationFrame
-The animation engine uses `requestAnimationFrame` for GPU-synced 60fps rendering:
-- No `setInterval` jank
-- Automatic throttling when tab is backgrounded
-- Smooth pen cursor tracking via CSS positioning
-
-### Character Queue Pre-computation
-All character positions are calculated by `layoutText()` before animation begins, avoiding mid-animation layout recalculations that could cause frame drops.
-
-### Auto-scroll Throttling
-Viewport scrolling during animation uses `behavior: 'smooth'` with a 120px edge threshold, limiting scroll events to only when the pen approaches viewport boundaries.
+| Metric | Value |
+| :--- | :--- |
+| Character render rate (animate, speed 8) | ~8 chars/frame → 500+ chars in ~2s |
+| A4 page canvas | 794 × 1123 px |
+| Approx. memory per filled page | ~3.4 MB bitmap |
+| Render debounce | 280 ms trailing |
+| Autosave debounce | 1000 ms trailing |
+| Auto-fit font size | Binary search, 6 iterations |
+| PDF export | Lossless PNG / `NONE` compression — larger files, zero artifacts |
 
 ---
 
-## AI Streaming Performance
+## Export Costs
 
-### SSE Streaming
-AI responses use Server-Sent Events streaming, rendering text incrementally rather than waiting for the complete response:
-- Eliminates UI freezing during AI generation
-- First visible output within 200-500ms of request
-- Canvas updates on each text chunk without full re-render
+Exports run 2× upscaling through `_upscaleCanvas(src, scale)` (a high-quality smoothing pass). PNG is lossless; JPG uses quality **0.97**; PDF embeds lossless PNGs with `NONE` compression — fidelity first, size second. Downloads stream per-page, so memory stays bounded regardless of note length.
 
 ---
 
-## Optimization Techniques
+## When Things Get Heavy
 
-| Technique | Impact | Description |
-| :--- | :--- | :--- |
-| Unified `layoutText()` | High | Single computation shared by render + animation |
-| Debounced rendering | High | Prevents redundant canvas redraws |
-| Debounced autosave | Medium | Limits localStorage writes to 1/sec |
-| Canvas reuse | Medium | Repaints existing canvases vs creating new ones |
-| RAF animation | High | GPU-synced rendering at monitor refresh rate |
-| Offscreen measurement | Low | Measures text widths on hidden context |
-| Blob URL exports | Medium | Native canvas export, no html2canvas overhead |
-| CDN dependencies | Medium | Parallel loading from edge servers |
-| SSE AI streaming | High | Incremental rendering prevents UI blocking |
+- **Very long notes** → more pages × ~3.4 MB each. Rendering is O(chars); page count scales linearly.
+- **Many drafted glyphs** → IndexedDB grows; only non-blank glyphs are kept (`pruneBlankGlyphs`).
+- **Rapid slider dragging** → each `change` event re-renders; the 280ms debounce still applies on the text path, but setting changes render immediately by design.
 
 ---
 
-## Benchmarks (Approximate)
+## Future Optimizations (Not Yet Needed)
 
-| Operation | Time | Notes |
-| :--- | :--- | :--- |
-| Initial render (1 page) | 15-30ms | Including paper background |
-| Re-render (text change) | 10-25ms | Debounced, single page |
-| Paper grain shader | 2-5ms | 2,200 iterations |
-| Font compilation | 200-500ms | 64 glyphs, one-time cost |
-| PDF export (5 pages) | 300-800ms | JPEG encoding + jsPDF |
-| Image export (PNG) | 50-150ms | Native canvas.toBlob() |
-| AI first token | 200-500ms | SSE streaming latency |
-
----
-
-## Known Limitations
-
-- **Large documents (50+ pages)**: Canvas memory may exceed 150MB on low-RAM devices
-- **Paper grain noise**: Re-randomizes on each repaint (cosmetic, not a bug)
-- **AI latency**: API response time is network-dependent (1-5 seconds typical)
-- **Custom font tracing**: Complex handwriting may produce >1000 path points per glyph
+- Worker-thread layout for extremely large documents
+- Delta rendering (only re-draw changed pages)
+- `OffscreenCanvas` for page compositing

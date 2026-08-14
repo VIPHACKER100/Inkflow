@@ -1,121 +1,128 @@
-# 🧠 UX Interactions
+# 🖱️ UX Interactions & User Flows
 
-This document describes Inkflow's user experience design — responsive layouts, inline page editing, collapsible panels, debounced rendering, and interaction patterns.
-
----
-
-## Responsive Adaptability
-
-### Desktop (≥ 768px)
-- Two-column CSS Grid: 300px sidebar + fluid canvas viewport
-- Full control panel visible at all times
-- Multi-page A4 canvases centered with depth shadows
-
-### Mobile (< 768px)
-- Single-column layout with collapsible sidebar drawer
-- Sidebar slides in/out via CSS transform
-- Hamburger menu button (`#hamburger`) toggles the drawer
-- Canvas auto-scales using `Math.min(PAGE_W, 720)` for fit
-
-### Canvas Auto-Scaling
-The app retains the high-density print size ($794 \times 1123\text{px}$) but dynamically scales the DOM representation, maintaining razor-sharp rendering on Retina displays.
+This document maps the user-facing interactions in Inkflow to the functions and flows behind them.
 
 ---
 
-## Inline Page Editing (v1.2.0)
+## Primary Workflow
 
-Each canvas page has a transparent `contenteditable` overlay (`.page-editor`) that enables direct on-page text editing:
-
-### Interaction Flow
-1. **Click on a page**: Editor gains focus, text becomes visible in ink color
-2. **Type/edit**: Changes sync to `S.text` and the sidebar textarea via `getGlobalTextFromEditors()`
-3. **Click away (blur)**: Editor text becomes transparent, canvas re-renders with handwriting
-
-### Style Synchronization
-`updateEditorStyles(editor, canvas)` keeps the overlay aligned with canvas settings:
-- Font family (including Devanagari fallbacks)
-- Font size scaled to canvas display dimensions
-- Padding matching the configured margins
-- Caret color matching the ink color
-
----
-
-## Collapsible Sections
-
-Control configurations are segmented into logical, collapsible cards:
-
-```css
-transition: max-height 0.3s cubic-bezier(.4, 0, .2, 1), padding 0.22s ease;
+```
+Type / paste / drop text → ✦ Render (instant) or ▶ Animate (handwriting)
+    → edit inline on the canvas pages → export
 ```
 
-### Section Categories
-1. **📝 Text Input** — Textarea for manual entry + file upload zone
-2. **🔤 Typography** — Font, size, line height, word spacing
-3. **📋 Page Layout** — Standard (flowing), Two-Column Grid, and Cornell Study Notes templates
-4. **📄 Paper Style** — Ruled, plain, grid, legal, vintage, dark, dot grid, engineering grid, music staff
-5. **✒️ Ink & Impression** — Color, rotation, bleed, pressure, margin
-6. **🤖 AI Assistant** — Provider, model, API key, workflow buttons
-7. **📤 Export** — PNG, JPG, SVG, PDF, Copy, Print
-8. **🎬 Animation** — Speed control, start/stop
-9. **🔤 Custom Font** — HandFonted Studio launcher
+### Text Input & Drop Zones
+The sidebar text area accepts typing, pasting, and drag-and-drop of `.txt`, `.md`, and `.pdf` files. A separate file-upload wrapper handles the same via the file picker. PDFs are parsed with the lazily-loaded pdf.js library.
+
+### Render vs Animate
+| Button | Function | Behavior |
+| :--- | :--- | :--- |
+| ✦ Render | `triggerRender()` | Instantly draws the full text without animation |
+| ▶ Animate | `startAnimation()` | Plays the handwriting animation, then finalizes |
+| ■ Stop | `stopAnimation()` | Freezes animation mid-write |
+| ✕ (text area) | `clearText()` | Wipes the text area and canvas |
+| ✕ (toolbar) | `clearText()` | Same — toolbar clear button |
+
+### Inline Editing (Page Editor)
+Each A4 canvas carries a transparent `contenteditable` overlay. Click any page and type directly — edits sync back through `getGlobalTextFromEditors()` on blur and trigger a debounced re-render (280ms). The editor mirrors the canvas font, size, and alignment, so WYSIWYG stays intact.
+
+### Page Navigation
+The floating pill at the bottom shows `Page X of Y` with ◀ / ▶ buttons (`navigatePage(-1)` / `navigatePage(1)`). Page 1 hides the prev button; the last page hides next.
 
 ---
 
-## Debounced Rendering
+## Study Workflows
 
-```javascript
-function debounceRender() {
-  clearTimeout(renderTimeout);
-  renderTimeout = setTimeout(() => renderText(S.text), 280);
-}
-```
+### Study Mode
+The 📖 **Study Mode** toolbar button (`toggleStudyMode()`) adds the `study-mode-active` class to the body, which dims/hides distraction chrome and reveals the floating **🚪 Exit Study Mode** button (bottom-right). This mode is designed for focused reading of your notes.
 
-- User types → timer resets
-- User pauses 280ms → canvas re-renders
-- Prevents redundant renders during fast typing
+### Flashcards
+1. Type study syntax — e.g. `Q: What is inertia?` followed by `A: Resistance to motion` — see [Handwriting Engine](./handwriting-engine.md#pre-processing-rich-study-syntax).
+2. The 🃏 **Flashcards** toolbar button appears with a live count (`flashcard-count-indicator`).
+3. Click it to open the review modal (`openFlashcardsModal()`): click the card to flip (`flipFlashcard()`), navigate with **◀ Prev / Next ▶** (`prevFlashcard()` / `nextFlashcard()`), and track progress via the "remaining" badge.
+4. Close with ✕ or **Done**.
+
+### Voice to Notes
+The 🎤 mic button (`toggleVoiceInput()`) uses the Web Speech API (`webkitSpeechRecognition`, continuous, `en-US`). Transcripts append directly into the text area; the button lights up while recording. If the API is unsupported, a warning toast shows and the button disables (`initVoiceToNotes()`).
+
+### Notebooks & Folders
+The sidebar **Notebooks** section is an IndexedDB-backed explorer:
+- **＋ New Note** (`createNewNotebook()`) — prompts for a title/folder, saves, and loads the new note
+- **＋ Folder** (`createNewFolder()`) — creates a folder with an untitled note inside
+- Clicking a note (`loadNotebook(id)`) restores its text + per-note settings (paper, ink, font, etc.)
+- Clicking a note's 🗑 (`deleteNotebookClicked(id, event)`) confirms, deletes, and loads the next note (or clears)
+
+Changes are mirrored live into the active notebook on every `autosave()`.
 
 ---
 
-## Interaction Patterns
+## Typography Interactions
 
-### Slider Controls
-- Real-time value preview labels update on `oninput`
-- Values displayed next to each slider label
-- Immediate canvas re-render via debouncer
+### Font & Size
+The font family dropdown re-renders immediately. **Auto-Fit** (`autoFitFontSize()`) binary-searches the largest size in 14–52px that keeps your text on one page, then re-renders. The size slider (12–56) and line-height/word-spacing/margin sliders all live-render.
 
-### Color Picker
-- Native `<input type="color">` for ink color selection
-- Preset color buttons for quick access (Navy, Black, Blue, Purple, Red, Green)
-- Instant preview on canvas
+### Text Alignment
+Three alignment buttons (⊤ ⊼ ⊥) call `setTextAlignment('top'|'middle'|'bottom')`; the active one carries the `.active` class. Vertical placement is computed by `getAlignmentOffset()`.
 
-### Paper Style Selector
-- Visual radio-button cards with active state highlighting
-- Click triggers immediate background + ruling redraw
+### Reset Defaults
+**↺ Reset Defaults** (`resetToDefaults()`) restores factory settings and re-syncs every control.
 
-### Note Layout Selector
-- Dropdown selector for choosing layout templates (Standard, Two-Column, Cornell)
-- Triggers instant recalculation and re-layout via `layoutText()`
+---
 
-### Pagination
-- Bottom-center floating pill with left/right arrows
-- Page counter display: "Page 1 of 3"
-- Smooth scroll-into-view on page change
-- Also displayed in the top toolbar
+## Paper & Ink
 
-### Modal Overlays
-- HandFonted Studio opens as a centered glassmorphism modal
-- Tabbed navigation between "Live Sketchpad" and "Upload Template"
-- Sheet tabs inside Live Sketchpad to toggle between **Letters** (A-Z, a-z) and **Symbols** (numbers and punctuation) sheets
-- Dropdown selector inside Upload Template to select template sheet type, allowing independent grid calibration slider states and scanned uploads per sheet
-- ESC key or overlay click to dismiss
+- The 10 paper buttons (`setPaper(this)`) switch paper style and re-render; **Clean Notes** enforces a non-handwriting font list.
+- The **Header** checkbox toggles the Date / P. No. worksheet header (`S.showHeaderBox`); the inputs on each page can be edited directly and re-render via `redrawPageCanvas()`.
+- Ink presets (🔵⚫💙🟣🔴🟢) call `setInkPreset(hex, name)`; the custom color picker sets any color. Bleed and pressure sliders tune the writing effect.
 
-### File Upload
-- Drag-and-drop zone with visual dragover feedback
-- Click to browse files
-- Supports TXT, MD, and PDF with progress bar for PDF extraction
-- Upload status shown inline with success/error feedback
+### Theme Packs
+Two entry points — the **Notebook Theme** dropdown and the **One-click Note Themes** swatch grid — both call `applyTheme(themeId)` (Default / Vintage / Cute / Science / Minimal / Scrapbook), which reconfigures paper + ink + rotation + font size together.
 
-### Export Toast Notifications
-- Non-blocking overlay in the bottom-right corner
-- Color-coded by type: info (blue), success (green), warn (yellow), error (red)
-- Auto-dismiss after 3 seconds for non-info types
+---
+
+## AI Workflows
+
+Five AI buttons (`aiAction(type)`) stream results onto the canvas:
+- 🪄 **Smart Arrange** — restructures messy notes
+- 📋 **Summarize Notes** — condensed summary
+- ✏️ **Improve Grammar** — cleaned-up prose
+- 🎓 **Lecture → Notes** — transcript → study notes
+- 📝 **Generate Assignment** — creates an assignment sheet
+
+Configure provider, model, and API key in the **AI Features** section; a status line (`setAiStatus`) shows progress. See [AI Integration](./ai-integration.md).
+
+---
+
+## Export Interactions
+
+| Action | Button | Result |
+| :--- | :--- | :--- |
+| PNG | 🖼 | Downloads per-page 2×-upscaled PNGs (`inkflow-page-N.png`) |
+| JPG | 📷 | Downloads per-page 2× JPEGs (quality 0.97) |
+| PDF | 📄 | Single lossless multi-page PDF (`inkflow-notes.pdf`) |
+| SVG | 🎨 | Per-page SVG wrapping the PNG |
+| Copy | 📋 | Current page copied to the clipboard as PNG |
+| Print | 🖨 | `window.print()` with print CSS |
+
+Successful exports show a green toast; failures show a warning/error toast (`showExportToast`). See [Export Pipelines](./export-pipelines.md).
+
+---
+
+## Custom Font Studio (HandFonted)
+
+Opened via **🎨 HandFonted Studio**:
+
+1. **Live Sketchpad tab** — pick a character from the grid (52 letters + 32 symbols), draw it with the mouse/pen, then **💾 Save Character** (`saveActiveCharacter()`). Undo, clear, and brush-size controls are inline. Progress (X / 84) tracks completion.
+2. **Upload Template tab** — download the **📦 3-sheet Template Package**, print it, write your characters, photograph/scan, upload, and auto-trace each cell into vector paths.
+3. **💾 Save Progress / 📂 Load Progress** export/import the whole project as JSON.
+4. **🔨 Build Font** (`buildCustomFont()`) compiles glyphs into a TrueType font, registers it with `FontFace`, and applies it instantly.
+
+See [Custom Font Suite](./custom-font-suite.md).
+
+---
+
+## Keyboard & Accessibility Hooks
+
+- All interactive buttons are real `<button>` elements; export, dark-mode, and hamburger controls carry `aria-label`/`title` attributes.
+- The dark-mode toggle (`applyDark()`) flips the `html.dark` class; the header's ☀/🌙 icon reflects state.
+- See [Accessibility](./accessibility.md) for the full report.

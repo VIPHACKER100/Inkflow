@@ -1,6 +1,6 @@
 # 📤 Export Pipelines
 
-This document describes Inkflow's multi-format export system — PNG/JPG image, SVG vector wrapper, multi-page PDF, clipboard copy, and native print support.
+This document describes Inkflow's multi-format export system — 2×-upscaled PNG/JPG image export, SVG vector wrapper, lossless multi-page PDF, clipboard copy, and native print support.
 
 ---
 
@@ -8,7 +8,8 @@ This document describes Inkflow's multi-format export system — PNG/JPG image, 
 
 ```mermaid
 graph LR
-    A[Rendered A4 Canvas Pages] --> B{Export Selection}
+    A[Rendered A4 Canvas Pages] --> UP[_upscaleCanvas 2x]
+    UP --> B{Export Selection}
     B -->|canvas.toBlob PNG/JPG| C[High-Res Images]
     B -->|SVG wrapping PNG embed| D[SVG Vector Files]
     B -->|jsPDF A4 scaling| E[Multi-page PDF]
@@ -20,23 +21,47 @@ graph LR
 
 ---
 
+## High-Resolution Upscaling
+
+Since v1.4.0 every raster export runs the source canvas through `_upscaleCanvas(src, scale)`:
+
+```javascript
+function _upscaleCanvas(src, scale) {
+  const hq = document.createElement('canvas');
+  hq.width  = src.width  * scale;
+  hq.height = src.height * scale;
+  const ctx = hq.getContext('2d');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(src, 0, 0, hq.width, hq.height);
+  return hq;
+}
+```
+
+The `EXPORT_SCALE` / `PDF_SCALE` factor is **2**, producing ~150 DPI output from the 794×1123 native canvas.
+
+---
+
 ## 1. Image Export (PNG / JPG)
 
-Reads directly from `pages[]` canvas elements at native A4 resolution ($794 \times 1123\text{px}$) using `canvas.toBlob()`. No screenshot library required.
+Reads from `pages[]` canvas elements and upsamples 2× before encoding via `canvas.toBlob()`. No screenshot library required.
 
 ### Process
 1. Blur any active `.page-editor` overlay and wait 320ms for clean canvas state
-2. Call `canvas.toBlob(callback, mimeType, quality)` for each page
-3. Create a Blob URL via `URL.createObjectURL(blob)`
-4. Trigger download via `triggerDownload(url, filename)`
-5. Revoke the Blob URL after 1 second to free memory
+2. `_upscaleCanvas(pages[i], 2)` for each page
+3. Call `hq.toBlob(callback, mimeType, quality)`
+4. Create a Blob URL via `URL.createObjectURL(blob)`
+5. Trigger download via `triggerDownload(url, filename)`
+6. Revoke the Blob URL after 1 second to free memory
 
 | Format | MIME Type | Quality | Notes |
 | :--- | :--- | :--- | :--- |
 | PNG | `image/png` | 1.0 | Lossless, full alpha |
-| JPG | `image/jpeg` | 0.93 | High quality, smaller file |
+| JPG | `image/jpeg` | 0.97 | Near-lossless, smaller file |
 
-> **v1.2.0 Change**: Replaced `html2canvas` screenshot capture with native `canvas.toBlob()`. This removes a CDN dependency, improves pixel accuracy, and resolves Chrome's download tray invisibility for files over 2MB.
+Single-page documents export one file (`inkflow-notes.png`); multi-page documents export one file per page (`inkflow-notes-page1.png`, …).
+
+> **v1.2.0 Change**: Replaced `html2canvas` screenshot capture with native `canvas.toBlob()`. The `html2canvas` CDN script remains loaded in `index.html` but is no longer referenced by any export path.
 
 ---
 
@@ -46,7 +71,8 @@ Wraps a full-resolution PNG data URL inside a standard SVG `<image>` element:
 
 ```javascript
 const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${PAGE_W}" height="${PAGE_H}">
+<svg xmlns="http://www.w3.org/2000/svg" width="${PAGE_W}" height="${PAGE_H}"
+     viewBox="0 0 ${PAGE_W} ${PAGE_H}">
   <image href="${imgData}" x="0" y="0" width="${PAGE_W}" height="${PAGE_H}"/>
 </svg>`;
 const blob = new Blob([svgContent], { type: 'image/svg+xml' });
@@ -59,18 +85,24 @@ For multi-page documents: `inkflow-notes-page1.svg`, `inkflow-notes-page2.svg`, 
 
 ## 3. Multi-Page PDF Export
 
-Maps canvas image binaries into jsPDF A4 blocks ($210\text{mm} \times 297\text{mm}$) with progress toasts:
+Maps 2×-upscaled lossless PNG pages into jsPDF A4 blocks (210mm × 297mm) with progress toasts:
 
 ```javascript
-const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+const PDF_SCALE = 2;
+const doc = new jsPDF({
+  orientation: 'portrait', unit: 'mm', format: 'a4',
+  compress: false, // avoid double-compression on top of PNG
+});
 for (let i = 0; i < pages.length; i++) {
-  showExportToast(`Building PDF (Page ${i + 1}/${pages.length})…`, 'info');
   if (i > 0) doc.addPage();
-  const imgData = pages[i].toDataURL('image/jpeg', 0.93);
-  doc.addImage(imgData, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+  const hq = _upscaleCanvas(pages[i], PDF_SCALE);
+  const imgData = hq.toDataURL('image/png', 1.0);
+  doc.addImage(imgData, 'PNG', 0, 0, 210, 297, undefined, 'NONE');
 }
 doc.save('inkflow-notes.pdf');
 ```
+
+> **v1.4.0 Change**: PDFs now embed lossless PNG with `NONE` compression instead of JPEG/`FAST`, giving pixel-perfect print/archive quality at a slightly larger file size.
 
 ---
 
@@ -119,4 +151,4 @@ function triggerDownload(url, filename) {
 
 ## Pre-Export State Handling
 
-Before any export: checks `pages.length > 0`, blurs active `.page-editor`, and awaits 320ms for the blur/redraw cycle to complete.
+Before any export: checks `pages.length > 0`, blurs active `.page-editor`, and awaits 320ms for the blur/redraw cycle to complete. Failing conditions surface as a `warn` toast ("Nothing to export — add some text first.").

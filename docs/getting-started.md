@@ -1,119 +1,102 @@
-# 🚀 Getting Started
+# 🚀 Getting Started with Inkflow
 
-This guide covers everything you need to set up and run Inkflow locally.
+Welcome to **Inkflow v1.4.0** — a single-file web app that turns plain text into beautiful, handwritten-style notes with an AI assistant built in.
 
 ---
 
-## Prerequisites
+## What Is Inkflow?
 
-- A modern web browser (Chrome 90+, Firefox 88+, Safari 15+, Edge 90+)
-- No server, Node.js, or package manager required
-- Optional: OpenRouter or Anthropic API key for AI features
+Inkflow converts typed text into realistic handwriting on virtual A4 paper using your browser. It works fully client-side: no server, no sign-up, no telemetry. Everything runs in your browser tab.
 
 ---
 
 ## Quick Start
 
-### 1. Download or Clone
-```bash
-git clone https://github.com/VIPHACKER100/inkflow.git
-cd inkflow
-```
+1. **Open the app** — load `index.html` in a modern browser (Chrome, Edge, Firefox, Safari).
+2. **Type or paste text** in the sidebar text area (or drag in a `.txt` / `.md` / `.pdf` file).
+3. Press **Animate** to watch the handwriting animation, or press **✦ Render** for instant output.
+4. Use the floating **page indicator** at the bottom to move between pages.
+5. Export via the **Export** section — PNG, JPG, PDF (lossless), SVG, Copy, or Print.
 
-Or simply download and extract the ZIP archive.
+That's it. There is no installation step.
 
-### 2. Open in Browser
-Open `index.html` directly in your browser:
-```
-File → Open → index.html
-```
+---
 
-### 3. Use a Local Dev Server (Recommended)
-For the best experience (especially for font loading, file uploads, and clipboard copy), use a local HTTP server:
+## Hosting Options
 
-**VS Code Live Server:**
-1. Install the "Live Server" extension
-2. Right-click `index.html` → "Open with Live Server"
-3. App opens at `http://localhost:5500/index.html`
+Because Inkflow is a static single-page app, it runs anywhere static files are served:
 
-**Python:**
-```bash
-python -m http.server 5500
-```
+- **Local**: double-click `index.html` (all libraries load from CDN)
+- **GitHub Pages** / Netlify / Vercel / Cloudflare Pages: push the repo, done
+- **Any web server**: copy `index.html`, `index.css`, `index.js` to your docroot
 
-**Node.js:**
-```bash
-npx -y http-server -p 8000
-```
+See [Deployment](./deployment.md) for details, including the AI proxy caveat.
 
 ---
 
 ## Project Structure
 
 ```
-inkflow/
-├── index.html          # Main HTML structure and CDN imports
-├── index.css           # Complete stylesheet with design tokens
-├── index.js            # All application logic and engines
-├── LICENSE             # Project license
-└── docs/               # Documentation (you are here)
-    ├── README.md           # Documentation index
-    ├── system-architecture.md
-    ├── state-management.md
-    ├── handwriting-engine.md
-    ├── paper-rendering.md
-    ├── animation-engine.md
-    ├── ai-integration.md
-    ├── export-pipelines.md
-    ├── custom-font-suite.md
-    ├── ui-design-system.md
-    ├── ux-interactions.md
-    ├── getting-started.md
-    ├── configuration-guide.md
-    ├── api-reference.md
-    ├── deployment.md
-    ├── accessibility.md
-    ├── performance.md
-    ├── contributing.md
-    └── changelog.md
+Inkflow/
+├── index.html          # App shell + CDN library loads (html2canvas, jsPDF, Font Awesome)
+├── index.css           # ~2,400 lines: design tokens, themes, paper styles, modals
+├── index.js            # ~5,600 lines: the entire application logic
+├── docs/               # Full documentation suite (this site)
+│   ├── README.md
+│   ├── getting-started.md
+│   ├── system-architecture.md
+│   ├── state-management.md
+│   ├── configuration-guide.md
+│   ├── ui-design-system.md
+│   ├── paper-rendering.md
+│   ├── handwriting-engine.md
+│   ├── animation-engine.md
+│   ├── export-pipelines.md
+│   ├── ai-integration.md
+│   ├── custom-font-suite.md
+│   ├── api-reference.md
+│   ├── ux-interactions.md
+│   ├── accessibility.md
+│   ├── performance.md
+│   ├── deployment.md
+│   └── contributing.md
+├── .github/
+│   └── workflows/
+│       └── codeql.yml    # CodeQL static-analysis CI
+└── LICENSE               # MIT
 ```
 
 ---
 
-## External Dependencies (CDN-loaded)
+## Try It in 30 Seconds
 
-| Library | Version | Purpose |
-| :--- | :--- | :--- |
-| Google Fonts | — | Caveat, Patrick Hand, Indie Flower, Kalam, etc. |
-| Noto Sans Devanagari | — | Devanagari/Indic script fallback |
-| Font Awesome | 6.x | UI icons |
-| jsPDF | 2.5.1 | Multi-page PDF generation |
-| opentype.js | 1.3.4 | Custom font compilation (lazy-loaded) |
-| pdf.js | 3.4.120 | PDF text extraction for file upload (lazy-loaded) |
-
-All dependencies are loaded via CDN — no `npm install` required. `html2canvas` is no longer required as of v1.2.0.
+```
+1. Click the text area
+2. Paste: "Hello! This is Inkflow. I make your notes look handwritten."
+3. Click ▶ Animate
+4. Watch it draw itself
+5. Click Export → PNG
+```
 
 ---
 
-## First Steps
+## Feature Highlights
 
-1. **Type or paste text** into the textarea on the left sidebar, or **click directly on the page** to edit inline
-2. **Choose a paper style** — ruled, grid, plain, legal, vintage, or dark
-3. **Adjust typography** — font family, size, line height
-4. **Tune handwriting style** — rotation, ink bleed, pen pressure
-5. **Export** — download as PNG, JPG, SVG, PDF, copy to clipboard, or print directly
+| Category | Features |
+| :--- | :--- |
+| **Handwriting** | 16+ handwriting fonts, 10 paper styles, ink presets, bleed/pressure, auto-fit, alignment |
+| **Layouts** | Standard, Two-Column, Cornell Study Notes |
+| **Study Tools** | Study Mode, Flashcards (auto-extracted), Voice-to-Notes, Notebooks & Folders |
+| **AI** | Smart Arrange, Summarize, Grammar Fix, Lecture→Notes, Assignment Generator (OpenRouter/Anthropic) |
+| **Custom Fonts** | Upload `.ttf`/`.otf`, or build your own with the HandFonted Studio |
+| **Export** | PNG, JPG, PDF (lossless), SVG, Clipboard, Print — all 2× upscaled |
 
-### Optional: AI Features
-1. Select your AI provider (OpenRouter or Anthropic) and enter your API key
-2. Paste source text (lecture notes, essays, etc.)
-3. Click an AI action: Summarize, Fix Grammar, Convert to Notes, or Generate Assignment
-4. The AI output streams in real-time as handwritten notes
+---
 
-### Optional: File Upload
-1. Click the upload zone or drag-and-drop a `.txt`, `.md`, or `.pdf` file
-2. Text is extracted and rendered as handwriting automatically
+## Where to Go Next
 
-### Optional: Custom Font
-1. Click "✨ Create Your Own Font" in the sidebar
-2. Use the Live Sketchpad to draw characters, or upload a scanned template
-3. Click "Build Font" to compile and activate your handwriting
+- [Configuration Guide](./configuration-guide.md) — every control explained
+- [System Architecture](./system-architecture.md) — how the app is structured
+- [State Management](./state-management.md) — persistence & hydration
+- [API Reference](./api-reference.md) — all public functions
+- [Changelog](./changelog.md) — release history

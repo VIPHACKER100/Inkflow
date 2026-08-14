@@ -34,88 +34,100 @@ Inkflow supports two primary AI backends. Users select their provider and model 
 
 ## SSE Streaming (v1.2.0)
 
-`callClaude()` now uses Server-Sent Events streaming via `ReadableStream` and `TextDecoder`:
+`callClaude(prompt, systemPrompt, onChunk)` uses Server-Sent Events streaming via `ReadableStream` and `TextDecoder`:
 
 ```javascript
-const response = await fetch(url, { method: 'POST', headers, body });
-const reader = response.body.getReader();
+const res = await fetch(url, { method: 'POST', headers, body });
+const reader = res.body.getReader();
 const decoder = new TextDecoder();
+let buffer = '';
 
 while (true) {
-  const { done, value } = await reader.read();
+  const { value, done } = await reader.read();
   if (done) break;
-  const chunk = decoder.decode(value);
-  // Parse SSE data lines, extract content deltas
-  if (onChunk) onChunk(contentDelta);
+  buffer += decoder.decode(value, { stream: true });
+  // split buffer into 'data:' lines, JSON.parse each, extract content delta
+  if (onChunk) onChunk(textContent);
 }
 ```
 
-The `onChunk` callback updates the canvas in real-time, rendering text word-by-word as the AI generates it, preventing UI freezing.
+Requests use `stream: true` and `max_tokens: 1500`. OpenRouter responses are read from `dataObj.choices[0].delta.content`; Anthropic responses from `dataObj.delta.text` on `content_block_delta` events.
+
+The `onChunk` callback updates the textarea and re-renders the canvas at most every 200ms, so text appears word-by-word as the AI generates it, preventing UI freezing.
 
 ---
 
 ## AI Workflows
 
-### 1. Bullet-Point Summarizer
+`aiAction(type)` dispatches five workflows, disabling the action buttons for the duration and re-enabling them on completion. Final output replaces the textarea content, re-renders, and autosaves.
+
+### 1. 🪄 Smart Arrange
+```
+System: Reorganize and format the following text to look like beautifully
+arranged handwritten notes. Add appropriate section headers, bullet points,
+and clean paragraph breaks. Plain text only, no markdown symbols.
+```
+
+### 2. 📋 Summarize
 ```
 System: Summarize the following text into clear, concise bullet-point notes.
 Use short sentences. No markdown formatting — plain text only.
 ```
 
-### 2. Grammar & Phrasing Correction
+### 3. ✏️ Grammar & Phrasing Correction
 ```
 System: Fix the grammar, spelling, and phrasing of this text.
 Keep the content and meaning identical. Return plain text only, no markdown.
 ```
 
-### 3. Lecture Transcript → Notebook Notes
+### 4. 🎓 Lecture Transcript → Notebook Notes
 ```
 System: Convert this raw lecture transcript into clean, well-structured
-handwritten-style notes. Plain text only, no markdown symbols.
+handwritten-style notes. Use headings, bullet points, and numbered lists
+where appropriate. Plain text only, no markdown symbols.
 ```
 
-### 4. Academic Assignment Generator
+### 5. 📝 Academic Assignment Generator
 ```
-System: Generate a complete handwritten-style assignment with an introduction,
-body paragraphs, and conclusion. Plain text only. No markdown.
+System: Write a detailed, well-structured academic assignment on the topic
+given by the user, with an introduction, body paragraphs, and conclusion.
+Plain text only, no markdown.
 ```
-
-### 5. Smart Arrange (Optimization)
-```
-System: Restructure this text to make it more organized and readable.
-Keep all the original information but use better spacing, indentation, 
-and bullet points. Plain text only. No markdown.
-```
+(Requires the topic field — falls back to the current textarea content if empty.)
 
 ---
 
 ## Dynamic Model Registry
 
-On page load, `fetchOpenRouterModels()` asynchronously fetches the full model catalog from OpenRouter and replaces the static fallback list. Models are:
+`AI_MODELS` contains static fallback lists for both providers. On page load, `fetchOpenRouterModels()` asynchronously fetches the full model catalog from OpenRouter and replaces the static fallback list. Models are:
 
-- Auto-tagged with provider emoji (⚡ Google, 🟣 Anthropic, 🟢 OpenAI, 🦙 Meta, etc.)
+- Auto-tagged with provider emoji (⚡ Google, 🟣 Anthropic, 🟢 OpenAI, 🦙 Meta, 🌊 DeepSeek, 🔷 Mistral, 🟠 Qwen, ✖ xAI, 🟩 NVIDIA, 🪟 Microsoft, 🔴 Cohere, 🤖 other)
+- Tagged `(Free)` when both prompt and completion pricing are zero
 - Sorted with free models first, then alphabetically
-- Auto-refreshed when the provider dropdown changes
+- Auto-refreshed when the provider dropdown changes (guarded by `openRouterModelsLoaded` / `isFetchingOpenRouterModels`)
 
 ---
 
 ## Execution Flow
 
 1. User inputs API key and selects an AI feature
-2. System prompt loaded for clean plain-text output
-3. Request dispatched via `fetch` with streaming enabled (`stream: true`)
-4. `onChunk` callback incrementally renders text onto the canvas
-5. Spinner displayed (`✦ Generating…`) with real-time text preview
-6. On completion, final text is synced to the textarea and autosaved
+2. Input text is validated (per-action "add some text first" checks)
+3. Request dispatched via `fetch` with `stream: true`
+4. `onChunk` incrementally updates the textarea and canvas (200ms throttle)
+5. Status line shows `✦ Generating…`, then `✓ Done — <model>`
+6. On completion, final text is synced and autosaved
 
 ---
 
 ## Error Handling
 
-| Error | User Feedback |
+Status feedback is rendered in the `#ai-status` element via `setAiStatus()`:
+
+| Condition | Feedback |
 | :--- | :--- |
-| Missing API key | "Please enter your API key first" toast |
-| Network failure | "Failed to connect — check your connection" error |
-| Rate limiting (429) | "Rate limited — please wait and try again" |
-| Invalid API key (401) | "Invalid API key — please check and re-enter" |
-| Empty input text | "Please enter some text first" validation |
+| Missing API key | `⚠ Enter your OpenRouter/Anthropic API key first.` |
+| HTTP error from API | `✕ API Error: <message or status>` |
+| Network / fetch failure | `✕ Network error: <message>` |
+| Empty text for summarize/arrange/grammar | `⚠ Add some text first.` |
+| Empty text for lecture | `⚠ Paste lecture text first.` |
+| Empty topic for assignment | `⚠ Enter a topic first.` |

@@ -8,81 +8,95 @@ This document describes the HandFonted Custom Font Suite — the template grid g
 
 The HandFonted Custom Font Suite operates completely inside the browser sandbox to perform raster-to-vector extraction, vector path smoothing, and client-side font compilation. Users can create personalized handwriting fonts by either sketching characters on the live sketchpad or uploading a scanned template sheet.
 
+**Character Coverage** (two sheets, 84 characters total):
+- **Letters**: 52 characters (`A–Z`, `a–z`)
+- **Numbers & Symbols**: 32 characters (`0–9`, `. , ? ! @ # $ % ^ & * ( ) - _ + = / : ; ' "`)
+
 ---
 
 ## Vector Tracing Pipeline
 
 ```mermaid
 flowchart TD
-    A[Upload Handwriting Scan] -->|Align crop overlay coordinates| B[Slice into 8x8 grid cells]
-    B -->|Crop grid cell to temporary canvas| C[Isolate characters & threshold alpha > 128]
-    C -->|Pixel boundary scan| D[Moore-Neighbor Contour Tracing]
+    A[Sketch on Canvas OR Upload Handwriting Scan] -->|Sketchpad strokes / aligned crop| B[Slice into 8x8 grid cells]
+    B -->|Crop grid cell to temp canvas + clear label| C[Isolate characters & threshold ink]
+    C -->|Blank-cell guard isCellBlank| D[Moore-Neighbor Contour Tracing]
     D -->|Coordinate path arrays| E[Ramer-Douglas-Peucker Simplification]
-    E -->|collinear point tolerance = 1.0| F[Smoothed SVG Vector Paths]
-    F -->|Scale to Em-square metrics| G[OpenType Glyph Compiler]
-    G -->|opentype.js bundle| H[Compile TrueType Font File]
+    E -->|tolerance 0.85| F[Smoothed Vector Paths]
+    F -->|Scale to 1000 UPM em box| G[OpenType Glyph Compiler]
+    G -->|opentype.js lazy-loaded| H[Compile TrueType Font File]
     H -->|Generate Blob URL| I[CSS FontFace dynamic registration]
 ```
 
 ---
 
-## 1. Printable Grid Sheet Layout
+## 1. Printable Template Package
 
-**Function**: `generateDownloadTemplate()`
+**Function**: `generateDownloadTemplate()` — downloads **3 sheets** as PNGs (staggered to avoid browser blocking):
+1. **Instructions cover** (1600×1600px) — setup and scanning guidance
+2. **Letters grid** — 8×8 cells for `A–Z` + `a–z`
+3. **Numbers & Symbols grid** — 8×8 cells for the 32 symbols
 
-* **Dynamic Sheet Rendering**: Renders a 1600×1600px canvas with an 8×8 grid mapping to the active template sheet.
-* **Letters Sheet**: Contains 52 characters (`A–Z` and `a–z`).
-* **Numbers & Symbols Sheet**: Contains 32 characters (`0–9` and standard symbols/punctuation: `. , ? ! @ # $ % ^ & * ( ) - _ + = / : ; ' "`).
-* Each cell is 175×175px with a dotted baseline helper at 70% height.
-* Small label tags in the top-left corner identify each character.
-* Writing area is kept completely blank for noise-free tracing.
+Each grid sheet is 1600×1600px with 175×175px cells, a dotted baseline helper at 70% height, and small label tags identifying each character.
 
 ---
 
-## 2. Moore-Neighbor Contour Tracing
+## 2. Live Sketchpad
 
-Isolates character contours on a temporary canvas slice by scanning for active pixels (alpha > 128) and tracing the boundaries in a clockwise sequence.
-
-- **Glyph Pruning**: To prevent the creation of "invisible" characters (rects with zero paths), the synthesizer uses `isCellBlank()` before tracing. Cells without sufficient ink (brightness threshold < 160 or alpha > 50) are discarded.
-- Traverses both external boundaries and internal negative outlines (holes, e.g. in 'o' or 'A')
-- Assembles clean mathematical coordinate arrays for each closed contour
+An interactive 256×256 canvas with:
+- **Brush size control** (1–8px) and **undo** (stroke history with `redrawCanvas()`)
+- **Character grid** with `drafted` state badges; switching sheets preserves progress
+- **Ink guard**: `saveActiveCharacter()` calls `isCellBlank()` and refuses to save empty sketches
+- **Save to IndexedDB**: `saveGlyphDB(char, dataUrl)` persists each glyph as a data URL (keyed by character)
+- **Project save/load**: `exportFontProject()` / `importFontProject()` move the whole glyph set as a JSON file; imports run `pruneBlankGlyphs()` to strip stale blanks
+- Progress bar tracks `completed / 84` characters
 
 ---
 
-## 3. RDP Curve Simplification
+## 3. Template Upload & Alignment
 
-Recursively smooths pixel contours using the Ramer-Douglas-Peucker algorithm:
+1. Select the sheet (`Letters` or `Symbols`) and click **Download Template Package**.
+2. Print, fill, scan/photograph (300 DPI recommended).
+3. Upload via drag-and-drop or browse; each sheet keeps its own alignment image and grid offsets.
+4. Align with the interactive **grid overlay sliders** (`Grid X/Y Offset`, `Grid W/H`) — a shaded bounding box plus an 8×8 grid is drawn over the scanned image. Configs are stored per sheet in `gridConfigs`.
+5. `cropTemplateCell(index, sheetName)` slices each cell at 128×128 (scaling from the 360×360 preview), clearing the top-left guide label so it isn't traced as ink.
 
+---
+
+## 4. Moore-Neighbor Contour Tracing
+
+`traceCanvasContours(canvas)` binarizes pixels (alpha > 50 and average brightness < 160 count as ink), then traces connected-component boundaries using an 8-direction neighbor search, tracking a `visited` mask so each contour is found exactly once. Contours with ≥ 3 points are smoothed and retained.
+
+---
+
+## 5. RDP Curve Simplification
+
+`simplifyPath(points, tolerance)` applies the Ramer–Douglas–Peucker algorithm recursively:
+
+- Tolerance: **0.85**
 - Drops redundant coordinates on straight segments
-- Perpendicular distance tolerance: $\epsilon = 1.0$
-- Preserves handwriting curves while reducing point count by ~60-80%
+- Preserves handwriting curves while reducing point count substantially
 
 ---
 
-## 4. OpenType Font Compilation
+## 6. OpenType Font Compilation
 
-- Coordinates scaled to 1000 units Em-square (advance width 500 units)
-- Instantiates `opentype.Glyph` and `opentype.Path` elements
-- Bundles all drafted glyphs across both sheets inside an `opentype.Font` instance
-- Generates TrueType Font byte array → Blob URL → CSS FontFace:
+`buildCustomFont()` (async):
+1. Lazy-loads `opentype.js` 1.3.4 via `ensureOpentypeLoaded()`
+2. Seeds the font with `.notdef` (advance 650) and `space` (advance 400) glyphs
+3. For each of the 84 template characters, obtains a cell canvas from the sketchpad glyphs or the aligned template, **skips blank cells** (`isCellBlank`), and traces its path
+4. `canvasToOpentypePath()` scales contours into the 1000-unit em box (fit within 600×700 units, centered) and closes the path
+5. Computes per-glyph advance widths from the ink bounding box (min 250 units)
+6. Builds `opentype.Font` (unitsPerEm 1000, ascender 800, descender −200), serializes to a TTF blob
+7. Registers the result as a `FontFace`, appends it to the font selector, applies it, and re-renders
+8. Aborts with a message if fewer than 2 glyphs are drafted
 
-```javascript
-const font = new FontFace('CustomHandwrittenFont', `url(${fontUrl})`);
-await font.load();
-document.fonts.add(font);
-```
+> **Blank-glyph hygiene**: `pruneBlankGlyphs()` runs on boot and after project imports, scanning each glyph for visible ink (`glyphHasInk`) and removing empty entries from memory and IndexedDB so they never render as invisible characters.
 
 ---
 
-## Two Input Modes
+## Persistence
 
-### Live Sketchpad
-Draw characters sheet-by-sheet on an interactive canvas. Each character is saved to the glyph tray and persisted asynchronously in **IndexedDB** (`InkflowDB` -> `draftedGlyphs` store), bypassing the 5MB browser `localStorage` limit.
-
-### Upload Template
-1. Select the sheet tab (`Letters` or `Symbols`) and click **Download Blank Template Grid**.
-2. Print it, write all characters with a real pen.
-3. Scan or photograph the filled sheet.
-4. Upload and align using the interactive grid overlay sliders. Independent images and grid offsets (`X, Y, W, H`) are stored for each sheet.
-5. The engine automatically slices, traces, and compiles characters from both uploaded sheets.
-
+- Glyphs persist in **IndexedDB** (`InkflowDB` → `draftedGlyphs` store), bypassing the 5MB `localStorage` limit.
+- Boot migration moves any legacy `localStorage` glyphs into IndexedDB and clears the old keys.
+- Uploaded fonts register via `FontFace` at runtime and their names are remembered in `localStorage` (`inkflow-fonts`).

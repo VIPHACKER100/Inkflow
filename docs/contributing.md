@@ -43,7 +43,10 @@ Inkflow is a **single-page, zero-dependency-install** application. Contributions
 index.html    # Structure and CDN imports only
 index.css     # All styles — design tokens, components, layouts
 index.js      # All logic — engines, state, UI handlers
-docs/         # Documentation (markdown)
+docs/         # Documentation (markdown suite — see docs/README.md)
+.github/
+  workflows/
+    codeql.yml # GitHub CodeQL Advanced static-analysis CI
 ```
 
 Do NOT split JS/CSS into additional files without discussion. The single-file architecture is intentional.
@@ -63,7 +66,8 @@ Do NOT split JS/CSS into additional files without discussion. The single-file ar
 - [ ] All existing features still work (no regressions)
 - [ ] Tested on desktop and mobile viewports
 - [ ] Tested in at least 2 browsers
-- [ ] Documentation updated if adding new features
+- [ ] Documentation updated if adding new features (keep the version number in `docs/README.md` and `docs/changelog.md` in sync)
+- [ ] GitHub CodeQL workflow passes (no new high-severity findings)
 - [ ] No new npm/build dependencies added
 
 ---
