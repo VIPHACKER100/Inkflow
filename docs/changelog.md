@@ -4,6 +4,22 @@ All notable changes to Inkflow are documented in this file.
 
 ---
 
+## [1.4.1] — 2026-08-24
+
+### ✨ Added
+- **Keyboard Shortcut for Study Mode**: Added an `Escape` key shortcut listener to exit Study Mode instantly from anywhere in the app.
+- **Active Page Auto-Centering**: `toggleStudyMode()` now automatically scrolls the active page canvas cleanly into center view (`scrollIntoView({ behavior: 'smooth', block: 'center' })`) upon entering or exiting Study Mode.
+- **Enhanced Voice Input Error Toasts**: `voiceRecognition.onerror` now displays friendly toast notifications (`showToast(msg, 'error')`) detailing microphone permission or network issues.
+
+### ♻️ Changed
+- **Study Mode Layout & Viewport Engine**: Completely rewritten Study Mode CSS (`body.study-mode-active`). Removed off-screen column shifts (`grid-template-columns: 1fr !important`). `#canvas-area` and `#canvas-area::before` (dot grid background pattern) now span 100% of the screen width. `#toolbar` auto-dims to `0.5` opacity and lights up smoothly on hover or focus-within.
+- **Clean Notes Text Alignment**: Integrated `getAlignmentOffset(S.textAlignment, blockFontSize, S.lineHeight)` into `layoutTextCleanStandard()`, enabling Upper, Middle, and Lower text alignment in Clean Notes paper style.
+- **Recalibrated Text Alignment Geometry**: Updated `getAlignmentOffset()` formulas so that `bottom` ("Lower") sits text baseline directly **ON** the ruled line (`0`), `middle` ("Middle") floats text **CENTERED** between lines (`-(lineH * 0.32)`), and `top` ("Upper") positions text touching the **UPPER** line (`-(lineH * 0.62)`).
+- **Text Alignment UI Preview Icons**: Adjusted `.align-text.align-bottom` positioning (`bottom: 5px`) in `index.css` so preview button icons accurately match the canvas paper placement.
+- **Voice Input Start/Stop Safety**: Removed recursive `toggleVoiceInput()` calls inside `onerror` and added `try-catch` guards around `.start()` and `.stop()`.
+
+---
+
 ## [1.4.0] — 2026-08-15
 
 ### ✨ Added

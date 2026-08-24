@@ -34,7 +34,8 @@ The floating pill at the bottom shows `Page X of Y` with ◀ / ▶ buttons (`nav
 ## Study Workflows
 
 ### Study Mode
-The 📖 **Study Mode** toolbar button (`toggleStudyMode()`) adds the `study-mode-active` class to the body, which dims/hides distraction chrome and reveals the floating **🚪 Exit Study Mode** button (bottom-right). This mode is designed for focused reading of your notes.
+### Study Mode
+The 📖 **Study Mode** toolbar button (`toggleStudyMode()`) adds the `study-mode-active` class to the body. This expands the canvas viewport to 100% width (`grid-template-columns: 1fr`), hides the sidebar (`display: none`), auto-dims the top toolbar (`opacity: 0.5`) with hover reveal, smoothly centers the active page canvas into view, and reveals the floating **🚪 Exit Study Mode** button (bottom-right). Pressing `Escape` or clicking the floating button exits Study Mode.
 
 ### Flashcards
 1. Type study syntax — e.g. `Q: What is inertia?` followed by `A: Resistance to motion` — see [Handwriting Engine](./handwriting-engine.md#pre-processing-rich-study-syntax).
@@ -43,7 +44,7 @@ The 📖 **Study Mode** toolbar button (`toggleStudyMode()`) adds the `study-mod
 4. Close with ✕.
 
 ### Voice to Notes
-The 🎤 mic button (`toggleVoiceInput()`) uses the Web Speech API (`webkitSpeechRecognition`, continuous, `en-US`). Transcripts append directly into the text area; the button lights up while recording. If the API is unsupported, a warning toast shows and the button disables (`initVoiceToNotes()`).
+The 🎤 mic button (`toggleVoiceInput()`) uses the Web Speech API (`webkitSpeechRecognition`, continuous, `en-US`). Transcripts append directly into the text area; the button lights up while recording. Permission denials or speech errors trigger user-friendly toast notifications (`showToast(msg, 'error')`); if the API is unsupported, the mic button is disabled (`initVoiceToNotes()`).
 
 ### Notebooks & Folders
 The sidebar **Notebooks** section is an IndexedDB-backed explorer:
@@ -62,7 +63,7 @@ Changes are mirrored live into the active notebook on every `autosave()`.
 The font family dropdown re-renders immediately. **Auto-Fit** (`autoFitFontSize()`) binary-searches the largest size in 14–52px that keeps your text on one page, then re-renders. The size slider (12–56) and line-height/word-spacing/margin sliders all live-render.
 
 ### Text Alignment
-Three alignment buttons (⊤ ⊼ ⊥) call `setTextAlignment('top'|'middle'|'bottom')`; the active one carries the `.active` class. Vertical placement is computed by `getAlignmentOffset()`.
+Three alignment buttons (**Upper**, **Middle**, **Lower**) call `setTextAlignment('top'|'middle'|'bottom')`; the active one carries the `.active` class. Vertical placement relative to notebook lines is computed by `getAlignmentOffset()` (Lower sits text baseline on rule line, Middle centers text between lines, Upper positions text touching the upper line) across all layout modes including Clean Notes. Preview icons accurately reflect baseline placement.
 
 ### Reset Defaults
 **↺ Reset Defaults** (`resetToDefaults()`) restores factory settings and re-syncs every control.

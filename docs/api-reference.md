@@ -36,7 +36,7 @@ Computes Cornell Study Notes coordinates. Lines prefixed `? ` / `cue:` → cues 
 - **Returns**: `{ queue, pageTexts, pageCount }`
 
 ### `layoutTextCleanStandard(cleanText, S, PAGE_W, PAGE_H, ctx)`
-Structured-content layout for `clean` paper + Standard layout. Parses `#`/`##` headings, bullets, and questions via `parseStructuredContent()`, with proportional font sizes and block spacing.
+Structured-content layout for `clean` paper + Standard layout. Parses `#`/`##` headings, bullets, and questions via `parseStructuredContent()`, with proportional font sizes, block spacing, and vertical text alignment offsets (`getAlignmentOffset`).
 - **Returns**: `{ queue, pageTexts, pageCount }`
 
 ### `renderText(text)`
@@ -65,7 +65,7 @@ Generates randomized per-character variation parameters.
 - **Returns**: `{ tiltDeg, scaleX, scaleY, baselineOff, spacingExtra, pressureMod, opacity }`
 
 ### `getAlignmentOffset(alignment, fontSize, lineHeight)`
-Returns the vertical shift for `top` / `middle` / `bottom` text alignment.
+Returns the vertical baseline shift for `top` (Upper: `-(lineH * 0.62)`), `middle` (Middle: `-(lineH * 0.32)`), and `bottom` (Lower: `0`) text alignments relative to notebook line baselines.
 
 ### `getCachedGlyphImage(char, src)`
 Returns a fully-decoded `<img>` for a drafted glyph (cached), or `null` while decoding; triggers `debounceRender()` when ready.
@@ -264,13 +264,13 @@ Renders the folder-grouped notebook explorer from IndexedDB.
 ## Study Tools
 
 ### `toggleStudyMode()`
-Toggles the `study-mode-active` body class and the floating exit button.
+Toggles the `study-mode-active` body class, expands canvas area to 100% viewport width (`grid-template-columns: 1fr`), auto-dims top toolbar (`opacity: 0.5`) with hover reveal, displays floating exit button, smoothly scrolls active page into view, and supports `Escape` key shortcut exit.
 
 ### Flashcards — `openFlashcardsModal()`, `closeFlashcardsModal()`, `flipFlashcard()`, `nextFlashcard()`, `prevFlashcard()`, `updateFlashcardUI()`
 Open/close the review modal, flip the active card, navigate the deck, and update the question/answer/progress UI.
 
 ### Voice — `initVoiceToNotes()`, `toggleVoiceInput()`
-Initializes the Web Speech API recognizer (continuous, `en-US`) and toggles recording. Appends transcripts to the textarea; disables the mic button when unsupported.
+Initializes the Web Speech API recognizer (continuous, `en-US`) and toggles recording inside `try-catch` guards. Appends transcripts to the textarea, displays toast error notifications (`showToast`) on permission or speech errors, and disables the mic button when unsupported.
 
 ---
 
