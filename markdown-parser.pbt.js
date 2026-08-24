@@ -641,6 +641,6 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 // Return status code for CLI
-if (typeof process !== 'undefined') {
+if (typeof process !== 'undefined' && typeof require !== 'undefined' && require.main === module) {
   process.exit(allTestsPassed ? 0 : 1);
 }

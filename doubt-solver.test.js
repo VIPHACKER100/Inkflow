@@ -4,6 +4,22 @@
  * Requirements: 5.1, 5.2, 5.3, 5.7, 5.9
  */
 
+// Mock global DOM for test environment
+if (typeof global.document === 'undefined') {
+  const elements = {};
+  global.document = {
+    getElementById: (id) => {
+      if (!elements[id]) {
+        elements[id] = { value: '', textContent: '', addEventListener: () => {}, dispatchEvent: () => {} };
+      }
+      return elements[id];
+    },
+    querySelector: (selector) => {
+      return { textContent: 'Doubt Solver', addEventListener: () => {}, getAttribute: (attr) => "aiAction('doubt')" };
+    }
+  };
+}
+
 describe('Doubt Solver Feature', () => {
   
   /**

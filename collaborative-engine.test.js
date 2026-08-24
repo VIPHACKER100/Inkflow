@@ -60,6 +60,10 @@ function assert(name, condition) {
 }
 
 function test(name, fn) {
+  if (typeof global.it === 'function' && typeof process !== 'undefined' && require.main !== module) {
+    global.it(name, fn);
+    return;
+  }
   console.log(`\n[TEST] ${name}`);
   try {
     fn();
@@ -176,10 +180,16 @@ test('Convergence: Multi-char insert vs single char delete', () => {
 
 console.log('\n──────────────────────────────────');
 console.log(`Results: ${passed} passed, ${failed} failed`);
-if (failed === 0) {
+if (typeof require !== 'undefined' && require.main === module) {
+  if (failed === 0) {
+    console.log('✅ All OT tests passed!');
+    process.exit(0);
+  } else {
+    console.error(`❌ ${failed} test(s) failed.`);
+    process.exit(1);
+  }
+} else if (failed === 0) {
   console.log('✅ All OT tests passed!');
-  process.exit(0);
 } else {
   console.error(`❌ ${failed} test(s) failed.`);
-  process.exit(1);
 }

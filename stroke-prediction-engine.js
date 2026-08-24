@@ -35,7 +35,7 @@ class StrokePredictionEngine {
 
     // Dictionary of common academic/scientific words for single-word autocompletion
     this.wordList = [
-      "gravity", "gravity", "gravitational", "acceleration", "velocity", "momentum", 
+      "gravity", "gravitational", "acceleration", "velocity", "momentum", 
       "mitochondria", "chromosome", "photosynthesis", "chlorophyll", "cytoplasm",
       "evaporation", "condensation", "precipitation", "collection", "temperature",
       "equation", "variable", "coefficient", "derivative", "integral", "theorem",

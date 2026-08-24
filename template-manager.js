@@ -126,14 +126,16 @@ class TemplateManager {
   getTemplate(id) {
     // Try to load custom template from localStorage if not found in built-ins
     if (!this.templates.has(id)) {
-      const custom = localStorage.getItem('inkflow_template_' + id);
-      if (custom) {
-        try {
-          return JSON.parse(custom);
-        } catch (e) {
-          console.error("Failed to parse custom template", id);
+      try {
+        const custom = localStorage.getItem('inkflow_template_' + id);
+        if (custom) {
+          try {
+            return JSON.parse(custom);
+          } catch (e) {
+            console.error("Failed to parse custom template", id);
+          }
         }
-      }
+      } catch (e) { /* Safari private mode, storage full, etc. */ }
       return this.templates.get('standard');
     }
     return this.templates.get(id);
@@ -143,25 +145,29 @@ class TemplateManager {
     if (!template.id || template.id === 'standard' || template.id === 'twocolumn' || template.id === 'cornell' || template.id === 'meeting') {
       throw new Error("Cannot overwrite built-in templates. Provide a unique custom ID.");
     }
-    localStorage.setItem('inkflow_template_' + template.id, JSON.stringify(template));
+    try {
+      localStorage.setItem('inkflow_template_' + template.id, JSON.stringify(template));
+    } catch (e) { /* Safari private mode, storage full, etc. */ }
     this.templates.set(template.id, template);
   }
 
   getAllTemplates() {
     const list = Array.from(this.templates.values());
     // Also grab custom ones from local storage
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key.startsWith('inkflow_template_')) {
-        try {
-          const tpl = JSON.parse(localStorage.getItem(key));
-          if (!this.templates.has(tpl.id)) {
-            list.push(tpl);
-            this.templates.set(tpl.id, tpl);
-          }
-        } catch (e) {}
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('inkflow_template_')) {
+          try {
+            const tpl = JSON.parse(localStorage.getItem(key));
+            if (!this.templates.has(tpl.id)) {
+              list.push(tpl);
+              this.templates.set(tpl.id, tpl);
+            }
+          } catch (e) {}
+        }
       }
-    }
+    } catch (e) { /* Safari private mode */ }
     return list;
   }
 

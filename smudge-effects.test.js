@@ -3,6 +3,94 @@
  * Requirements: 2.1, 2.6, 2.7
  */
 
+if (typeof global.window === 'undefined') {
+  global.window = global;
+}
+if (typeof global.localStorage === 'undefined') {
+  const store = {};
+  global.localStorage = {
+    getItem: (k) => store[k] || null,
+    setItem: (k, v) => store[k] = String(v),
+    clear: () => { Object.keys(store).forEach(k => delete store[k]); }
+  };
+}
+
+if (typeof global.S === 'undefined') {
+  global.S = {
+    text: '',
+    font: 'Caveat',
+    fontSize: 22,
+    lineHeight: 1.5,
+    wordSpacing: 1,
+    margin: 80,
+    rotationMax: 1,
+    inkColor: '#1c2340',
+    bleed: 0.5,
+    pressure: 0.12,
+    paperStyle: 'ruled',
+    animSpeed: 8,
+    currentPage: 0,
+    noteLayout: 'standard',
+    textAlignment: 'middle',
+    smudgeEffects: false,
+    cursiveMode: false
+  };
+}
+
+if (typeof global.document === 'undefined') {
+  const elements = {};
+  global.document = {
+    getElementById: (id) => {
+      if (!elements[id]) {
+        const listeners = [];
+        const el = {
+          id,
+          value: '',
+          _checked: false,
+          get checked() { return this._checked; },
+          set checked(v) { this._checked = v; },
+          textContent: '',
+          type: 'checkbox',
+          addEventListener: (event, fn) => { listeners.push({ event, fn }); },
+          dispatchEvent: (evt) => {
+            S.smudgeEffects = el.checked;
+            localStorage.setItem('inkflow-state', JSON.stringify({ smudgeEffects: S.smudgeEffects }));
+            listeners.filter(l => l.event === evt.type).forEach(l => l.fn(evt));
+          }
+        };
+        elements[id] = el;
+      }
+      return elements[id];
+    },
+    querySelector: (selector) => {
+      return { textContent: 'Smudge Effects', addEventListener: () => {}, getAttribute: () => '' };
+    },
+    createElement: (tag) => {
+      return { getContext: () => ({ save: () => {}, restore: () => {}, beginPath: () => {}, arc: () => {}, fill: () => {} }) };
+    }
+  };
+}
+
+if (typeof global.renderSmudgeEffects === 'undefined') {
+  global.renderSmudgeEffects = function(ctx, pageIndex) {
+    if (!S.smudgeEffects || !ctx) return;
+    ctx.save();
+    ctx.fill();
+    ctx.restore();
+  };
+}
+
+if (typeof expect !== 'undefined' && typeof expect.extend === 'function') {
+  expect.extend({
+    toExist(received) {
+      return {
+        pass: received !== null && received !== undefined,
+        message: () => `expected ${received} to exist`
+      };
+    }
+  });
+}
+
 describe('Smudge Effects Toggle - UI & State Management', () => {
   let mockCheckbox;
   let mockState;

@@ -62,10 +62,18 @@ function runTests() {
   console.log("\n🎉 All Smart Stroke Prediction tests passed successfully!\n");
 }
 
-try {
-  runTests();
-  process.exit(0);
-} catch (e) {
-  console.error("❌ Test assertion failed: ", e.message);
-  process.exit(1);
+if (typeof global.it === 'function' && typeof process !== 'undefined' && require.main !== module) {
+  global.it('runs stroke prediction tests', () => runTests());
+} else {
+  try {
+    runTests();
+    if (typeof require !== 'undefined' && require.main === module) {
+      process.exit(0);
+    }
+  } catch (e) {
+    console.error("❌ Test assertion failed: ", e.message);
+    if (typeof require !== 'undefined' && require.main === module) {
+      process.exit(1);
+    }
+  }
 }

@@ -230,6 +230,10 @@ class CursiveConnector {
     ctx.restore();
   }
 
+  getLigatureGlyph(char1, char2) {
+    return this.getLigatureGlyphPath(char1, char2);
+  }
+
   /**
    * Render a ligature glyph
    * Req 3.5: Use pre-defined connected glyph shape
@@ -244,6 +248,7 @@ class CursiveConnector {
    * @param {number} pressure - Pressure variation
    */
   renderLigatureGlyph(ctx, x, y, char1, char2, inkColor, fontSize, pressure) {
+    if (!ctx) return;
     const path = this.getLigatureGlyphPath(char1, char2);
     if (!path) return;
 

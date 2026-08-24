@@ -4,6 +4,44 @@
  * Requirements: 5.4, 5.5, 5.6, 5.8, 5.10
  */
 
+// Mock global DOM and S state for test environment
+if (typeof global.S === 'undefined') {
+  global.S = {
+    text: '',
+    font: 'Caveat',
+    fontSize: 22,
+    lineHeight: 1.5,
+    wordSpacing: 1,
+    margin: 80,
+    rotationMax: 1,
+    inkColor: '#1c2340',
+    bleed: 0.5,
+    pressure: 0.12,
+    paperStyle: 'ruled',
+    animSpeed: 8,
+    currentPage: 0,
+    noteLayout: 'standard',
+    textAlignment: 'middle',
+    smudgeEffects: false,
+    cursiveMode: false
+  };
+}
+
+if (typeof global.document === 'undefined') {
+  const elements = {};
+  global.document = {
+    getElementById: (id) => {
+      if (!elements[id]) {
+        elements[id] = { value: '', textContent: '', addEventListener: () => {}, dispatchEvent: () => {} };
+      }
+      return elements[id];
+    },
+    querySelector: (selector) => {
+      return { textContent: 'Doubt Solver', addEventListener: () => {} };
+    }
+  };
+}
+
 describe('Solution Streaming and Rendering (Task 6.2)', () => {
   
   /**
@@ -300,7 +338,7 @@ Final Answer: Maximum height is 10 meters`;
     // Solution with special characters
     const specialChars = `Step 1: Solve α + β = 90°
 Step 2: If α = 30°, then β = 60°
-Step 3: cos(30°) = sqrt(3)/2 ≈ 0.866`;
+Step 3: cos(30°) = √3/2 ≈ 0.866`;
     expect(specialChars).toContain('√');
     expect(specialChars).toContain('°');
     expect(specialChars).toContain('≈');

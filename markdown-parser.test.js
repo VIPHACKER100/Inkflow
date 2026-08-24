@@ -16,6 +16,9 @@ class TestRunner {
 
   test(name, fn) {
     this.tests.push({ name, fn });
+    if (typeof global.it === 'function' && typeof process !== 'undefined' && require.main !== module) {
+      global.it(name, () => fn.call(this));
+    }
   }
 
   assertEqual(actual, expected, message = '') {
@@ -43,7 +46,12 @@ class TestRunner {
   }
 
   run() {
+    if (typeof global.it === 'function' && typeof process !== 'undefined' && require.main !== module) {
+      return true;
+    }
     console.log('Starting MarkdownParser tests...\n');
+    this.passed = 0;
+    this.failed = 0;
 
     for (const { name, fn } of this.tests) {
       try {
@@ -535,6 +543,6 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 // Return status code for CLI
-if (typeof process !== 'undefined') {
+if (typeof process !== 'undefined' && typeof require !== 'undefined' && require.main === module) {
   process.exit(allTestsPassed ? 0 : 1);
 }

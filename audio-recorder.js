@@ -148,21 +148,23 @@ class AudioRecorder {
   }
 
   updateUIStart() {
+    if (!this.btnRecord) return;
     this.btnRecord.innerHTML = '⏹️ Stop Recording';
     this.btnRecord.classList.remove('accent');
     this.btnRecord.style.backgroundColor = '#ff4444';
     this.btnRecord.style.color = '#fff';
-    this.statusPanel.classList.remove('hidden');
-    this.timerDisplay.textContent = '00:00';
-    this.sizeDisplay.textContent = '0 KB';
+    if (this.statusPanel) this.statusPanel.classList.remove('hidden');
+    if (this.timerDisplay) this.timerDisplay.textContent = '00:00';
+    if (this.sizeDisplay) this.sizeDisplay.textContent = '0 KB';
   }
 
   updateUIStop() {
+    if (!this.btnRecord) return;
     this.btnRecord.innerHTML = '🎙️ Record Lecture';
     this.btnRecord.classList.add('accent');
     this.btnRecord.style.backgroundColor = '';
     this.btnRecord.style.color = '';
-    this.statusPanel.classList.add('hidden');
+    if (this.statusPanel) this.statusPanel.classList.add('hidden');
   }
 }
 

@@ -14,22 +14,25 @@
     rel="stylesheet" />
 
   <!-- html2canvas for image export -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <!-- jsPDF for PDF export -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <!-- Mammoth for DOCX extraction -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 
   <!-- Font Awesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
   <!-- Mermaid for diagram support -->
-  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+
+  <!-- OpenType.js for custom font generation -->
+  <script defer src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
 
   <!-- Rough.js for hand-drawn diagrams -->
-  <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/dist/rough.umd.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/dist/rough.umd.js"></script>
 
   <!-- Custom Stylesheet -->
   <link rel="stylesheet" href="index.css" />
@@ -69,10 +72,10 @@
 
       <!-- ── TEXT INPUT SECTION ── -->
       <div class="sb-section" id="sec-text">
-        <div class="sb-section-header" onclick="toggleSection('sec-text')">
+        <button class="sb-section-header" onclick="toggleSection('sec-text')" aria-expanded="true" aria-controls="sec-text">
           ✏️ &nbsp;Text Input
           <span class="sb-arrow">▾</span>
-        </div>
+        </button>
         <div class="sb-body">
           <textarea id="text-input" placeholder="Start typing your notes here…
 
@@ -113,10 +116,10 @@ Try pasting a paragraph of lecture notes!"></textarea>
 
       <!-- ── FONT SETTINGS SECTION ── -->
       <div class="sb-section" id="sec-font">
-        <div class="sb-section-header" onclick="toggleSection('sec-font')">
+        <button class="sb-section-header" onclick="toggleSection('sec-font')" aria-expanded="true" aria-controls="sec-font">
           𝒜 &nbsp;Font &amp; Style
           <span class="sb-arrow">▾</span>
-        </div>
+        </button>
         <div class="sb-body">
           <!-- Phase 3.1 — Font selector -->
           <div class="sb-label">Handwriting Font</div>
@@ -226,10 +229,10 @@ Try pasting a paragraph of lecture notes!"></textarea>
 
       <!-- ── COLLABORATION SECTION ── -->
       <div class="sb-section" id="sec-collab">
-        <div class="sb-section-header" onclick="toggleSection('sec-collab')">
+        <button class="sb-section-header" onclick="toggleSection('sec-collab')" aria-expanded="true" aria-controls="sec-collab">
           👥 &nbsp;Collaboration
           <span class="sb-arrow">▾</span>
-        </div>
+        </button>
         <div class="sb-body">
           <div class="collab-controls">
             <div class="collab-status-bar">
@@ -250,10 +253,10 @@ Try pasting a paragraph of lecture notes!"></textarea>
 
       <!-- ── PAPER STYLE SECTION ── -->
       <div class="sb-section" id="sec-paper">
-        <div class="sb-section-header" onclick="toggleSection('sec-paper')">
+        <button class="sb-section-header" onclick="toggleSection('sec-paper')" aria-expanded="true" aria-controls="sec-paper">
           📄 &nbsp;Paper Style
           <span class="sb-arrow">▾</span>
-        </div>
+        </button>
         <div class="sb-body">
           <div class="paper-grid">
             <button class="paper-btn active" data-style="ruled" onclick="setPaper(this)">📏 Ruled</button>
@@ -271,10 +274,10 @@ Try pasting a paragraph of lecture notes!"></textarea>
 
       <!-- ── NOTE LAYOUT SECTION ── -->
       <div class="sb-section" id="sec-layout">
-        <div class="sb-section-header" onclick="toggleSection('sec-layout')">
+        <button class="sb-section-header" onclick="toggleSection('sec-layout')" aria-expanded="true" aria-controls="sec-layout">
           📋 &nbsp;Page Layout
           <span class="sb-arrow">▾</span>
-        </div>
+        </button>
         <div class="sb-body">
           <div class="sb-label">Note Layout Template</div>
           <select id="layout-select" title="Note Layout Template">
@@ -287,10 +290,10 @@ Try pasting a paragraph of lecture notes!"></textarea>
       </div>
       <!-- ── LAYER MANAGER SECTION ── -->
       <div class="sb-section" id="sec-layers">
-        <div class="sb-section-header" onclick="toggleSection('sec-layers')">
+        <button class="sb-section-header" onclick="toggleSection('sec-layers')" aria-expanded="true" aria-controls="sec-layers">
           📚 &nbsp;Layer Manager
           <span class="sb-arrow">▾</span>
-        </div>
+        </button>
         <div class="sb-body">
           <div id="layer-list" class="layer-list">
             <!-- Dynamically populated by updateLayerUI() -->
@@ -304,10 +307,10 @@ Try pasting a paragraph of lecture notes!"></textarea>
 
       <!-- ── EFFECTS SECTION ── -->
       <div class="sb-section" id="sec-effects">
-        <div class="sb-section-header" onclick="toggleSection('sec-effects')">
+        <button class="sb-section-header" onclick="toggleSection('sec-effects')" aria-expanded="true" aria-controls="sec-effects">
           🎨 &nbsp;Ink Effects
           <span class="sb-arrow">▾</span>
-        </div>
+        </button>
         <div class="sb-body">
           <!-- Phase 5.6 — Ink color picker -->
           <div class="sb-label">Ink Color</div>
@@ -374,10 +377,10 @@ Try pasting a paragraph of lecture notes!"></textarea>
 
       <!-- ── AI TOOLS SECTION ── -->
       <div class="sb-section" id="sec-ai">
-        <div class="sb-section-header" onclick="toggleSection('sec-ai')">
+        <button class="sb-section-header" onclick="toggleSection('sec-ai')" aria-expanded="true" aria-controls="sec-ai">
           ✦ &nbsp;AI Features
           <span class="sb-arrow">▾</span>
-        </div>
+        </button>
         <div class="sb-body">
           <!-- Provider selector -->
           <div class="sb-label">AI Provider</div>
@@ -423,10 +426,10 @@ Try pasting a paragraph of lecture notes!"></textarea>
 
       <!-- ── EXPORT SECTION ── -->
       <div class="sb-section" id="sec-export">
-        <div class="sb-section-header" onclick="toggleSection('sec-export')">
+        <button class="sb-section-header" onclick="toggleSection('sec-export')" aria-expanded="true" aria-controls="sec-export">
           ⬇ &nbsp;Export
           <span class="sb-arrow">▾</span>
-        </div>
+        </button>
         <div class="sb-body">
           <div class="export-grid">
             <!-- Phase 8.1 — PNG -->
@@ -448,10 +451,10 @@ Try pasting a paragraph of lecture notes!"></textarea>
 
       <!-- ── ANIMATION SECTION ── -->
       <div class="sb-section" id="sec-anim">
-        <div class="sb-section-header" onclick="toggleSection('sec-anim')">
+        <button class="sb-section-header" onclick="toggleSection('sec-anim')" aria-expanded="true" aria-controls="sec-anim">
           ▶ &nbsp;Animation
           <span class="sb-arrow">▾</span>
-        </div>
+        </button>
         <div class="sb-body">
           <div class="sb-label">Writing Speed <span class="val" id="spd-val">8</span></div>
           <input type="range" id="speed-slider" min="1" max="30" step="1" value="8" title="Writing Speed" />
@@ -684,7 +687,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
   <script src="collaborative-engine.js"></script>
 
   <!-- TensorFlow.js for Smart Stroke Prediction (Task 14) -->
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
   <script src="stroke-prediction-engine.js"></script>
 
   <!-- Multi-Layer Canvas Architecture (Task 16) -->

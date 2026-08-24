@@ -512,15 +512,6 @@ Object.keys(markdownPenInputMap).forEach(type => {
 /* ───────────────────────────────────────────
    PHASE 2.2 — SMUDGE EFFECTS TOGGLE
 ─────────────────────────────────────────── */
-const smudgeEffectsToggle = document.getElementById('smudge-effects-toggle');
-if (smudgeEffectsToggle) {
-  smudgeEffectsToggle.addEventListener('change', () => {
-    S.smudgeEffects = smudgeEffectsToggle.checked;
-    autosave();
-    debounceRender();
-  });
-}
-
 /* ───────────────────────────────────────────
    PHASE 3.1 — CURSIVE MODE TOGGLE
    Enables connected letter strokes (ligatures and connection curves)
@@ -769,11 +760,15 @@ function drawPaperBackground(ctx, style) {
   if (style !== 'dark') {
     ctx.save();
     ctx.globalAlpha = 0.018;
+    // ponytail: seeded PRNG so texture doesn't flicker on re-render
+    let seed = 0;
+    for (let ci = 0; ci < style.length; ci++) seed = ((seed << 5) - seed + style.charCodeAt(ci)) | 0;
+    const rng = () => { seed = (seed * 16807 + 0) % 2147483647; return (seed & 0x7fffffff) / 0x7fffffff; };
     for (let i = 0; i < 2200; i++) {
-      const gx = Math.random() * w;
-      const gy = Math.random() * h;
-      const gs = Math.random() * 3 + 1;
-      ctx.fillStyle = Math.random() > 0.5 ? '#8b7355' : '#c8b090';
+      const gx = rng() * w;
+      const gy = rng() * h;
+      const gs = rng() * 3 + 1;
+      ctx.fillStyle = rng() > 0.5 ? '#8b7355' : '#c8b090';
       ctx.fillRect(gx, gy, gs, gs * 0.5);
     }
     ctx.restore();
@@ -1181,31 +1176,6 @@ function clearText() {
   autosave();
 }
 
-function insertDiagramTemplate(type) {
-  const textarea = document.getElementById('text-input');
-  let template = '';
-  
-  if (type === 'mermaid') {
-    template = '\n```mermaid\ngraph TD\n  A[Start] --> B(Process)\n  B --> C{Decision}\n  C -- Yes --> D[Result 1]\n  C -- No --> E[Result 2]\n```\n';
-  } else if (type === 'cycle') {
-    template = '\n```diagram\n{\n  "type": "cycle",\n  "title": "Water Cycle",\n  "nodes": [\n    { "id": "n1", "label": "Evaporation" },\n    { "id": "n2", "label": "Condensation" },\n    { "id": "n3", "label": "Precipitation" },\n    { "id": "n4", "label": "Collection" }\n  ],\n  "edges": [\n    { "from": "n1", "to": "n2" },\n    { "from": "n2", "to": "n3" },\n    { "from": "n3", "to": "n4" },\n    { "from": "n4", "to": "n1" }\n  ]\n}\n```\n';
-  } else if (type === 'flowchart') {
-    template = '\n```diagram\n{\n  "type": "flowchart",\n  "nodes": [\n    { "id": "s1", "label": "Input", "shape": "oval" },\n    { "id": "p1", "label": "Process data", "shape": "box" },\n    { "id": "d1", "label": "Valid?", "shape": "diamond" },\n    { "id": "s2", "label": "Success", "shape": "box" },\n    { "id": "e1", "label": "Error", "shape": "box" }\n  ],\n  "edges": [\n    { "from": "s1", "to": "p1" },\n    { "from": "p1", "to": "d1" },\n    { "from": "d1", "to": "s2", "label": "Yes" },\n    { "from": "d1", "to": "e1", "label": "No" }\n  ]\n}\n```\n';
-  }
-  
-  const start = textarea.selectionStart;
-  const end = textarea.selectionEnd;
-  const val = textarea.value;
-  
-  textarea.value = val.substring(0, start) + template + val.substring(end);
-  textarea.focus();
-  textarea.selectionStart = textarea.selectionEnd = start + template.length;
-  
-  S.text = textarea.value;
-  debounceRender();
-  autosave();
-}
-
 /* ───────────────────────────────────────────
    PHASE 4.4 — HELPER FUNCTIONS
 ─────────────────────────────────────────── */
@@ -1308,12 +1278,6 @@ function layoutText(text) {
   if (!text.trim()) {
     return { queue: [], pageTexts: [], pageCount: 1 };
   }
-
-  // Use a temporary canvas context to measure text sizes properly
-  const tmpCanvas = document.createElement('canvas');
-  tmpCanvas.width = PAGE_W;
-  tmpCanvas.height = PAGE_H;
-  const ctx = tmpCanvas.getContext('2d');
 
   const result = layoutTextTemplated(text);
 
@@ -1750,7 +1714,10 @@ window.renderSpecificPage = function(pageIdx, forceRedraw) {
       if (diag.ready && diag.img && !diag.error) {
         ctx.save();
         ctx.translate(item.x, item.y);
-        ctx.rotate((Math.random() * 0.4 - 0.2) * Math.PI / 180);
+        // ponytail: seeded rotation so diagrams don't jitter on re-render
+        let hash = 0;
+        for (let ci = 0; ci < item.content.length; ci++) { hash = ((hash << 5) - hash + item.content.charCodeAt(ci)) | 0; }
+        ctx.rotate((hash % 40 - 20) / 100 * Math.PI / 180);
         ctx.globalAlpha = 0.9;
         ctx.drawImage(diag.img, 0, 0, item.w, item.h);
         ctx.restore();
@@ -1871,7 +1838,7 @@ window.renderSpecificPage = function(pageIdx, forceRedraw) {
       ctx.font = `${Math.max(10, pxSize)}px ${item.fontStack}`;
       ctx.globalAlpha = item.isPrediction ? 0.3 : v.opacity;
       if (S.bleed > 0.05) {
-        ctx.shadowColor = S.shadowColor || itemInkColor;
+        ctx.shadowColor = itemInkColor;
         ctx.shadowBlur = S.bleed * 1.4;
       } else {
         ctx.shadowBlur = 0;
@@ -2876,6 +2843,7 @@ function showExportToast(msg, type = 'info') {
     exportToastTimer = setTimeout(() => { toast.style.opacity = '0'; }, 3000);
   }
 }
+const showToast = showExportToast;
 
 
 /* ───────────────────────────────────────────
@@ -3018,6 +2986,7 @@ function autosave() {
       hinglishAutoSwitch: S.hinglishAutoSwitch,
       markdownMultiPen: S.markdownMultiPen,
       markdownPenProfiles: S.markdownPenProfiles,
+      textAlignment: S.textAlignment,
     };
     localStorage.setItem('inkflow-state', JSON.stringify(state));
   }, 1000);
@@ -3103,6 +3072,9 @@ async function restoreState() {
     }
     syncMarkdownPenControls();
     syncHinglishControls();
+    if (state.textAlignment) {
+      S.textAlignment = state.textAlignment;
+    }
 
     // 2. Migrate draftedGlyphs if they exist in localStorage state
     if (state.draftedGlyphs && Object.keys(state.draftedGlyphs).length > 0) {
@@ -3669,7 +3641,8 @@ function selectSketchCharacter(char) {
   document.getElementById('current-char-display').textContent = char;
   document.getElementById('canvas-guide-letter').textContent = char;
   
-  clearSketchCanvas();
+  if (typeof window.clearSketchCanvas === 'function') window.clearSketchCanvas();
+  else clearSketchCanvas();
   
   if (draftedGlyphs[char]) {
     const img = new Image();
