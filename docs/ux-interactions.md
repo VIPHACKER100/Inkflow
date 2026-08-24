@@ -40,7 +40,7 @@ The 📖 **Study Mode** toolbar button (`toggleStudyMode()`) adds the `study-mod
 1. Type study syntax — e.g. `Q: What is inertia?` followed by `A: Resistance to motion` — see [Handwriting Engine](./handwriting-engine.md#pre-processing-rich-study-syntax).
 2. The 🃏 **Flashcards** toolbar button appears with a live count (`flashcard-count-indicator`).
 3. Click it to open the review modal (`openFlashcardsModal()`): click the card to flip (`flipFlashcard()`), navigate with **◀ Prev / Next ▶** (`prevFlashcard()` / `nextFlashcard()`), and track progress via the "remaining" badge.
-4. Close with ✕ or **Done**.
+4. Close with ✕.
 
 ### Voice to Notes
 The 🎤 mic button (`toggleVoiceInput()`) uses the Web Speech API (`webkitSpeechRecognition`, continuous, `en-US`). Transcripts append directly into the text area; the button lights up while recording. If the API is unsupported, a warning toast shows and the button disables (`initVoiceToNotes()`).
@@ -97,10 +97,10 @@ Configure provider, model, and API key in the **AI Features** section; a status 
 
 | Action | Button | Result |
 | :--- | :--- | :--- |
-| PNG | 🖼 | Downloads per-page 2×-upscaled PNGs (`inkflow-page-N.png`) |
-| JPG | 📷 | Downloads per-page 2× JPEGs (quality 0.97) |
+| PNG | 🖼 | 2×-upscaled PNGs — `inkflow-notes.png` (single page) or `inkflow-notes-pageN.png` (multi-page) |
+| JPG | 📷 | Same naming, 2× JPEGs (quality 0.97) |
 | PDF | 📄 | Single lossless multi-page PDF (`inkflow-notes.pdf`) |
-| SVG | 🎨 | Per-page SVG wrapping the PNG |
+| SVG | 🎨 | `inkflow-notes.svg` / `inkflow-notes-pageN.svg`, wrapping the PNG |
 | Copy | 📋 | Current page copied to the clipboard as PNG |
 | Print | 🖨 | `window.print()` with print CSS |
 

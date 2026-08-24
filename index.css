@@ -935,7 +935,7 @@ html.dark .page-editor:focus {
 }
 
 .align-text.align-top {
-  top: 2px;
+  top: 1px;
 }
 
 .align-text.align-middle {
@@ -944,7 +944,7 @@ html.dark .page-editor:focus {
 }
 
 .align-text.align-bottom {
-  bottom: 2px;
+  bottom: 5px;
 }
 
 /* Print styles */
@@ -1990,29 +1990,7 @@ html.dark .drop-zone {
   color: var(--accent);
 }
 
-/* ═══════════════════════════════════════════
-   STUDY MODE LAYOUT
-════════════════════════════════════════════ */
-body.study-mode-active #toolbar {
-  transform: translateY(-100%);
-}
-
-body.study-mode-active #app {
-  grid-template-columns: 0px 1fr !important;
-  padding-top: 0 !important;
-}
-
-body.study-mode-active #sidebar {
-  opacity: 0 !important;
-  pointer-events: none !important;
-  transform: translateX(-100%) !important;
-}
-
-body.study-mode-active #page-nav {
-  transform: translate(-50%, 100px) !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
+/* Note: Study Mode Layout consolidated at the end of the file */
 
 /* ═══════════════════════════════════════════
    STUDY FLASHCARDS MODAL
@@ -2394,26 +2372,83 @@ body.study-mode-active #page-nav {
    STUDY MODE ACTIVE STATE
 ═══════════════════════════════════════════ */
 body.study-mode-active #sidebar {
-  display: none;
-}
-
-body.study-mode-active #toolbar {
-  opacity: 0.4;
-  pointer-events: none;
-  transition: opacity 0.3s;
-}
-
-body.study-mode-active #toolbar:hover {
-  opacity: 1;
-  pointer-events: all;
-}
-
-body.study-mode-active #canvas-area {
-  padding-left: 0 !important;
+  display: none !important;
 }
 
 body.study-mode-active #app {
-  grid-template-columns: 0 1fr;
+  grid-template-columns: 1fr !important;
+  padding-top: 56px !important;
+}
+
+body.study-mode-active #canvas-area {
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+  width: 100% !important;
+}
+
+body.study-mode-active #canvas-area::before {
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+}
+
+/* Floating/Dimmed Top Toolbar in Study Mode */
+body.study-mode-active #toolbar {
+  opacity: 0.5;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(0) !important;
+}
+
+body.study-mode-active #toolbar:hover,
+body.study-mode-active #toolbar:focus-within {
+  opacity: 1;
+}
+
+/* Hide standard page nav in study mode */
+body.study-mode-active #page-nav {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translate(-50%, 40px) !important;
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+/* Touch devices have no hover — keep controls clearly visible */
+@media (hover: none) {
+  body.study-mode-active #toolbar {
+    opacity: 0.85;
+  }
+}
+
+/* Floating Exit Button Styling */
+#btn-exit-study-mode {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 1000;
+  box-shadow: 0 6px 20px rgba(192, 98, 42, 0.35), 0 2px 8px rgba(0, 0, 0, 0.12);
+  font-weight: 600;
+  background: var(--accent);
+  color: #ffffff;
+  border: none;
+  border-radius: 40px;
+  padding: 12px 24px;
+  font-size: 14px;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s, box-shadow 0.2s;
+}
+
+#btn-exit-study-mode:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 8px 24px rgba(192, 98, 42, 0.45), 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: var(--accent);
+}
+
+#btn-exit-study-mode:active {
+  transform: translateY(0) scale(0.98);
 }
 
 #btn-study-mode.active {

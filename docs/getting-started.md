@@ -84,7 +84,7 @@ Inkflow/
 
 | Category | Features |
 | :--- | :--- |
-| **Handwriting** | 16+ handwriting fonts, 10 paper styles, ink presets, bleed/pressure, auto-fit, alignment |
+| **Handwriting** | 14 fonts (English + Devanagari handwriting, 2 clean fallbacks) + custom uploads, 10 paper styles, ink presets, bleed/pressure, auto-fit, alignment |
 | **Layouts** | Standard, Two-Column, Cornell Study Notes |
 | **Study Tools** | Study Mode, Flashcards (auto-extracted), Voice-to-Notes, Notebooks & Folders |
 | **AI** | Smart Arrange, Summarize, Grammar Fix, Lecture→Notes, Assignment Generator (OpenRouter/Anthropic) |

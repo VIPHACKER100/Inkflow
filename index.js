@@ -1027,15 +1027,15 @@ function getAlignmentOffset(alignment, fontSize, lineHeight) {
   
   switch (alignment) {
     case 'top':
-      // Text touches upper line (shift up by ~40% of line height)
-      return -(lineH * 0.35);
+      // Upper: Text touches upper line (shift baseline up towards top line)
+      return -(lineH * 0.62);
     case 'bottom':
-      // Text sits on lower line (shift down by ~40% of line height)
-      return (lineH * 0.35);
+      // Lower: Text baseline sits directly on the lower line
+      return 0;
     case 'middle':
     default:
-      // Centered between lines (no offset)
-      return 0;
+      // Middle: Text centered vertically between upper and lower lines
+      return -(lineH * 0.32);
   }
 }
 
@@ -2026,6 +2026,7 @@ function layoutTextCleanStandard(cleanText, S, PAGE_W, PAGE_H, ctx) {
     }
 
     const lineH = blockFontSize * S.lineHeight;
+    const alignOffset = getAlignmentOffset(S.textAlignment, blockFontSize, S.lineHeight);
 
     // Spacings
     let topSp = 10;
@@ -2092,7 +2093,7 @@ function layoutTextCleanStandard(cleanText, S, PAGE_W, PAGE_H, ctx) {
       queue.push({
         ch: bulletChar,
         x: bulletX,
-        y: y,
+        y: y + alignOffset,
         v,
         pageIdx,
         isIndic: false,
@@ -2175,7 +2176,7 @@ function layoutTextCleanStandard(cleanText, S, PAGE_W, PAGE_H, ctx) {
         let item = {
           ch,
           x,
-          y,
+          y: y + alignOffset,
           v,
           pageIdx,
           isIndic: false,
@@ -5228,6 +5229,12 @@ function toggleStudyMode() {
   if (floatingBtn) {
     floatingBtn.style.display = isActive ? 'inline-flex' : 'none';
   }
+
+  // Close mobile sidebar overlay if open
+  if (isActive) {
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) sidebar.classList.remove('open');
+  }
   
   if (toolbarBtn) {
     if (isActive) {
@@ -5236,7 +5243,22 @@ function toggleStudyMode() {
       toolbarBtn.classList.remove('active');
     }
   }
+
+  // Smoothly center the current page canvas in the viewport
+  setTimeout(() => {
+    const pageToScroll = pages[S.currentPage] || pages[0];
+    if (pageToScroll) {
+      pageToScroll.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, 60);
 }
+
+// Global Escape key listener to exit Study Mode easily
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.body.classList.contains('study-mode-active')) {
+    toggleStudyMode();
+  }
+});
 
 /* ───────────────────────────────────────────
    FLASHCARDS REVIEW DECK ENGINE
@@ -5353,7 +5375,17 @@ function initVoiceToNotes() {
   
   voiceRecognition.onerror = (e) => {
     console.error('Speech recognition error:', e);
-    toggleVoiceInput();
+    let errorMsg = 'Speech recognition error occurred.';
+    if (e.error === 'not-allowed') {
+      errorMsg = 'Microphone permission denied. Please allow microphone access.';
+    } else if (e.error === 'no-speech') {
+      errorMsg = 'No speech detected. Please speak clearly.';
+    } else if (e.error === 'network') {
+      errorMsg = 'Network error during speech recognition.';
+    } else if (e.error === 'aborted') {
+      errorMsg = 'Speech recognition stopped.';
+    }
+    showToast(errorMsg, 'error');
   };
   
   voiceRecognition.onresult = (event) => {
@@ -5379,12 +5411,17 @@ function toggleVoiceInput() {
   if (!voiceRecognition) return;
   
   if (isVoiceActive) {
-    voiceRecognition.stop();
+    try {
+      voiceRecognition.stop();
+    } catch (err) {
+      console.warn('Failed to stop speech recognition:', err);
+    }
   } else {
     try {
       voiceRecognition.start();
     } catch (err) {
       console.error('Failed to start speech recognition:', err);
+      showToast('Failed to start speech recognition. Please try again.', 'error');
     }
   }
 }
