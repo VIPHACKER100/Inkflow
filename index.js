@@ -325,7 +325,10 @@ function createPage(pageNum) {
 
   const worksheetHeader = document.createElement('div');
   worksheetHeader.className = 'worksheet-header';
-  worksheetHeader.style.display = S.paperStyle === 'ruled' ? 'flex' : 'none';
+  // Must match the rule in setPaper()/restoreState(): the canvas draws the
+  // header box for both 'ruled' and 'clean' when showHeaderBox is enabled.
+  worksheetHeader.style.display =
+    (S.paperStyle === 'ruled' || S.paperStyle === 'clean') && S.showHeaderBox !== false ? 'flex' : 'none';
 
   const dateRow = document.createElement('div');
   dateRow.className = 'worksheet-field-row';
@@ -562,15 +565,17 @@ function updateEditorStyles(editor, canvas) {
 
 function getGlobalTextFromEditors() {
   const editors = document.querySelectorAll('.page-editor');
-  let text = '';
+  const parts = [];
   editors.forEach((editor) => {
     let t = editor.innerText;
     if (t.endsWith('\n')) {
       t = t.slice(0, -1);
     }
-    text += t;
+    parts.push(t);
   });
-  return text;
+  // Pages must be joined with a newline, otherwise the last word of one
+  // page fuses with the first word of the next when syncing editor text.
+  return parts.join('\n');
 }
 
 window.addEventListener('resize', () => {
@@ -3218,12 +3223,27 @@ function showExportToast(msg, type = 'info') {
   }
 }
 
+let appToastTimer = null;
+function showToast(msg, type = 'info') {
+  let toast = document.getElementById('app-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'app-toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.className = 'export-toast export-toast--' + type;
+  toast.style.opacity = '1';
+  clearTimeout(appToastTimer);
+  appToastTimer = setTimeout(() => { toast.style.opacity = '0'; }, 3000);
+}
+
 
 /* ───────────────────────────────────────────
    PHASE 8.6–8.7 — AUTOSAVE & STATE RESTORE
 ─────────────────────────────────────────── */
 const DB_NAME = 'InkflowDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = 'draftedGlyphs';
 let dbInstance = null;
 
@@ -3235,6 +3255,12 @@ function getDB() {
       const db = e.target.result;
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME);
+      }
+      // Both stores must be created here: onupgradeneeded only fires when the
+      // version increases, so a handler that creates just one store would
+      // permanently lock the other out of this database.
+      if (!db.objectStoreNames.contains(NOTEBOOKS_STORE)) {
+        db.createObjectStore(NOTEBOOKS_STORE, { keyPath: 'id' });
       }
     };
     request.onsuccess = (e) => {
@@ -5173,11 +5199,17 @@ function applyTheme(themeId) {
     const valPress = document.getElementById('pressure-val');
     if (valPress) valPress.textContent = theme.pressure;
   }
-  // Toggle worksheet header visibility based on paper style
+  // Toggle worksheet header visibility based on paper style and the
+  // header checkbox, matching the rule used by setPaper()/restoreState().
+  const showHeader = (S.paperStyle === 'ruled' || S.paperStyle === 'clean') && S.showHeaderBox !== false;
   document.querySelectorAll('.worksheet-header').forEach(wh => {
-    wh.style.display = S.paperStyle === 'ruled' ? 'flex' : 'none';
+    wh.style.display = showHeader ? 'flex' : 'none';
   });
-  
+  const headerToggleContainer = document.getElementById('header-toggle-container');
+  if (headerToggleContainer) {
+    headerToggleContainer.style.display = (S.paperStyle === 'ruled' || S.paperStyle === 'clean') ? 'flex' : 'none';
+  }
+
   debounceRender();
   autosave();
 }
@@ -5364,7 +5396,7 @@ setTimeout(initVoiceToNotes, 500);
    NOTEBOOKS & FOLDERS INDEXEDDB PERSISTENCE
 ─────────────────────────────────────────── */
 const NOTEBOOKS_DB_NAME = 'InkflowDB';
-const NOTEBOOKS_DB_VERSION = 1;
+const NOTEBOOKS_DB_VERSION = 2;
 const NOTEBOOKS_STORE = 'notebooks';
 let notebooksDbInstance = null;
 
@@ -5376,6 +5408,10 @@ function getNotebooksDB() {
       const db = e.target.result;
       if (!db.objectStoreNames.contains(NOTEBOOKS_STORE)) {
         db.createObjectStore(NOTEBOOKS_STORE, { keyPath: 'id' });
+      }
+      // See getDB(): both stores are created in every upgrade path.
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME);
       }
     };
     request.onsuccess = (e) => {
