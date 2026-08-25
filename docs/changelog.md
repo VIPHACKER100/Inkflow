@@ -4,6 +4,35 @@ All notable changes to Inkflow are documented in this file.
 
 ---
 
+## [1.4.0] — 2026-08-25
+
+### ✨ Added
+- **6 Diagram Types**: New dropdown with Cycle, Flowchart, Hierarchy (Tree), Pipeline, Pyramid, and Mermaid diagram options. Each uses rough.js for hand-drawn aesthetic.
+- **New Shapes — Pill & Hexagon**: Added `pill`/`rounded` and `hexagon` shape types to diagram rendering (both rough.js and canvas2d), including animation support.
+- **Dated Paper Style**: New "Dated" paper style with a date column line to the left of the margin for date-stamped notes.
+- **Transparent PNG Export**: New `✨ Transparent` export button that renders text on a transparent background without paper grain or rulings.
+- **Cursive Connector Rendering**: New `renderConnectionStroke()` function that draws smooth cursive connections between characters using quadratic Bezier curves.
+- **Edge Label Rendering**: Diagram edges now support `label` property rendered with a background pill for readability.
+- **Node Label Rendering**: Diagram nodes support `label` property rendered below shapes via new `diagram-label` queue items.
+- **Diagram Engine Module**: Extracted `layoutCycle`, `layoutFlowchart`, `layoutHierarchy`, `getDiagramImage`, `parseDiagramJSON`, `positionDiagramNodes` into standalone `diagram-engine.js` module.
+- **Tests**: Added `diagram-engine.test.js` (23 tests) and `cursive-connector.test.js` (27 tests).
+
+### 🛠️ Fixed
+- **Cursive Exit/Entry Points**: Fixed `charExitPoints`/`charEntryPoints` Y coordinates from top-relative (0.1–0.55) to baseline-relative (0.02), eliminating diagonal slash-through-text bug on characters like L, T, V, W.
+- **fontSwitcher Null Dereference**: Fixed 8 call sites where `fontSwitcher?.getFontStack()` could return null, adding fallback to `S.font`.
+- **n.label Undefined Crash**: Diagram label rendering loop now skips nodes with no label; `ctx.font` set before `measureText`.
+- **Mermaid Object URL Leak**: Blob URLs from Mermaid rendering are now revoked after image loads (`URL.revokeObjectURL(url)`).
+- **autoFitFontSize Fallback**: Defaults to minimum font size (14) when no size fits the page.
+- **Collab Engine Event Listener Leak**: `disconnect()` now removes the input event listener to prevent memory leaks.
+- **Null Guards**: Added optional chaining for slider wiring loop, fontSelect, inkColorInput listeners, cursive getExitPoint/getEntryPoint, and audio-recorder timerDisplay/sizeDisplay.
+
+### ♻️ Changed
+- **Diagram Queue Rendering**: Split `type: 'diagram'` queue items into individual shape+edge items for proper sequential rendering.
+- **Edge Label Background**: Now derives from paper style (dark: `rgba(26,26,46,0.85)`, light: `rgba(247,243,234,0.85)`).
+- **Script Loading**: `diagram-engine.js` loads without `defer` before `index.js` for proper global availability.
+
+---
+
 ## [1.2.1] — 2026-06-20
 
 ### ✨ Added
@@ -100,15 +129,6 @@ All notable changes to Inkflow are documented in this file.
 
 ---
 
-## [Unreleased]
-
-### Planned
-- Extended character sets (diacritics, special symbols)
-- Localization support (i18n)
-- Bullet / Mind-map templates for AI output note styling
-
----
-
 ## [1.3.0] — 2026-06-15
 
 ### ✨ Added
@@ -129,3 +149,12 @@ All notable changes to Inkflow are documented in this file.
 - **`cropTemplateCell()`**: Signature updated to `cropTemplateCell(index, sheetName)` to support slicing character cells from multiple templates.
 - **`generateDownloadTemplate()`**: Updated to dynamically name files and draw guide characters depending on the active sheet.
 - **`layoutText()` Engine**: Now includes character-level overflow detection in all layout modes; characters exceeding the right boundary trigger a soft line break with page-break checks.
+
+---
+
+## [Unreleased]
+
+### Planned
+- Extended character sets (diacritics, special symbols)
+- Localization support (i18n)
+- Bullet / Mind-map templates for AI output note styling

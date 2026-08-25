@@ -23,6 +23,7 @@ Inkflow features A4 aspect ratio rendering ($794\text{px} \times 1123\text{px}$)
 | **Dot Grid** | Warm beige (`#f6f2ec`) | Subtle dotted grid layout at 28px intervals (`#c0b49a` at 0.35 opacity) |
 | **Engineering** | Pale green (`#eef6ed`) | Technical grid: minor lines every 10px (0.18 opacity), major lines every 50px (0.4 opacity), with reddish margins |
 | **Music Staff** | Soft ivory (`#faf7f0`) | 5-line music staff blocks with 8px line spacing, 72px staff spacing, and vertical bracket endpoints |
+| **Dated** | Cream (`#f7f3ea`) | Ruled lines with a date column line to the left of the margin |
 
 ---
 
@@ -39,7 +40,8 @@ Inkflow features A4 aspect ratio rendering ($794\text{px} \times 1123\text{px}$)
    ctx.fillRect(0, 0, w, h);
    ```
 3. **Paper Grain Noise**: Run 2,200 iterations drawing micro-rectangles (1–4px, opacity 0.018) in warm organic tones to mimic tactile paper fibers.
-4. **Margin Lines**: For `ruled` and `legal` styles, draw a vertical red margin guide (`#e08080`) at $x = \text{S.margin} - 10$.
+4. **Margin Lines**: For `ruled`, `legal`, and `dated` styles, draw a vertical red margin guide (`#e08080`) at $x = \text{S.margin} - 10$.
+   - For `dated` style, also draw a date column line at $x = 36$ to the left of the margin.
 5. **Ruling Lines**: Draw horizontal lines separated by:
    $$\Delta y = \text{S.fontSize} \times \text{S.lineHeight}$$
 6. **Grid Layouts**:

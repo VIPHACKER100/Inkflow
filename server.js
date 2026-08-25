@@ -9,7 +9,8 @@ const wss = new WebSocket.Server({ server });
 let documentText = "";
 let serverRevision = 0;
 const operationHistory = []; // Array of { revision, op }
-const MAX_HISTORY = 1000; // ponytail: cap history to prevent memory leak
+const MAX_HISTORY = 1000;
+let historyOffset = 0; // tracks how many entries have been discarded from front
 const connectedClients = new Map();
 
 function generateColor() {
@@ -111,8 +112,9 @@ wss.on('connection', (ws) => {
 
         // OT logic: transform incoming operation against all history operations that happened after clientRevision
         if (clientRevision < 0 || clientRevision > serverRevision) { ws.close(); return; }
+        if (clientRevision < historyOffset) { ws.close(); return; } // history too old
         for (let i = clientRevision; i < serverRevision; i++) {
-          const pastOp = operationHistory[i].op;
+          const pastOp = operationHistory[i - historyOffset].op;
           op = transform(op, pastOp);
         }
 
@@ -126,9 +128,11 @@ wss.on('connection', (ws) => {
         // Save to history and increment revision
         operationHistory.push({ revision: serverRevision, op });
         serverRevision++;
-        // Compact history if it exceeds limit (all active clients are tracked by revision)
+        // Compact history if it exceeds limit
         if (operationHistory.length > MAX_HISTORY) {
-          operationHistory.splice(0, operationHistory.length - MAX_HISTORY);
+          const discard = operationHistory.length - MAX_HISTORY;
+          operationHistory.splice(0, discard);
+          historyOffset += discard;
         }
 
 

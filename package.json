@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/VIPHACKER100/Inkflow#readme",
   "dependencies": {
+    "jsdom": "^30.0.1",
     "ws": "^8.21.0"
   },
   "devDependencies": {

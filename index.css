@@ -2337,6 +2337,7 @@ html.dark .drop-zone {
 .flex-align-center-gap-6 { display: flex; align-items: center; gap: 6px; }
 .flex-1 { flex: 1; }
 .d-none { display: none !important; }
+.hidden { display: none; }
 .recording-status { margin-top: 10px; padding: 10px; background: var(--bg-alt); border-radius: 6px; display: flex; align-items: center; gap: 10px; font-size: 14px; }
 .recording-size { color: var(--text-muted); font-size: 12px; }
 .template-actions-extended { margin-top: 8px; justify-content: center; gap: 8px; }

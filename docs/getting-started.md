@@ -52,11 +52,13 @@ npx -y http-server -p 8000
 
 ```
 inkflow/
-├── index.html          # Main HTML structure and CDN imports
-├── index.css           # Complete stylesheet with design tokens
-├── index.js            # All application logic and engines
-├── LICENSE             # Project license
-└── docs/               # Documentation (you are here)
+├── index.html              # Main HTML structure and CDN imports
+├── index.css               # Complete stylesheet with design tokens
+├── index.js                # All application logic and engines
+├── diagram-engine.js       # Diagram layout algorithms, Mermaid rendering, rough.js shapes
+├── cursive-connector.js    # Cursive mode exit/entry points, Bezier connections
+├── LICENSE                 # Project license
+└── docs/                   # Documentation (you are here)
     ├── README.md           # Documentation index
     ├── system-architecture.md
     ├── state-management.md
@@ -98,10 +100,11 @@ All dependencies are loaded via CDN — no `npm install` required. `html2canvas`
 ## First Steps
 
 1. **Type or paste text** into the textarea on the left sidebar, or **click directly on the page** to edit inline
-2. **Choose a paper style** — ruled, grid, plain, legal, vintage, or dark
-3. **Adjust typography** — font family, size, line height
+2. **Choose a paper style** — ruled, grid, plain, legal, vintage, dark, dot grid, engineering, music staff, or dated
+3. **Adjust typography** — font family, size, line height, word spacing
 4. **Tune handwriting style** — rotation, ink bleed, pen pressure
-5. **Export** — download as PNG, JPG, SVG, PDF, copy to clipboard, or print directly
+5. **Add diagrams** — select Cycle, Flowchart, Hierarchy, Pipeline, Pyramid, or Mermaid from the diagram dropdown
+6. **Export** — download as PNG, Transparent PNG, JPG, SVG, PDF, copy to clipboard, or print directly
 
 ### Optional: AI Features
 1. Select your AI provider (OpenRouter or Anthropic) and enter your API key

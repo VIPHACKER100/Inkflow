@@ -117,3 +117,4 @@ Bottom pill-style navigation for multi-page A4 transitions.
 | Dot Grid | `#f6f2ec` | Warm beige grid of dots at 28px intervals |
 | Engineering | `#eef6ed` | Pale green grid with 10px minor and 50px major lines |
 | Music Staff | `#faf7f0` | Soft ivory sheet with 5-line music staffs |
+| Dated | `#f7f3ea` | Cream notebook with ruled lines and date column |

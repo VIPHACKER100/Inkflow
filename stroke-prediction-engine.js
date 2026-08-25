@@ -48,8 +48,6 @@ class StrokePredictionEngine {
    * Initializes the engine, tokenizer, and TensorFlow.js sequential model structure.
    */
   async initialize() {
-    console.log("[Prediction] Initializing prediction engine...");
-    
     // Set up a simple BPE-like vocab mapping common words/characters to tokens
     this.vocab = [" ", ...this.wordList, ..."abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".split("")];
     this.vocabSize = this.vocab.length;
@@ -74,12 +72,9 @@ class StrokePredictionEngine {
           activation: 'softmax'
         }));
         
-        console.log("[Prediction] TensorFlow.js model structure initialized successfully.");
       } catch (err) {
         console.warn("[Prediction] Failed to build TFJS model layers: ", err);
       }
-    } else {
-      console.log("[Prediction] TensorFlow.js not detected; running in smart lookup fallback mode.");
     }
   }
 
@@ -88,7 +83,6 @@ class StrokePredictionEngine {
    * In a production setup, this would load weights via tf.loadLayersModel().
    */
   async loadModel(modelPath = "") {
-    console.log(`[Prediction] Loading model from path: ${modelPath || "default-built-in"}`);
     return true;
   }
 
@@ -97,7 +91,6 @@ class StrokePredictionEngine {
    */
   setTemperature(temp) {
     this.temperature = Math.max(0.1, Math.min(2.0, temp));
-    console.log(`[Prediction] Temperature set to ${this.temperature}`);
   }
 
   /**

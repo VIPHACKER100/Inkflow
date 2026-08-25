@@ -40,6 +40,19 @@ Reads directly from `pages[]` canvas elements at native A4 resolution ($794 \tim
 
 ---
 
+## 1b. Transparent PNG Export (v1.4.0)
+
+Renders text on a transparent background — no paper grain, no rulings, no decorations. Useful for compositing and layering.
+
+### Process
+1. Create a fresh offscreen canvas at A4 resolution
+2. Fill with transparent background
+3. Call `renderQueueItems()` to draw all characters
+4. Call `renderCursiveConnectionsOn()` if cursive mode is active
+5. Export via `canvas.toBlob('image/png')` and download as `inkflow-transparent.png`
+
+---
+
 ## 2. SVG Export
 
 Wraps a full-resolution PNG data URL inside a standard SVG `<image>` element:

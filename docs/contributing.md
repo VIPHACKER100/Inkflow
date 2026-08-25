@@ -40,10 +40,12 @@ Inkflow is a **single-page, zero-dependency-install** application. Contributions
 ## File Structure
 
 ```
-index.html    # Structure and CDN imports only
-index.css     # All styles — design tokens, components, layouts
-index.js      # All logic — engines, state, UI handlers
-docs/         # Documentation (markdown)
+index.html          # Structure and CDN imports only
+index.css           # All styles — design tokens, components, layouts
+index.js            # All logic — engines, state, UI handlers
+diagram-engine.js   # Diagram layout algorithms, Mermaid rendering
+cursive-connector.js # Cursive mode exit/entry points, Bezier connections
+docs/               # Documentation (markdown)
 ```
 
 Do NOT split JS/CSS into additional files without discussion. The single-file architecture is intentional.
@@ -96,6 +98,8 @@ Use GitHub Issues with one of these templates:
 - Additional paper styles (e.g. isometric, manuscript, ledger)
 - New handwriting fonts
 - Extended character sets (diacritics, CJK, Arabic)
+- Additional diagram types (e.g. Gantt, sequence, class diagrams)
 - Accessibility improvements (ARIA labels, screen reader testing)
 - Performance optimizations for large documents
 - Localization / i18n support
+- Unit and integration tests for rendering engines

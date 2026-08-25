@@ -19,65 +19,68 @@ class CursiveConnector {
     this.ligaturePairs = ['th', 'ch', 'sh', 'st', 'ct', 'll', 'ff', 'fi', 'fl'];
     
     // Character exit points (right side of character) - normalized to [0,1] scale
-    // These are approximate exit points for lowercase letters
+    // x: horizontal position (0=left, 1=right edge of char)
+    // y: vertical offset BELOW baseline (0=at baseline, 1=fontSize below)
+    // Letters with descenders (g,j,p,q,y) connect higher (at x-height)
     this.charExitPoints = {
-      'a': { x: 0.8, y: 0.3 },
-      'b': { x: 0.75, y: 0.35 },
-      'c': { x: 0.8, y: 0.4 },
-      'd': { x: 0.75, y: 0.35 },
-      'e': { x: 0.8, y: 0.4 },
-      'f': { x: 0.6, y: 0.1 },
-      'g': { x: 0.75, y: 0.4 },
-      'h': { x: 0.75, y: 0.35 },
-      'i': { x: 0.5, y: 0.25 },
-      'j': { x: 0.45, y: 0.25 },
-      'k': { x: 0.75, y: 0.35 },
-      'l': { x: 0.5, y: 0.25 },
-      'm': { x: 0.85, y: 0.4 },
-      'n': { x: 0.75, y: 0.4 },
-      'o': { x: 0.8, y: 0.4 },
-      'p': { x: 0.75, y: 0.55 },
-      'q': { x: 0.75, y: 0.55 },
-      'r': { x: 0.65, y: 0.4 },
-      's': { x: 0.75, y: 0.4 },
-      't': { x: 0.55, y: 0.2 },
-      'u': { x: 0.75, y: 0.4 },
-      'v': { x: 0.75, y: 0.4 },
-      'w': { x: 0.85, y: 0.4 },
-      'x': { x: 0.75, y: 0.4 },
-      'y': { x: 0.75, y: 0.5 },
-      'z': { x: 0.75, y: 0.4 }
+      'a': { x: 0.8, y: 0.02 },
+      'b': { x: 0.75, y: 0.02 },
+      'c': { x: 0.8, y: 0.02 },
+      'd': { x: 0.75, y: 0.02 },
+      'e': { x: 0.8, y: 0.02 },
+      'f': { x: 0.6, y: 0.02 },
+      'g': { x: 0.75, y: 0.02 },
+      'h': { x: 0.75, y: 0.02 },
+      'i': { x: 0.5, y: 0.02 },
+      'j': { x: 0.45, y: 0.02 },
+      'k': { x: 0.75, y: 0.02 },
+      'l': { x: 0.5, y: 0.02 },
+      'm': { x: 0.85, y: 0.02 },
+      'n': { x: 0.75, y: 0.02 },
+      'o': { x: 0.8, y: 0.02 },
+      'p': { x: 0.75, y: 0.02 },
+      'q': { x: 0.75, y: 0.02 },
+      'r': { x: 0.65, y: 0.02 },
+      's': { x: 0.75, y: 0.02 },
+      't': { x: 0.55, y: 0.02 },
+      'u': { x: 0.75, y: 0.02 },
+      'v': { x: 0.75, y: 0.02 },
+      'w': { x: 0.85, y: 0.02 },
+      'x': { x: 0.75, y: 0.02 },
+      'y': { x: 0.75, y: 0.02 },
+      'z': { x: 0.75, y: 0.02 }
     };
 
     // Character entry points (left side of character) - normalized to [0,1] scale
-    // These are approximate entry points for lowercase letters
+    // x: horizontal position (0=left edge, 1=right), y: offset below baseline
+    // Ascenders (b,d,f,h,k,l,t) start stroke from above, descenders from baseline
     this.charEntryPoints = {
-      'a': { x: 0.2, y: 0.3 },
-      'b': { x: 0.2, y: 0.1 },
-      'c': { x: 0.2, y: 0.4 },
-      'd': { x: 0.2, y: 0.1 },
-      'e': { x: 0.2, y: 0.4 },
-      'f': { x: 0.4, y: 0.1 },
-      'g': { x: 0.2, y: 0.1 },
-      'h': { x: 0.2, y: 0.1 },
-      'i': { x: 0.4, y: 0.25 },
-      'j': { x: 0.45, y: 0.25 },
-      'k': { x: 0.2, y: 0.1 },
-      'l': { x: 0.4, y: 0.1 },
-      'm': { x: 0.1, y: 0.4 },
-      'n': { x: 0.2, y: 0.4 },
-      'o': { x: 0.2, y: 0.4 },
-      'p': { x: 0.2, y: 0.1 },
-      'q': { x: 0.2, y: 0.1 },
-      'r': { x: 0.2, y: 0.4 },
-      's': { x: 0.2, y: 0.4 },
-      't': { x: 0.4, y: 0.1 },
-      'u': { x: 0.2, y: 0.4 },
-      'v': { x: 0.1, y: 0.4 },
-      'w': { x: 0.1, y: 0.4 },
-      'x': { x: 0.2, y: 0.4 },
-      'y': { x: 0.2, y: 0.4 },
-      'z': { x: 0.2, y: 0.4 }
+      'a': { x: 0.15, y: 0.02 },
+      'b': { x: 0.15, y: 0.02 },
+      'c': { x: 0.15, y: 0.02 },
+      'd': { x: 0.15, y: 0.02 },
+      'e': { x: 0.15, y: 0.02 },
+      'f': { x: 0.15, y: 0.02 },
+      'g': { x: 0.15, y: 0.02 },
+      'h': { x: 0.15, y: 0.02 },
+      'i': { x: 0.3, y: 0.02 },
+      'j': { x: 0.35, y: 0.02 },
+      'k': { x: 0.15, y: 0.02 },
+      'l': { x: 0.3, y: 0.02 },
+      'm': { x: 0.1, y: 0.02 },
+      'n': { x: 0.15, y: 0.02 },
+      'o': { x: 0.15, y: 0.02 },
+      'p': { x: 0.15, y: 0.02 },
+      'q': { x: 0.15, y: 0.02 },
+      'r': { x: 0.2, y: 0.02 },
+      's': { x: 0.15, y: 0.02 },
+      't': { x: 0.3, y: 0.02 },
+      'u': { x: 0.15, y: 0.02 },
+      'v': { x: 0.15, y: 0.02 },
+      'w': { x: 0.1, y: 0.02 },
+      'x': { x: 0.15, y: 0.02 },
+      'y': { x: 0.15, y: 0.02 },
+      'z': { x: 0.15, y: 0.02 }
     };
 
     // Pre-defined ligature glyph shapes stored as SVG paths
@@ -162,7 +165,8 @@ class CursiveConnector {
    * @returns {object} Exit point {x, y}
    */
   getExitPoint(char, charWidth, charHeight) {
-    const normalized = this.charExitPoints[char.toLowerCase()] || { x: 0.8, y: 0.4 };
+    if (!char) return { x: charWidth * 0.8, y: charHeight * 0.02 };
+    const normalized = this.charExitPoints[char.toLowerCase()] || { x: 0.8, y: 0.02 };
     return {
       x: charWidth * normalized.x,
       y: charHeight * normalized.y
@@ -178,7 +182,8 @@ class CursiveConnector {
    * @returns {object} Entry point {x, y}
    */
   getEntryPoint(char, charWidth, charHeight) {
-    const normalized = this.charEntryPoints[char.toLowerCase()] || { x: 0.2, y: 0.4 };
+    if (!char) return { x: charWidth * 0.2, y: charHeight * 0.02 };
+    const normalized = this.charEntryPoints[char.toLowerCase()] || { x: 0.2, y: 0.02 };
     return {
       x: charWidth * normalized.x,
       y: charHeight * normalized.y
@@ -204,24 +209,21 @@ class CursiveConnector {
 
     ctx.save();
     
-    // Calculate actual exit and entry points in canvas space
     const startX = exitPos.x + exitPoint.x;
     const startY = exitPos.y + exitPoint.y;
     const endX = entryPos.x + entryPoint.x;
     const endY = entryPos.y + entryPoint.y;
 
-    // Quadratic Bezier curve with control point for natural curve
+    // Control point: curve upward between characters for natural cursive look
     const controlX = (startX + endX) / 2;
-    const controlY = (startY + endY) / 2 - (fontSize * 0.1); // Curve upward slightly
+    const controlY = Math.min(startY, endY) - (fontSize * 0.15);
 
-    // Set stroke style (Req 3.9: same ink color and pressure variation)
     ctx.strokeStyle = inkColor;
-    ctx.lineWidth = Math.max(0.5, fontSize * 0.05 * pressure);
+    ctx.lineWidth = Math.max(0.8, fontSize * 0.06 * pressure);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.globalAlpha = 0.9; // Slightly transparent for natural look
+    ctx.globalAlpha = 0.85;
 
-    // Draw quadratic Bezier curve
     ctx.beginPath();
     ctx.moveTo(startX, startY);
     ctx.quadraticCurveTo(controlX, controlY, endX, endY);

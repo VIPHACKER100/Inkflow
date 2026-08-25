@@ -34,7 +34,7 @@ Thin wrapper around `layoutText()` that returns only the character queue.
 
 ### `drawPaperBackground(ctx, style)`
 Paints the paper background on a canvas context.
-- **Parameters**: `ctx` (CanvasRenderingContext2D), `style` (String — `ruled|plain|grid|legal|vintage|dark|dot_grid|engineering|music`)
+- **Parameters**: `ctx` (CanvasRenderingContext2D), `style` (String — `ruled|plain|grid|legal|vintage|dark|dot_grid|engineering|music|dated`)
 - **Side Effects**: Also invokes `drawLayoutDecorations()` to overlay layout dividers and labels.
 
 ### `drawLayoutDecorations(ctx, noteLayout)`
@@ -175,6 +175,18 @@ Shared helper that creates a temporary anchor element, triggers the download, an
 ### `showExportToast(msg, type)`
 Displays a non-blocking toast notification with auto-dismiss for success/warn/error types.
 
+### `exportTransparentPNG()`
+**v1.4.0** — Exports rendered text on a transparent background (no paper grain, no rulings, no decorations). Renders all pages to a transparent canvas and downloads as PNG.
+- **Side Effects**: Calls `renderQueueItems()` and `renderCursiveConnectionsOn()` to draw text directly onto transparent canvas.
+
+### `renderQueueItems(queue, ctx, pageIndex)`
+**v1.4.0** — Renders a subset of the character queue onto a given canvas context. Used by both static rendering and transparent export.
+- **Parameters**: `queue` (Array), `ctx` (CanvasRenderingContext2D), `pageIndex` (Integer)
+
+### `renderCursiveConnectionsOn(ctx, queue, pageIndex)`
+**v1.4.0** — Renders cursive connection strokes between characters on a given canvas context. Only active when `S.cursive` is enabled.
+- **Parameters**: `ctx` (CanvasRenderingContext2D), `queue` (Array), `pageIndex` (Integer)
+
 ---
 
 ## UI Helpers
@@ -229,3 +241,39 @@ Redraws the template alignment overlay for the active upload template sheet usin
 **v1.3.0** — Slices and crops a character cell from the uploaded scanned template image for the specified sheet.
 - **Parameters**: `index` (Integer) — character cell index, `sheetName` (String — `letters|symbols`)
 - **Returns**: Canvas element containing the cropped character, or `null` if no image has been uploaded for that sheet.
+
+---
+
+## Diagram Engine (`diagram-engine.js`)
+
+**v1.4.0** — Standalone module for diagram rendering. Exposed as `window.DiagramEngine` in browser and `module.exports` in Node.js.
+
+### `DiagramEngine.layoutCycle(data, W, H)`
+Lays out a circular/cycle diagram.
+- **Parameters**: `data` (Object — `{ nodes, edges }`), `W` (Integer — canvas width), `H` (Integer — canvas height)
+- **Returns**: `{ items, edges }` — queue items and edge render data
+
+### `DiagramEngine.layoutFlowchart(data, W, H)`
+Lays out a flowchart diagram with top-down node placement.
+- **Parameters**: Same as `layoutCycle`
+- **Returns**: `{ items, edges }`
+
+### `DiagramEngine.layoutHierarchy(data, W, H)`
+Lays out a tree/hierarchy diagram with root at top.
+- **Parameters**: Same as `layoutCycle`
+- **Returns**: `{ items, edges }`
+
+### `DiagramEngine.getDiagramImage(type, markdown, W, H)`
+Renders a Mermaid diagram to a PNG data URL.
+- **Parameters**: `type` (String — diagram type), `markdown` (String — Mermaid source), `W` (Integer), `H` (Integer)
+- **Returns**: Promise resolving to a data URL string
+
+### `DiagramEngine.parseDiagramJSON(raw)`
+Parses a JSON diagram definition string, extracting nodes and edges.
+- **Parameters**: `raw` (String — JSON source)
+- **Returns**: `{ nodes, edges }` or `null` on parse failure
+
+### `DiagramEngine.positionDiagramNodes(nodes, W, H)`
+Computes x/y positions for nodes in a simple circular layout.
+- **Parameters**: `nodes` (Array), `W` (Integer), `H` (Integer)
+- **Returns**: Array of positioned nodes with `x`, `y`, `w`, `h` properties

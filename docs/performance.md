@@ -89,6 +89,7 @@ AI responses use Server-Sent Events streaming, rendering text incrementally rath
 | Blob URL exports | Medium | Native canvas export, no html2canvas overhead |
 | CDN dependencies | Medium | Parallel loading from edge servers |
 | SSE AI streaming | High | Incremental rendering prevents UI blocking |
+| Modular diagram engine | Medium | Extracted layout algorithms into standalone module |
 
 ---
 
@@ -112,3 +113,17 @@ AI responses use Server-Sent Events streaming, rendering text incrementally rath
 - **Paper grain noise**: Re-randomizes on each repaint (cosmetic, not a bug)
 - **AI latency**: API response time is network-dependent (1-5 seconds typical)
 - **Custom font tracing**: Complex handwriting may produce >1000 path points per glyph
+
+---
+
+## Test Coverage
+
+As of v1.4.0, Inkflow includes two test suites:
+- `diagram-engine.test.js` — 23 tests covering layout algorithms, Mermaid rendering, node positioning
+- `cursive-connector.test.js` — 27 tests covering exit/entry points, connection rendering, edge cases
+
+Run tests via Node.js:
+```bash
+node cursive-connector.test.js
+node diagram-engine.test.js
+```

@@ -20,7 +20,7 @@ The system state is governed by a central global configuration object `S` that a
 | `inkColor` | `String` | `"#1c2340"` | Hexadecimal string representation of the active ink color. |
 | `bleed` | `Float` | `0.5` | Intensity multiplier for drop-shadow bleeds ($0.0$ to $2.5$ range). |
 | `pressure` | `Float` | `0.12` | Scale of stroke thickness variation ($0.0$ to $0.3$ range). |
-| `paperStyle` | `String` | `"ruled"` | Page pattern identifier (`ruled`, `plain`, `grid`, `legal`, `vintage`, `dark`, `dot_grid`, `engineering`, `music`). |
+| `paperStyle` | `String` | `"ruled"` | Page pattern identifier (`ruled`, `plain`, `grid`, `legal`, `vintage`, `dark`, `dot_grid`, `engineering`, `music`, `dated`). |
 | `noteLayout` | `String` | `"standard"` | Page note template layout (`standard`, `twocolumn`, `cornell`). |
 | `animSpeed` | `Integer` | `8` | Characters written per animation frame ($1$ to $30$ range). |
 | `currentPage`| `Integer` | `0` | 0-indexed integer identifying the active viewport page in focus. |

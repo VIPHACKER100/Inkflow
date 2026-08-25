@@ -28,6 +28,7 @@ Complete reference for all user-configurable controls in Inkflow.
 | **Dot Grid** | Dotted background at 28px intervals | Technical sketches, diagrams, bullet journaling |
 | **Engineering** | Pale green grid (10px minor / 50px major lines) with reddish margins | Math calculations, structural designs, graphing |
 | **Music Staff** | Sets of 5-line staffs, vertical bracket endpoints | Writing sheet music, music notation |
+| **Dated** | Ruled with date column line to the left of the margin | Daily journaling, dated lecture notes |
 
 ---
 
@@ -95,6 +96,7 @@ The viewport auto-scrolls to keep the pen cursor visible during animation.
 | Format | Quality | Use Case |
 | :--- | :--- | :--- |
 | **PNG** | Lossless, native canvas | Digital sharing, presentations |
+| **Transparent PNG** | Lossless, no paper background, no grain | Compositing, layering, design work |
 | **JPG** | 93% JPEG, smaller size | Email attachments, web upload |
 | **SVG** | PNG embedded in SVG wrapper | Vector-aware applications |
 | **PDF** | Multi-page A4, 93% JPEG | Printing, submission, archival |

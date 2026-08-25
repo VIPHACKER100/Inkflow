@@ -1,7 +1,4 @@
-/* ───────────────────────────────────────────
-   STATE — Global settings object
-─────────────────────────────────────────── */
-const S = {
+﻿const S = {
   text: 'This is a sample note starting from the second line of the page. The first line has been skipped automatically as per your request.\n\n```diagram\n{\n  "type": "cycle",\n  "title": "Water Cycle",\n  "nodes": [\n    { "id": "n1", "label": "Evaporation" },\n    { "id": "n2", "label": "Condensation" },\n    { "id": "n3", "label": "Precipitation" },\n    { "id": "n4", "label": "Collection" }\n  ],\n  "edges": [\n    { "from": "n1", "to": "n2" },\n    { "from": "n2", "to": "n3" },\n    { "from": "n3", "to": "n4" },\n    { "from": "n4", "to": "n1" }\n  ]\n}\n```\n\nYou can continue writing your notes here, and the engine will handle the line spacing and page breaks while always skipping the top line of every new page.',
   font: 'Caveat',
   fontSize: 22,
@@ -130,81 +127,18 @@ if (typeof mermaid !== 'undefined') {
 }
 
 /**
- * PHASE 6.0 — STRUCTURED HAND-DRAWN DIAGRAMS (rough.js)
+ * PHASE 6.0 â€” STRUCTURED HAND-DRAWN DIAGRAMS (rough.js)
  */
-function layoutCycle(nodes, radius, center) {
-  const angleStep = (2 * Math.PI) / nodes.length;
-  return nodes.map((node, i) => ({
-    ...node,
-    x: center.x + radius * Math.cos(i * angleStep - Math.PI / 2),
-    y: center.y + radius * Math.sin(i * angleStep - Math.PI / 2),
-    shape: node.shape || 'circle'
-  }));
+// ponytail: diagram layout functions imported from diagram-engine.js
+// diagram layout functions (layoutCycle, layoutFlowchart, etc.) are global from diagram-engine.js
+function getDiagramImage(content) {
+  if (typeof DiagramEngine !== 'undefined' && DiagramEngine.getDiagramImage) {
+    return DiagramEngine.getDiagramImage(content);
+  }
+  return { ready: false };
 }
 
-function layoutFlowchart(nodes, edges, startX, startY, width) {
-  // Simplified layered layout
-  const layers = {};
-  const inDegree = {};
-  nodes.forEach(n => {
-    layers[n.id] = 0;
-    inDegree[n.id] = 0;
-  });
-  
-  edges.forEach(e => {
-    inDegree[e.to] = (inDegree[e.to] || 0) + 1;
-  });
-
-  // Basic layering based on connectivity
-  const queue = nodes.filter(n => inDegree[n.id] === 0).map(n => n.id);
-  const visited = new Set();
-  
-  let currentLayer = queue;
-  let layerIdx = 0;
-  const layerMap = [];
-  
-  while (currentLayer.length > 0) {
-    layerMap[layerIdx] = currentLayer;
-    const nextLayer = [];
-    currentLayer.forEach(id => {
-      visited.add(id);
-      edges.filter(e => e.from === id).forEach(e => {
-        if (!visited.has(e.to)) {
-          layers[e.to] = layerIdx + 1;
-          nextLayer.push(e.to);
-        }
-      });
-    });
-    currentLayer = [...new Set(nextLayer)];
-    layerIdx++;
-  }
-
-  // Fallback for cycles or disconnected nodes
-  const remaining = nodes.filter(n => !visited.has(n.id)).map(n => n.id);
-  if (remaining.length > 0) {
-    layerMap.push(remaining);
-  }
-
-  const verticalGap = 100;
-  const results = [];
-  
-  layerMap.forEach((layerIds, lIdx) => {
-    const layerWidth = layerIds.length * 150;
-    const xBase = startX + (width - layerWidth) / 2 + 75;
-    layerIds.forEach((id, i) => {
-      const node = nodes.find(n => n.id === id);
-      if (!node) return;
-      results.push({
-        ...node,
-        x: xBase + i * 150,
-        y: startY + lIdx * verticalGap,
-        shape: node.shape || 'box'
-      });
-    });
-  });
-
-  return results;
-}
+// ponytail: layoutFlowchart and layoutHierarchy are in diagram-engine.js
 
 function drawArrowhead(ctx, rc, x, y, angle, size, color, roughness) {
   const p1 = { x: x, y: y };
@@ -258,9 +192,9 @@ if (typeof initLayerCompositor === 'function') {
   initLayerCompositor(PAGE_W, PAGE_H);
 }
 
-/* ───────────────────────────────────────────
-   PHASE 1.4 / 2.6 — DARK MODE TOGGLE
-─────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   PHASE 1.4 / 2.6 â€” DARK MODE TOGGLE
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const darkToggle = document.getElementById('dark-toggle');
 const darkIcon = document.getElementById('dark-icon');
 let isDark = localStorage.getItem('inkflow-dark') === '1';
@@ -274,26 +208,29 @@ darkToggle.addEventListener('click', () => {
 
 function applyDark() {
   document.documentElement.classList.toggle('dark', isDark);
-  darkIcon.textContent = isDark ? '🌙' : '☀️';
+  darkIcon.textContent = isDark ? 'ðŸŒ™' : 'â˜€ï¸';
 }
 
-/* ───────────────────────────────────────────
-   PHASE 2.7 — HAMBURGER (MOBILE)
-─────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   PHASE 2.7 â€” HAMBURGER (MOBILE)
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 document.getElementById('hamburger').addEventListener('click', () => {
   document.getElementById('sidebar').classList.toggle('open');
 });
 
-/* ───────────────────────────────────────────
-   PHASE 2.3 — SIDEBAR SECTION TOGGLE
-─────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   PHASE 2.3 â€” SIDEBAR SECTION TOGGLE
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function toggleSection(id) {
-  document.getElementById(id).classList.toggle('collapsed');
+  const section = document.getElementById(id);
+  section.classList.toggle('collapsed');
+  const btn = section.querySelector('.sb-section-header');
+  if (btn) btn.setAttribute('aria-expanded', !section.classList.contains('collapsed'));
 }
 
-/* ───────────────────────────────────────────
-   PHASE 3.1/3.2 — FONT SELECTOR + PREVIEW
-─────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   PHASE 3.1/3.2 â€” FONT SELECTOR + PREVIEW
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const fontSelect = document.getElementById('font-select');
 fontSelect.addEventListener('change', () => {
   S.font = fontSelect.value;
@@ -325,7 +262,7 @@ if (document.fonts) {
   });
 }
 
-/* Phase 3.3 — Custom font upload */
+/* Phase 3.3 â€” Custom font upload */
 document.getElementById('font-upload').addEventListener('change', async function () {
   const file = this.files[0];
   if (!file) return;
@@ -343,7 +280,7 @@ document.getElementById('font-upload').addEventListener('change', async function
     fontSelect.value = name;
     fontSelect.style.fontFamily = name;
     S.font = name;
-    /* Phase 3.4 — Store font name in localStorage */
+    /* Phase 3.4 â€” Store font name in localStorage */
     const stored = JSON.parse(localStorage.getItem('inkflow-fonts') || '[]');
     if (!stored.includes(name)) stored.push(name);
     localStorage.setItem('inkflow-fonts', JSON.stringify(stored));
@@ -353,16 +290,16 @@ document.getElementById('font-upload').addEventListener('change', async function
   }
 });
 
-/* ───────────────────────────────────────────
-   PHASE 3.5 — AUTO-FIT FONT SIZE
-─────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   PHASE 3.5 â€” AUTO-FIT FONT SIZE
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function autoFitFontSize() {
   const text = S.text.trim();
   if (!text) return;
 
   let min = 14;
   let max = 52;
-  let bestSize = S.fontSize;
+  let bestSize = min;
 
   // Binary search for a font size that fits text within 1 or 2 pages optimally
   // but let's target fitting the current text precisely into the first page if it's short,
@@ -393,9 +330,9 @@ function autoFitFontSize() {
   autosave();
 }
 
-/* ───────────────────────────────────────────
-   PHASE 5.1–5.6 — SLIDER CONTROLS
-─────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   PHASE 5.1â€“5.6 â€” SLIDER CONTROLS
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function bindSlider(id, valId, key, parse = parseFloat, suffix = '') {
   const el = document.getElementById(id);
   const disp = document.getElementById(valId);
@@ -415,7 +352,7 @@ bindSlider('bleed-slider', 'bleed-val', 'bleed', parseFloat);
 bindSlider('pressure-slider', 'pressure-val', 'pressure', parseFloat);
 bindSlider('speed-slider', 'spd-val', 'animSpeed', parseInt);
 
-/* Phase 5.6 — Ink color picker */
+/* Phase 5.6 â€” Ink color picker */
 const inkColorInput = document.getElementById('ink-color');
 inkColorInput.addEventListener('input', () => {
   S.inkColor = inkColorInput.value;
@@ -426,7 +363,7 @@ inkColorInput.addEventListener('input', () => {
 function setInkPreset(hex, name) {
   S.inkColor = hex;
   inkColorInput.value = hex;
-  document.getElementById('ink-color-label').textContent = hex + ' — ' + name;
+  document.getElementById('ink-color-label').textContent = hex + ' â€” ' + name;
   syncMarkdownPenControls();
   debounceRender();
 }
@@ -472,15 +409,21 @@ function onMarkdownPenColorChange(type, value) {
 }
 
 function syncHinglishControls() {
-  const toggle = document.getElementById('auto-switch-devanagari');
-  if (!toggle) return;
-  toggle.checked = !!S.hinglishAutoSwitch;
+  const val = !!S.hinglishAutoSwitch;
+  const toggle1 = document.getElementById('auto-switch-devanagari');
+  const toggle2 = document.getElementById('hinglish-toggle');
+  if (toggle1) toggle1.checked = val;
+  if (toggle2) toggle2.checked = val;
 }
 
-function onHinglishToggle() {
-  const toggle = document.getElementById('auto-switch-devanagari');
+function onHinglishToggle(e) {
+  const toggle = e && e.target ? e.target : document.getElementById('auto-switch-devanagari');
   if (!toggle) return;
   S.hinglishAutoSwitch = !!toggle.checked;
+  // Sync the other checkbox
+  const otherId = toggle.id === 'hinglish-toggle' ? 'auto-switch-devanagari' : 'hinglish-toggle';
+  const other = document.getElementById(otherId);
+  if (other) other.checked = S.hinglishAutoSwitch;
   autosave();
   debounceRender();
 }
@@ -509,14 +452,14 @@ Object.keys(markdownPenInputMap).forEach(type => {
   el.addEventListener('change', autosave);
 });
 
-/* ───────────────────────────────────────────
-   PHASE 2.2 — SMUDGE EFFECTS TOGGLE
-─────────────────────────────────────────── */
-/* ───────────────────────────────────────────
-   PHASE 3.1 — CURSIVE MODE TOGGLE
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   PHASE 2.2 â€” SMUDGE EFFECTS TOGGLE
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   PHASE 3.1 â€” CURSIVE MODE TOGGLE
    Enables connected letter strokes (ligatures and connection curves)
    Requirements: 3.1, 3.4, 3.7
-─────────────────────────────────────────── */
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function onCursiveModeToggle() {
   const cursiveModeToggle = document.getElementById('cursive-mode-toggle');
   if (cursiveModeToggle) {
@@ -540,9 +483,9 @@ if (cursiveModeToggle) {
   cursiveModeToggle.addEventListener('change', onCursiveModeToggle);
 }
 
-/* ───────────────────────────────────────────
-   PHASE 5.7 — PAPER STYLE BUTTONS
-─────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   PHASE 5.7 â€” PAPER STYLE BUTTONS
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function setPaper(btn) {
   document.querySelectorAll('.paper-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
@@ -550,9 +493,9 @@ function setPaper(btn) {
   debounceRender();
 }
 
-/* ───────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    TEXT VERTICAL ALIGNMENT CONTROL
-─────────────────────────────────────────── */
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function setTextAlignment(alignment) {
   S.textAlignment = alignment;
   
@@ -570,9 +513,9 @@ function setTextAlignment(alignment) {
   debounceRender();
 }
 
-/* ───────────────────────────────────────────
-   PHASE 4.1 — CREATE CANVAS PAGE
-─────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   PHASE 4.1 â€” CREATE CANVAS PAGE
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function createPage(pageNum) {
   const wrapper = document.createElement('div');
   wrapper.className = 'page-wrapper';
@@ -618,7 +561,7 @@ function createPage(pageNum) {
     document.getElementById('text-input').value = globalText;
     autosave();
     // Re-evaluate font family stack dynamically in case Indic characters were typed
-    editor.style.fontFamily = fontSwitcher.getFontStack(ScriptDetector.isIndicScript(editor.innerText), S.font);
+editor.style.fontFamily = fontSwitcher?.getFontStack(ScriptDetector.isIndicScript(editor.innerText), S.font) ?? S.font;
   });
 
   // Create margin text overlay for left side notes
@@ -627,12 +570,12 @@ function createPage(pageNum) {
   marginText.id = 'margin-' + pageNum;
   marginText.contentEditable = 'true';
   marginText.setAttribute('aria-label', 'Margin notes for Page ' + pageNum);
-  marginText.setAttribute('placeholder', '📝');
+  marginText.setAttribute('placeholder', 'ðŸ“');
   marginText.style.fontFamily = S.font;
 
   // Update font when typing
   marginText.addEventListener('input', () => {
-    marginText.style.fontFamily = fontSwitcher.getFontStack(ScriptDetector.isIndicScript(marginText.innerText), S.font);
+    marginText.style.fontFamily = fontSwitcher?.getFontStack(ScriptDetector.isIndicScript(marginText.innerText), S.font) ?? S.font;
   });
 
   container.appendChild(canvas);
@@ -654,7 +597,7 @@ function updateEditorStyles(editor, canvas) {
   if (!editor || !canvas) return;
   const actualWidth = canvas.offsetWidth || parseFloat(canvas.style.width) || PAGE_W;
   const scale = actualWidth / PAGE_W;
-  editor.style.fontFamily = fontSwitcher.getFontStack(ScriptDetector.isIndicScript(editor.innerText), S.font);
+  editor.style.fontFamily = fontSwitcher?.getFontStack(ScriptDetector.isIndicScript(editor.innerText), S.font) ?? S.font;
   editor.style.fontSize = (S.fontSize * scale) + 'px';
   editor.style.lineHeight = S.lineHeight;
   editor.style.paddingTop = (S.margin * scale) + 'px';
@@ -673,12 +616,13 @@ function updateEditorStyles(editor, canvas) {
 function getGlobalTextFromEditors() {
   const editors = document.querySelectorAll('.page-editor');
   let text = '';
-  editors.forEach((editor) => {
+  editors.forEach((editor, i) => {
     let t = editor.innerText;
     if (t.endsWith('\n')) {
       t = t.slice(0, -1);
     }
     text += t;
+    if (i < editors.length - 1) text += '\n';
   });
   return text;
 }
@@ -693,9 +637,9 @@ window.addEventListener('resize', () => {
 });
 
 
-/* ───────────────────────────────────────────
-   PHASE 4.2 — PAPER BACKGROUND RENDERER
-─────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   PHASE 4.2 â€” PAPER BACKGROUND RENDERER
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function drawLayoutDecorations(ctx, noteLayout) {
   if (noteLayout === 'standard') return;
   if (!window.templateManager) return;
@@ -748,6 +692,7 @@ function drawPaperBackground(ctx, style) {
     dot_grid: { bg: '#f6f2ec', lineColor: '#c0b49a', lineOpacity: 0.35 },
     engineering: { bg: '#eef6ed', lineColor: '#78a67d', lineOpacity: 0.4 },
     music: { bg: '#faf7f0', lineColor: '#4a4a4a', lineOpacity: 0.55 },
+    dated: { bg: '#f8f4ea', lineColor: '#c5b9a0', lineOpacity: 0.55, redLine: '#e08080', dateColumn: true },
   };
 
   const c = configs[style] || configs.ruled;
@@ -783,6 +728,44 @@ function drawPaperBackground(ctx, style) {
     ctx.beginPath();
     ctx.moveTo(S.margin - 10, 0);
     ctx.lineTo(S.margin - 10, h);
+    ctx.stroke();
+    ctx.restore();
+
+    // Horizontal ruled lines
+    ctx.save();
+    ctx.globalAlpha = c.lineOpacity;
+    ctx.strokeStyle = c.lineColor;
+    ctx.lineWidth = 0.8;
+    const lineSpacingPx = S.fontSize * S.lineHeight;
+    for (let y = S.margin + lineSpacingPx; y < h - 20; y += lineSpacingPx) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  if (style === 'dated') {
+    // Red margin line
+    ctx.save();
+    ctx.globalAlpha = 0.55;
+    ctx.strokeStyle = c.redLine || '#e08080';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(S.margin - 10, 0);
+    ctx.lineTo(S.margin - 10, h);
+    ctx.stroke();
+    ctx.restore();
+
+    // Date column line (left of margin)
+    ctx.save();
+    ctx.globalAlpha = 0.45;
+    ctx.strokeStyle = '#b0a080';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(S.margin - 60, 0);
+    ctx.lineTo(S.margin - 60, h);
     ctx.stroke();
     ctx.restore();
 
@@ -971,35 +954,34 @@ function drawPaperBackground(ctx, style) {
   drawLayoutDecorations(ctx, S.noteLayout);
 }
 
-/* ───────────────────────────────────────────
-   PHASE 4.3 — PER-CHARACTER VARIATION ENGINE (Enhanced)
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   PHASE 4.3 â€” PER-CHARACTER VARIATION ENGINE (Enhanced)
    
    All offsets scale proportionally with fontSize
    so the handwriting looks natural at any size.
    
    Now integrated with CharacterVariationContext for
    position-aware variation (Requirements 1.1-1.8)
-─────────────────────────────────────────── */
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 // Note: getCharVariation and getCharVariationWithContext are now defined in
 // contextual-jitter-engine.js and available globally
 
-/* ───────────────────────────────────────────
-   PHASE 2.2 / 2.3 — SMUDGE & ERASER EFFECTS RENDERING
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   PHASE 2.2 / 2.3 â€” SMUDGE & ERASER EFFECTS RENDERING
    
    Renders semi-transparent overlay shapes to simulate
    smudges and eraser marks on pages (Requirements 2.2-2.9)
-─────────────────────────────────────────── */
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function renderSmudgeEffects(ctx, pageIdx) {
   if (!S.smudgeEffects) return;
-
-  const PAGE_W = 794;
-  const PAGE_H = 1123;
   
   // Seed random generator for consistent smudges per page
   // This ensures the same page always has the same smudges
-  const seed = 12345 + pageIdx * 9876;
+  const baseSeed = 12345 + pageIdx * 9876;
+  let callCount = 0;
   const seededRandom = () => {
-    const x = Math.sin(seed * 12.9898 + pageIdx * 78.233) * 43758.5453;
+    callCount++;
+    const x = Math.sin(baseSeed * 12.9898 + callCount * 78.233) * 43758.5453;
     return x - Math.floor(x);
   };
   
@@ -1063,13 +1045,13 @@ function renderSmudgeEffects(ctx, pageIdx) {
   }
 }
 
-/* ───────────────────────────────────────────
-   PHASE 3.1–3.9 — CURSIVE CONNECTION RENDERING
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   PHASE 3.1â€“3.9 â€” CURSIVE CONNECTION RENDERING
    
    Renders connection strokes between consecutive lowercase letters
    when cursive mode is enabled. Uses ligature pairs for special
-   letter combinations (Requirements 3.1–3.9)
-─────────────────────────────────────────── */
+   letter combinations (Requirements 3.1â€“3.9)
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function renderCursiveConnections(queue) {
   if (!cursiveConnector) return;
 
@@ -1106,18 +1088,33 @@ function renderCursiveConnections(queue) {
         continue;
       }
 
+      // Do not connect across word boundaries (gap indicates a space was between them)
+      const gap = nextItem.x - (currItem.x + (currItem.charWidth || 20));
+      if (gap > S.fontSize * 0.6) {
+        continue;
+      }
+
       // Check if it's a ligature pair (Req 3.4, 3.5)
       if (cursiveConnector.isLigaturePair(currItem.ch, nextItem.ch)) {
-        // Render ligature glyph instead of individual characters
-        // For now, we'll just render the connection stroke
-        // The actual character rendering will handle skipping the next char if ligature
-        continue; // TODO: Integrate ligature rendering into main queue processing
+        // Render ligature glyph as a connecting element between the two characters
+        const midX = (currItem.x + nextItem.x) / 2;
+        const midY = (currItem.y + nextItem.y) / 2;
+        cursiveConnector.renderLigatureGlyph(
+          ctx, midX, midY,
+          currItem.ch, nextItem.ch,
+          currItem.inkColor || S.inkColor,
+          S.fontSize,
+          currItem.v.pressureMod
+        );
+        continue;
       }
 
       // Render connection stroke between characters (Req 3.2, 3.3)
       const v = currItem.v;
-      const exitPoint = cursiveConnector.getExitPoint(currItem.ch, 20, S.fontSize);
-      const entryPoint = cursiveConnector.getEntryPoint(nextItem.ch, 20, S.fontSize);
+      const currWidth = currItem.charWidth || 20;
+      const nextWidth = nextItem.charWidth || 20;
+      const exitPoint = cursiveConnector.getExitPoint(currItem.ch, currWidth, S.fontSize);
+      const entryPoint = cursiveConnector.getEntryPoint(nextItem.ch, nextWidth, S.fontSize);
 
       cursiveConnector.renderConnectionStroke(
         ctx,
@@ -1133,9 +1130,9 @@ function renderCursiveConnections(queue) {
   });
 }
 
-/* ───────────────────────────────────────────
-   PHASE 4.1–4.8 — CLEAR & INIT PAGES
-─────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   PHASE 4.1â€“4.8 â€” CLEAR & INIT PAGES
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 /* Get vertical alignment offset based on text alignment setting */
 function getAlignmentOffset(alignment, fontSize, lineHeight) {
@@ -1176,9 +1173,9 @@ function clearText() {
   autosave();
 }
 
-/* ───────────────────────────────────────────
-   PHASE 4.4 — HELPER FUNCTIONS
-─────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   PHASE 4.4 â€” HELPER FUNCTIONS
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function sanitizeText(str) {
   if (!str) return '';
   return str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\uE000-\uF8FF]/g, '');
@@ -1211,51 +1208,7 @@ function parseBlocks(text) {
   return blocks;
 }
 
-const diagramCache = {};
-
-function getDiagramImage(content) {
-  if (diagramCache[content]) {
-    return diagramCache[content].ready ? diagramCache[content] : { ready: false };
-  }
-
-  const id = 'mermaid-' + Math.random().toString(36).substr(2, 9);
-  const entry = { ready: false, img: new Image(), width: 0, height: 0, content };
-  diagramCache[content] = entry;
-
-  // Mermaid.render is async
-  if (typeof mermaid !== 'undefined') {
-    mermaid.render(id, content).then(({ svg }) => {
-      const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      
-      // We need to get dimensions from the SVG
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(svg, 'image/svg+xml');
-      const svgEl = doc.querySelector('svg');
-      const viewbox = svgEl.getAttribute('viewBox');
-      if (viewbox) {
-        const parts = viewbox.split(' ');
-        entry.width = parseFloat(parts[2]);
-        entry.height = parseFloat(parts[3]);
-      } else {
-        entry.width = parseFloat(svgEl.getAttribute('width')) || 400;
-        entry.height = parseFloat(svgEl.getAttribute('height')) || 300;
-      }
-
-      entry.img.onload = () => {
-        entry.ready = true;
-        debounceRender();
-      };
-      entry.img.src = url;
-    }).catch(err => {
-      console.error('Mermaid render failed', err);
-      entry.error = true;
-      entry.ready = true; // Mark ready so we don't keep trying
-    });
-  }
-
-  return entry;
-}
+// ponytail: diagramCache and getDiagramImage are in diagram-engine.js
 
 function getGraphemes(text) {
   if (!text) return [];
@@ -1415,45 +1368,55 @@ function layoutTextTemplated(text) {
       }
 
       let positionedNodes = [];
-      const cx = activeZone.x + activeZone.width / 2;
-      const cy = y + dHeight / 2;
-      const r = Math.min(activeZone.width, dHeight) / 2 - 60;
       
-      data.nodes.forEach((n, i) => {
-        const angle = (i / data.nodes.length) * Math.PI * 2 - Math.PI / 2;
-        positionedNodes.push({
-          id: n.id,
-          label: n.label,
-          x: cx + Math.cos(angle) * r,
-          y: cy + Math.sin(angle) * r,
-          w: 100, h: 40
+      // Layout based on diagram type (using imported functions from diagram-engine.js)
+      positionedNodes = positionDiagramNodes(data, activeZone.x, y, dWidth, dHeight);
+
+      // Push individual shape items
+      positionedNodes.forEach(n => {
+        const shape = n.shape || (data.type === 'cycle' ? 'circle' : 'box');
+        queue.push({
+          type: 'shape', shape,
+          label: n.label || '',
+          x: n.x, y: n.y, w: n.w || 100, h: n.h || 40,
+          pageIdx
         });
       });
 
-      queue.push({
-        type: 'diagram',
-        nodes: positionedNodes,
-        edges: data.edges || [],
-        pageIdx
+      // Push individual edge items with labels
+      (data.edges || []).forEach(e => {
+        const fromNode = positionedNodes.find(n => n.id === e.from);
+        const toNode = positionedNodes.find(n => n.id === e.to);
+        if (!fromNode || !toNode) return;
+        queue.push({
+          type: 'edge',
+          from: { x: fromNode.x, y: fromNode.y },
+          to: { x: toNode.x, y: toNode.y },
+          label: e.label || '',
+          pageIdx
+        });
       });
 
       positionedNodes.forEach(n => {
+        if (!n.label) return;
         const words = n.label.split(' ');
         let ly = n.y - 5;
         const labelLineHeight = S.fontSize * 1.2;
+        ctx.font = `${S.fontSize}px ${S.font}`;
         
         words.forEach(word => {
           let lx = n.x - ctx.measureText(word).width / 2;
           const chars = getGraphemes(word);
           chars.forEach((ch, ci) => {
             const v = getCharVariation(S.rotationMax * 0.5, S.pressure, S.fontSize);
+            const cw = ctx.measureText(ch).width + v.spacingExtra;
             queue.push({
               ch, x: lx, y: ly + v.baselineOff, v,
-              pageIdx, isIndic: false,
-              fontStack: fontSwitcher.getFontStack(false, S.font),
-              inkColor: S.inkColor
+              pageIdx, isIndic: false, type: 'diagram-label',
+              fontStack: fontSwitcher?.getFontStack(false, S.font) ?? S.font,
+              inkColor: S.inkColor, penKey: 'body', charWidth: cw
             });
-            lx += ctx.measureText(ch).width + v.spacingExtra;
+            lx += cw;
           });
           ly += labelLineHeight;
         });
@@ -1501,17 +1464,17 @@ function layoutTextTemplated(text) {
           const token = tokens[ti];
           if (token.type === 'space') {
             const previewIsIndic = ScriptDetector.isIndicScript(segment.text);
-            applySpaceAdvance(fontSwitcher.getFontStack(previewIsIndic, S.font));
+            applySpaceAdvance(fontSwitcher?.getFontStack(previewIsIndic, S.font) ?? S.font);
             continue;
           }
 
           const lineWord = token.text;
           if (!lineWord) continue;
 
-          const scriptRuns = fontSwitcher.getTokenScriptRuns(lineWord, S.hinglishAutoSwitch, getGraphemes);
+          const scriptRuns = fontSwitcher?.getTokenScriptRuns(lineWord, S.hinglishAutoSwitch, getGraphemes) || [];
           let wordWidth = S.wordSpacing;
           scriptRuns.forEach(run => {
-            const runFontStack = fontSwitcher.getFontStack(run.isIndic, S.font);
+            const runFontStack = fontSwitcher?.getFontStack(run.isIndic, S.font) ?? S.font;
             ctx.font = `${S.fontSize}px ${runFontStack}`;
             wordWidth += ctx.measureText(run.text).width;
           });
@@ -1521,10 +1484,9 @@ function layoutTextTemplated(text) {
           }
 
           scriptRuns.forEach(run => {
-            const fontStack = fontSwitcher.getFontStack(run.isIndic, S.font);
+            const fontStack = fontSwitcher?.getFontStack(run.isIndic, S.font) ?? S.font;
             if (run.isIndic) {
-              const estimatedLineLength = 100;
-              const lineLength = Math.max(1, estimatedLineLength);
+              const lineLength = Math.max(1, lineText.length);
               variationContext.updateForCharacter(lineCharIndex, lineLength, lineCharIndex === 0, lineCharIndex === lineLength - 1);
               const v = getCharVariationWithContext(run.isIndic ? penRotation * 0.3 : penRotation, penPressure, S.fontSize, variationContext);
               const wobble = Math.sin(lineCharIndex * 0.04) * 0.4 * (S.fontSize / 22);
@@ -1532,7 +1494,8 @@ function layoutTextTemplated(text) {
               const cy = y + (v.baselineOff * 0.4) + wobble + alignOffset;
 
               queue.push({
-                ch: run.text, x, y: cy, v, pageIdx, isIndic: true, fontStack, inkColor, penKey: penProfile.key
+                ch: run.text, x, y: cy, v, pageIdx, isIndic: true, fontStack, inkColor, penKey: penProfile.key,
+                charWidth: ctx.measureText(run.text).width + v.spacingExtra
               });
 
               ctx.font = `${S.fontSize}px ${fontStack}`;
@@ -1548,8 +1511,8 @@ function layoutTextTemplated(text) {
               const ch = graphemes[ci];
               const isWordStart = ci === 0;
               const isWordEnd = ci === graphemes.length - 1;
-              const estimatedLineLength = 100;
-              variationContext.updateForCharacter(lineCharIndex, estimatedLineLength, isWordStart, isWordEnd);
+              const lineLength = Math.max(1, lineText.length);
+              variationContext.updateForCharacter(lineCharIndex, lineLength, isWordStart, isWordEnd);
 
               const v = getCharVariationWithContext(run.isIndic ? penRotation * 0.3 : penRotation, penPressure, S.fontSize, variationContext);
               ctx.font = `${S.fontSize}px ${fontStack}`;
@@ -1564,7 +1527,8 @@ function layoutTextTemplated(text) {
               const cy = y + v.baselineOff + wobble + alignOffset;
 
               queue.push({
-                ch, x, y: cy, v, pageIdx, isIndic: false, fontStack, inkColor, penKey: penProfile.key
+                ch, x, y: cy, v, pageIdx, isIndic: false, fontStack, inkColor, penKey: penProfile.key,
+                charWidth: ctx.measureText(ch).width + v.spacingExtra
               });
 
               x += ctx.measureText(ch).width + v.spacingExtra;
@@ -1595,7 +1559,7 @@ function getCachedGlyphImage(char, src) {
   if (entry && entry.src === src) {
     return entry.ready ? entry.img : null;
   }
-  // New character, or its drafted artwork changed — (re)decode it.
+  // New character, or its drafted artwork changed â€” (re)decode it.
   const img = new Image();
   entry = { img, src, ready: false };
   glyphImageCache[char] = entry;
@@ -1703,7 +1667,7 @@ window.renderSpecificPage = function(pageIdx, forceRedraw) {
 
   const pageItems = (window.currentRenderQueue || []).filter(item => item.pageIdx === pageIdx);
 
-  if (S.cursiveMode && typeof cursiveConnector !== 'undefined') {
+  if (S.cursiveMode && cursiveConnector) {
     renderCursiveConnections(pageItems);
   }
 
@@ -1766,6 +1730,19 @@ window.renderSpecificPage = function(pageIdx, forceRedraw) {
               [item.x, item.y + halfH],
               [item.x - halfW, item.y]
             ], options);
+          } else if (item.shape === 'pill' || item.shape === 'rounded') {
+            rc.roundRect(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h, 12, options);
+          } else if (item.shape === 'hexagon') {
+            const hw = item.w / 2, hh = item.h / 2;
+            const inset = hw * 0.3;
+            rc.polygon([
+              [item.x - hw + inset, item.y - hh],
+              [item.x + hw - inset, item.y - hh],
+              [item.x + hw, item.y],
+              [item.x + hw - inset, item.y + hh],
+              [item.x - hw + inset, item.y + hh],
+              [item.x - hw, item.y]
+            ], options);
           } else {
             rc.rectangle(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h, options);
           }
@@ -1783,11 +1760,25 @@ window.renderSpecificPage = function(pageIdx, forceRedraw) {
             ctx.lineTo(item.x, item.y + halfH);
             ctx.lineTo(item.x - halfW, item.y);
             ctx.closePath();
+          } else if (item.shape === 'pill' || item.shape === 'rounded') {
+            const rad = Math.min(12, item.h / 2);
+            ctx.roundRect(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h, rad);
+          } else if (item.shape === 'hexagon') {
+            const hw = item.w / 2, hh = item.h / 2;
+            const inset = hw * 0.3;
+            ctx.moveTo(item.x - hw + inset, item.y - hh);
+            ctx.lineTo(item.x + hw - inset, item.y - hh);
+            ctx.lineTo(item.x + hw, item.y);
+            ctx.lineTo(item.x + hw - inset, item.y + hh);
+            ctx.lineTo(item.x - hw + inset, item.y + hh);
+            ctx.lineTo(item.x - hw, item.y);
+            ctx.closePath();
           } else {
             ctx.rect(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h);
           }
           ctx.stroke();
         }
+        // ponytail: labels rendered via diagram-label queue items with handwriting variation
       } else if (item.type === 'edge') {
         if (rc) {
           rc.line(item.from.x, item.from.y, item.to.x, item.to.y, options);
@@ -1807,6 +1798,23 @@ window.renderSpecificPage = function(pageIdx, forceRedraw) {
           ctx.moveTo(item.to.x, item.to.y);
           ctx.lineTo(item.to.x - 10 * Math.cos(angle + 0.5), item.to.y - 10 * Math.sin(angle + 0.5));
           ctx.stroke();
+        }
+        if (item.label) {
+          const mx = (item.from.x + item.to.x) / 2;
+          const my = (item.from.y + item.to.y) / 2;
+          ctx.save();
+          ctx.font = `${Math.max(10, S.fontSize * 0.7)}px ${S.font}`;
+          ctx.fillStyle = S.inkColor;
+          ctx.globalAlpha = 0.85;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          const tw = ctx.measureText(item.label).width;
+          const isDark = S.paperStyle === 'dark';
+          ctx.fillStyle = isDark ? 'rgba(26,26,46,0.85)' : 'rgba(247,243,234,0.85)';
+          ctx.fillRect(mx - tw / 2 - 3, my - S.fontSize * 0.4, tw + 6, S.fontSize * 0.9);
+          ctx.fillStyle = S.inkColor;
+          ctx.fillText(item.label, mx, my);
+          ctx.restore();
         }
       }
       return;
@@ -1935,9 +1943,9 @@ function triggerRender() {
   renderText(S.text);
 }
 
-/* ───────────────────────────────────────────
-   TASK 13 — COLLABORATIVE WRITING ENGINE
-─────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   TASK 13 â€” COLLABORATIVE WRITING ENGINE
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 let collabEngine = null;
 const COLLAB_SERVER_URL = 'ws://localhost:8080';
 
@@ -2010,7 +2018,7 @@ function toggleCollaboration() {
       if (isOnline) {
         btn.textContent = 'Disconnect';
         document.getElementById('collab-users-container').classList.remove('hidden');
-      } else if (text !== 'Connecting…') {
+      } else if (text !== 'Connectingâ€¦') {
         btn.textContent = 'Connect to Session';
       }
     }
@@ -2018,13 +2026,13 @@ function toggleCollaboration() {
 
   collabEngine.initialize();
   collabEngine.connect(COLLAB_SERVER_URL);
-  btn.textContent = 'Connecting…';
+  btn.textContent = 'Connectingâ€¦';
   btn.disabled = true;
   setTimeout(() => { btn.disabled = false; }, 2000);
 }
 
 /**
- * PHASE 6.0 — DIAGRAM TEMPLATES
+ * PHASE 6.0 â€” DIAGRAM TEMPLATES
  */
 function insertDiagramTemplate(type) {
   const textarea = document.getElementById('text-input');
@@ -2032,15 +2040,16 @@ function insertDiagramTemplate(type) {
   const end = textarea.selectionEnd;
   const current = textarea.value;
 
-  let template = '';
-  if (type === 'cycle') {
-    template = '\n```diagram\n{\n  "type": "cycle",\n  "nodes": [\n    { "id": "n1", "label": "Start" },\n    { "id": "n2", "label": "Develop" },\n    { "id": "n3", "label": "Review" },\n    { "id": "n4", "label": "Ship" }\n  ],\n  "edges": [\n    { "from": "n1", "to": "n2" },\n    { "from": "n2", "to": "n3" },\n    { "from": "n3", "to": "n4" },\n    { "from": "n4", "to": "n1" }\n  ]\n}\n```\n';
-  } else if (type === 'flowchart') {
-    template = '\n```diagram\n{\n  "type": "flowchart",\n  "nodes": [\n    { "id": "s1", "label": "Input", "shape": "box" },\n    { "id": "s2", "label": "Verify?", "shape": "diamond" },\n    { "id": "s3", "label": "Success", "shape": "oval" }\n  ],\n  "edges": [\n    { "from": "s1", "to": "s2" },\n    { "from": "s2", "to": "s3", "label": "Yes" }\n  ]\n}\n```\n';
-  } else if (type === 'mermaid') {
-    template = '\n```mermaid\ngraph TD\n  A[Idea] --> B(Writing)\n  B --> C{Good?}\n  C -->|Yes| D[Publish]\n  C -->|No| B\n```\n';
-  }
+  const templates = {
+    cycle: '\n```diagram\n{\n  "type": "cycle",\n  "nodes": [\n    { "id": "n1", "label": "Start" },\n    { "id": "n2", "label": "Develop" },\n    { "id": "n3", "label": "Review" },\n    { "id": "n4", "label": "Ship" }\n  ],\n  "edges": [\n    { "from": "n1", "to": "n2" },\n    { "from": "n2", "to": "n3" },\n    { "from": "n3", "to": "n4" },\n    { "from": "n4", "to": "n1" }\n  ]\n}\n```\n',
+    flowchart: '\n```diagram\n{\n  "type": "flowchart",\n  "nodes": [\n    { "id": "s1", "label": "Input", "shape": "box" },\n    { "id": "s2", "label": "Verify?", "shape": "diamond" },\n    { "id": "s3", "label": "Success", "shape": "box" },\n    { "id": "s4", "label": "Retry", "shape": "box" }\n  ],\n  "edges": [\n    { "from": "s1", "to": "s2" },\n    { "from": "s2", "to": "s3", "label": "Yes" },\n    { "from": "s2", "to": "s4", "label": "No" }\n  ]\n}\n```\n',
+    hierarchy: '\n```diagram\n{\n  "type": "hierarchy",\n  "nodes": [\n    { "id": "ceo", "label": "CEO", "shape": "rounded" },\n    { "id": "eng", "label": "Engineering", "shape": "box" },\n    { "id": "design", "label": "Design", "shape": "box" },\n    { "id": "mkt", "label": "Marketing", "shape": "box" },\n    { "id": "fe", "label": "Frontend", "shape": "pill" },\n    { "id": "be", "label": "Backend", "shape": "pill" }\n  ],\n  "edges": [\n    { "from": "ceo", "to": "eng" },\n    { "from": "ceo", "to": "design" },\n    { "from": "ceo", "to": "mkt" },\n    { "from": "eng", "to": "fe" },\n    { "from": "eng", "to": "be" }\n  ]\n}\n```\n',
+    pyramid: '\n```diagram\n{\n  "type": "pyramid",\n  "nodes": [\n    { "id": "t", "label": "Vision", "shape": "diamond" },\n    { "id": "m", "label": "Strategy", "shape": "box" },\n    { "id": "b", "label": "Execution", "shape": "hexagon" }\n  ],\n  "edges": [\n    { "from": "t", "to": "m" },\n    { "from": "m", "to": "b" }\n  ]\n}\n```\n',
+    pipeline: '\n```diagram\n{\n  "type": "flowchart",\n  "nodes": [\n    { "id": "p1", "label": "Plan", "shape": "rounded" },\n    { "id": "p2", "label": "Build", "shape": "box" },\n    { "id": "p3", "label": "Test", "shape": "hexagon" },\n    { "id": "p4", "label": "Deploy", "shape": "pill" }\n  ],\n  "edges": [\n    { "from": "p1", "to": "p2" },\n    { "from": "p2", "to": "p3" },\n    { "from": "p3", "to": "p4" }\n  ]\n}\n```\n',
+    mermaid: '\n```mermaid\ngraph TD\n  A[Idea] --> B(Writing)\n  B --> C{Good?}\n  C -->|Yes| D[Publish]\n  C -->|No| B\n```\n'
+  };
 
+  const template = templates[type] || templates.flowchart;
   textarea.value = current.substring(0, start) + template + current.substring(end);
   textarea.focus();
   textarea.selectionStart = textarea.selectionEnd = start + template.length;
@@ -2122,6 +2131,11 @@ function startAnimation() {
             } else if (item.shape === 'diamond') {
               const halfW = item.w / 2, halfH = item.h / 2;
               rc.polygon([[item.x, item.y - halfH], [item.x + halfW, item.y], [item.x, item.y + halfH], [item.x - halfW, item.y]], options);
+            } else if (item.shape === 'pill' || item.shape === 'rounded') {
+              rc.roundRect(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h, 12, options);
+            } else if (item.shape === 'hexagon') {
+              const hw = item.w / 2, hh = item.h / 2, inset = hw * 0.3;
+              rc.polygon([[item.x-hw+inset,item.y-hh],[item.x+hw-inset,item.y-hh],[item.x+hw,item.y],[item.x+hw-inset,item.y+hh],[item.x-hw+inset,item.y+hh],[item.x-hw,item.y]], options);
             } else {
               rc.rectangle(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h, options);
             }
@@ -2129,8 +2143,16 @@ function startAnimation() {
             ctx.strokeStyle = S.inkColor;
             ctx.lineWidth = 1.2;
             ctx.beginPath();
-            if (item.shape === 'circle') ctx.arc(item.x, item.y, Math.max(item.w, item.h) / 2, 0, Math.PI * 2);
-            else ctx.rect(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h);
+            if (item.shape === 'circle') {
+              ctx.arc(item.x, item.y, Math.max(item.w, item.h) / 2, 0, Math.PI * 2);
+            } else if (item.shape === 'pill' || item.shape === 'rounded') {
+              ctx.roundRect(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h, 12);
+            } else if (item.shape === 'hexagon') {
+              const hw = item.w / 2, hh = item.h / 2, inset = hw * 0.3;
+              ctx.moveTo(item.x-hw+inset,item.y-hh); ctx.lineTo(item.x+hw-inset,item.y-hh); ctx.lineTo(item.x+hw,item.y); ctx.lineTo(item.x+hw-inset,item.y+hh); ctx.lineTo(item.x-hw+inset,item.y+hh); ctx.lineTo(item.x-hw,item.y); ctx.closePath();
+            } else {
+              ctx.rect(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h);
+            }
             ctx.stroke();
           }
         } else if (item.type === 'edge') {
@@ -2190,48 +2212,48 @@ function startAnimation() {
 document.getElementById('btn-animate').addEventListener('click', startAnimation);
 document.getElementById('btn-clear').addEventListener('click', clearText);
 
-/* ───────────────────────────────────────────
-   PHASE 7.2 — MULTI-PROVIDER AI ENGINE
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   PHASE 7.2 â€” MULTI-PROVIDER AI ENGINE
    Supports: OpenRouter (100+ models) & Anthropic Direct
-─────────────────────────────────────────── */
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 const AI_MODELS = {
   openrouter: [
-    // ── Google ──
-    { id: 'google/gemini-2.5-flash-preview', name: '⚡ Gemini 2.5 Flash (Free)' },
-    { id: 'google/gemini-2.5-pro-preview', name: '🔥 Gemini 2.5 Pro' },
-    { id: 'google/gemini-2.0-flash-001', name: '⚡ Gemini 2.0 Flash (Free)' },
-    // ── Anthropic ──
-    { id: 'anthropic/claude-sonnet-4', name: '🟣 Claude Sonnet 4' },
-    { id: 'anthropic/claude-3.5-sonnet', name: '🟣 Claude 3.5 Sonnet' },
-    { id: 'anthropic/claude-3-haiku', name: '🟣 Claude 3 Haiku (Fast)' },
-    // ── OpenAI ──
-    { id: 'openai/gpt-4.1', name: '🟢 GPT-4.1' },
-    { id: 'openai/gpt-4.1-mini', name: '🟢 GPT-4.1 Mini' },
-    { id: 'openai/gpt-4.1-nano', name: '🟢 GPT-4.1 Nano' },
-    { id: 'openai/gpt-4o', name: '🟢 GPT-4o' },
-    { id: 'openai/gpt-4o-mini', name: '🟢 GPT-4o Mini' },
-    { id: 'openai/o3-mini', name: '🟢 o3-Mini (Reasoning)' },
-    // ── Meta ──
-    { id: 'meta-llama/llama-4-maverick', name: '🦙 Llama 4 Maverick' },
-    { id: 'meta-llama/llama-4-scout', name: '🦙 Llama 4 Scout' },
-    { id: 'meta-llama/llama-3.3-70b-instruct', name: '🦙 Llama 3.3 70B (Free)' },
-    // ── DeepSeek ──
-    { id: 'deepseek/deepseek-chat-v3-0324', name: '🌊 DeepSeek V3' },
-    { id: 'deepseek/deepseek-r1', name: '🌊 DeepSeek R1 (Reasoning)' },
-    // ── Mistral ──
-    { id: 'mistralai/mistral-large-2411', name: '🔷 Mistral Large' },
-    { id: 'mistralai/mistral-small-2503', name: '🔷 Mistral Small' },
-    { id: 'mistralai/codestral-mamba', name: '🔷 Codestral Mamba' },
-    // ── Qwen ──
-    { id: 'qwen/qwen-2.5-72b-instruct', name: '🟠 Qwen 2.5 72B' },
-    { id: 'qwen/qwen3-235b-a22b', name: '🟠 Qwen 3 235B' },
-    // ── xAI ──
-    { id: 'x-ai/grok-3-mini-beta', name: '✖ Grok 3 Mini' },
-    // ── Others ──
-    { id: 'nvidia/llama-3.1-nemotron-70b-instruct', name: '🟩 Nemotron 70B (Free)' },
-    { id: 'microsoft/phi-4', name: '🪟 Phi-4 (Free)' },
-    { id: 'cohere/command-a', name: '🔴 Command A' },
+    // â”€â”€ Google â”€â”€
+    { id: 'google/gemini-2.5-flash-preview', name: 'âš¡ Gemini 2.5 Flash (Free)' },
+    { id: 'google/gemini-2.5-pro-preview', name: 'ðŸ”¥ Gemini 2.5 Pro' },
+    { id: 'google/gemini-2.0-flash-001', name: 'âš¡ Gemini 2.0 Flash (Free)' },
+    // â”€â”€ Anthropic â”€â”€
+    { id: 'anthropic/claude-sonnet-4', name: 'ðŸŸ£ Claude Sonnet 4' },
+    { id: 'anthropic/claude-3.5-sonnet', name: 'ðŸŸ£ Claude 3.5 Sonnet' },
+    { id: 'anthropic/claude-3-haiku', name: 'ðŸŸ£ Claude 3 Haiku (Fast)' },
+    // â”€â”€ OpenAI â”€â”€
+    { id: 'openai/gpt-4.1', name: 'ðŸŸ¢ GPT-4.1' },
+    { id: 'openai/gpt-4.1-mini', name: 'ðŸŸ¢ GPT-4.1 Mini' },
+    { id: 'openai/gpt-4.1-nano', name: 'ðŸŸ¢ GPT-4.1 Nano' },
+    { id: 'openai/gpt-4o', name: 'ðŸŸ¢ GPT-4o' },
+    { id: 'openai/gpt-4o-mini', name: 'ðŸŸ¢ GPT-4o Mini' },
+    { id: 'openai/o3-mini', name: 'ðŸŸ¢ o3-Mini (Reasoning)' },
+    // â”€â”€ Meta â”€â”€
+    { id: 'meta-llama/llama-4-maverick', name: 'ðŸ¦™ Llama 4 Maverick' },
+    { id: 'meta-llama/llama-4-scout', name: 'ðŸ¦™ Llama 4 Scout' },
+    { id: 'meta-llama/llama-3.3-70b-instruct', name: 'ðŸ¦™ Llama 3.3 70B (Free)' },
+    // â”€â”€ DeepSeek â”€â”€
+    { id: 'deepseek/deepseek-chat-v3-0324', name: 'ðŸŒŠ DeepSeek V3' },
+    { id: 'deepseek/deepseek-r1', name: 'ðŸŒŠ DeepSeek R1 (Reasoning)' },
+    // â”€â”€ Mistral â”€â”€
+    { id: 'mistralai/mistral-large-2411', name: 'ðŸ”· Mistral Large' },
+    { id: 'mistralai/mistral-small-2503', name: 'ðŸ”· Mistral Small' },
+    { id: 'mistralai/codestral-mamba', name: 'ðŸ”· Codestral Mamba' },
+    // â”€â”€ Qwen â”€â”€
+    { id: 'qwen/qwen-2.5-72b-instruct', name: 'ðŸŸ  Qwen 2.5 72B' },
+    { id: 'qwen/qwen3-235b-a22b', name: 'ðŸŸ  Qwen 3 235B' },
+    // â”€â”€ xAI â”€â”€
+    { id: 'x-ai/grok-3-mini-beta', name: 'âœ– Grok 3 Mini' },
+    // â”€â”€ Others â”€â”€
+    { id: 'nvidia/llama-3.1-nemotron-70b-instruct', name: 'ðŸŸ© Nemotron 70B (Free)' },
+    { id: 'microsoft/phi-4', name: 'ðŸªŸ Phi-4 (Free)' },
+    { id: 'cohere/command-a', name: 'ðŸ”´ Command A' },
   ],
   anthropic: [
     { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4 (Latest)' },
@@ -2255,20 +2277,20 @@ async function fetchOpenRouterModels() {
     const data = await res.json();
     if (data && Array.isArray(data.data)) {
       const fetched = data.data.map(item => {
-        let emoji = '🤖 ';
+        let emoji = 'ðŸ¤– ';
         const id = item.id.toLowerCase();
         
-        if (id.startsWith('google/')) emoji = '⚡ ';
-        else if (id.startsWith('anthropic/')) emoji = '🟣 ';
-        else if (id.startsWith('openai/')) emoji = '🟢 ';
-        else if (id.startsWith('meta-llama/')) emoji = '🦙 ';
-        else if (id.startsWith('deepseek/')) emoji = '🌊 ';
-        else if (id.startsWith('mistralai/')) emoji = '🔷 ';
-        else if (id.startsWith('qwen/')) emoji = '🟠 ';
-        else if (id.startsWith('x-ai/')) emoji = '✖ ';
-        else if (id.startsWith('cohere/')) emoji = '🔴 ';
-        else if (id.startsWith('nvidia/')) emoji = '🟩 ';
-        else if (id.startsWith('microsoft/')) emoji = '🪟 ';
+        if (id.startsWith('google/')) emoji = 'âš¡ ';
+        else if (id.startsWith('anthropic/')) emoji = 'ðŸŸ£ ';
+        else if (id.startsWith('openai/')) emoji = 'ðŸŸ¢ ';
+        else if (id.startsWith('meta-llama/')) emoji = 'ðŸ¦™ ';
+        else if (id.startsWith('deepseek/')) emoji = 'ðŸŒŠ ';
+        else if (id.startsWith('mistralai/')) emoji = 'ðŸ”· ';
+        else if (id.startsWith('qwen/')) emoji = 'ðŸŸ  ';
+        else if (id.startsWith('x-ai/')) emoji = 'âœ– ';
+        else if (id.startsWith('cohere/')) emoji = 'ðŸ”´ ';
+        else if (id.startsWith('nvidia/')) emoji = 'ðŸŸ© ';
+        else if (id.startsWith('microsoft/')) emoji = 'ðŸªŸ ';
         
         const isFree = item.pricing && parseFloat(item.pricing.prompt) === 0 && parseFloat(item.pricing.completion) === 0;
         let displayName = item.name || item.id;
@@ -2331,12 +2353,12 @@ function onProviderChange() {
   // Update key label and placeholder
   if (provider === 'openrouter') {
     keyLabel.textContent = 'OpenRouter API Key';
-    keyInput.placeholder = 'sk-or-v1-…';
+    keyInput.placeholder = 'sk-or-v1-â€¦';
     // Async fetch up-to-date models automatically from openrouter
     fetchOpenRouterModels();
   } else {
     keyLabel.textContent = 'Anthropic API Key';
-    keyInput.placeholder = 'sk-ant-api…';
+    keyInput.placeholder = 'sk-ant-apiâ€¦';
   }
 }
 
@@ -2350,11 +2372,11 @@ async function callClaude(prompt, systemPrompt, onChunk) {
   const key = document.getElementById('api-key').value.trim();
 
   if (!key) {
-    setAiStatus('⚠ Enter your ' + (provider === 'openrouter' ? 'OpenRouter' : 'Anthropic') + ' API key first.');
+    setAiStatus('âš  Enter your ' + (provider === 'openrouter' ? 'OpenRouter' : 'Anthropic') + ' API key first.');
     return null;
   }
 
-  setAiStatus('✦ Generating via ' + (provider === 'openrouter' ? 'OpenRouter' : 'Anthropic') + '…');
+  setAiStatus('âœ¦ Generating via ' + (provider === 'openrouter' ? 'OpenRouter' : 'Anthropic') + 'â€¦');
 
   try {
     let res;
@@ -2399,7 +2421,7 @@ async function callClaude(prompt, systemPrompt, onChunk) {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      setAiStatus('✕ API Error: ' + (err.error?.message || res.status));
+      setAiStatus('âœ• API Error: ' + (err.error?.message || res.status));
       return null;
     }
 
@@ -2445,12 +2467,12 @@ async function callClaude(prompt, systemPrompt, onChunk) {
       }
     }
 
-    setAiStatus('✓ Done — ' + model.split('/').pop());
+    setAiStatus('âœ“ Done â€” ' + model.split('/').pop());
     setTimeout(() => setAiStatus(''), 3000);
     return textContent;
 
   } catch (e) {
-    setAiStatus('✕ Network error: ' + e.message);
+    setAiStatus('âœ• Network error: ' + e.message);
     return null;
   }
 }
@@ -2459,9 +2481,9 @@ function setAiStatus(msg) {
   document.getElementById('ai-status').textContent = msg;
 }
 
-/* ───────────────────────────────────────────
-   PHASE 11 — GRAMMAR CORRECTOR
-─────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   PHASE 11 â€” GRAMMAR CORRECTOR
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 class GrammarCorrector {
   static detectLanguage(text) {
     if (!text) return 'english';
@@ -2505,9 +2527,9 @@ function acceptGrammarCorrection() {
   closeGrammarModal();
 }
 
-/* ───────────────────────────────────────────
-   PHASE 7.3–7.6 — AI ACTION DISPATCHER
-─────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   PHASE 7.3â€“7.6 â€” AI ACTION DISPATCHER
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 async function aiAction(type) {
   const textarea = document.getElementById('text-input');
   const currentText = textarea.value.trim();
@@ -2530,7 +2552,7 @@ async function aiAction(type) {
 
   if (type === 'doubt') {
     if (!currentText) {
-      setAiStatus('⚠ Please enter a problem to solve');
+      setAiStatus('âš  Please enter a problem to solve');
       btns.forEach(b => b.disabled = false);
       return;
     }
@@ -2559,7 +2581,7 @@ Focus on conceptual clarity and helping students understand the problem-solving 
 
   if (type === 'diagram') {
     const topic = document.getElementById('ai-topic').value.trim() || currentText;
-    if (!topic) { setAiStatus('⚠ Enter a topic first.'); btns.forEach(b => b.disabled = false); return; }
+    if (!topic) { setAiStatus('âš  Enter a topic first.'); btns.forEach(b => b.disabled = false); return; }
     
     // For diagram, we need a special prompt that forces structured JSON
     const systemPrompt = `Generate a structured diagram JSON for the topic: ${topic}.
@@ -2587,16 +2609,16 @@ Constraints:
   }
 
   if (type === 'summarize') {
-    if (!currentText) { setAiStatus('⚠ Add some text first.'); btns.forEach(b => b.disabled = false); return; }
+    if (!currentText) { setAiStatus('âš  Add some text first.'); btns.forEach(b => b.disabled = false); return; }
     result = await callClaude(
       currentText,
-      'Summarize the following text into clear, concise bullet-point notes. Use short sentences. No markdown formatting — plain text only.',
+      'Summarize the following text into clear, concise bullet-point notes. Use short sentences. No markdown formatting â€” plain text only.',
       onChunk
     );
   }
 
   if (type === 'arrange') {
-    if (!currentText) { setAiStatus('⚠ Add some text first.'); btns.forEach(b => b.disabled = false); return; }
+    if (!currentText) { setAiStatus('âš  Add some text first.'); btns.forEach(b => b.disabled = false); return; }
     result = await callClaude(
       currentText,
       'Reorganize and format the following text to look like beautifully arranged handwritten notes. Add appropriate section headers, bullet points, and clean paragraph breaks. Ensure the flow is logical and aesthetic. Use plain text only, no markdown symbols like asterisks or hashtags.',
@@ -2605,7 +2627,7 @@ Constraints:
   }
 
   if (type === 'grammar') {
-    if (!currentText) { setAiStatus('⚠ Add some text first.'); btns.forEach(b => b.disabled = false); return; }
+    if (!currentText) { setAiStatus('âš  Add some text first.'); btns.forEach(b => b.disabled = false); return; }
     
     const language = GrammarCorrector.detectLanguage(currentText);
     if (language === 'hindi') setAiStatus('Using Hindi grammar model...');
@@ -2629,7 +2651,7 @@ Constraints:
   }
 
   if (type === 'lecture') {
-    if (!currentText) { setAiStatus('⚠ Paste lecture text first.'); btns.forEach(b => b.disabled = false); return; }
+    if (!currentText) { setAiStatus('âš  Paste lecture text first.'); btns.forEach(b => b.disabled = false); return; }
     result = await callClaude(
       currentText,
       'Convert this raw lecture transcript into clean, well-structured handwritten-style notes. Use headings, bullet points, and numbered lists where appropriate. Plain text only, no markdown symbols.',
@@ -2639,7 +2661,7 @@ Constraints:
 
   if (type === 'assignment') {
     const topic = document.getElementById('ai-topic').value.trim() || currentText;
-    if (!topic) { setAiStatus('⚠ Enter a topic first.'); btns.forEach(b => b.disabled = false); return; }
+    if (!topic) { setAiStatus('âš  Enter a topic first.'); btns.forEach(b => b.disabled = false); return; }
     result = await callClaude(
       'Write a detailed, well-structured academic assignment on the topic: ' + topic,
       'Generate a complete handwritten-style assignment with an introduction, body paragraphs, and conclusion. Use plain text only. No markdown. Write naturally as someone would write in a notebook.',
@@ -2658,14 +2680,14 @@ Constraints:
 }
 
 
-/* ───────────────────────────────────────────
-   PHASE 8.1–8.2 — IMAGE EXPORT (PNG / JPG)
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   PHASE 8.1â€“8.2 â€” IMAGE EXPORT (PNG / JPG)
    Reads directly from the canvas elements at full native resolution.
    For single-page docs: one file. For multi-page: one file per page.
-─────────────────────────────────────────── */
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 async function exportImage(format) {
   if (!pages || pages.length === 0) {
-    showExportToast('Nothing to export — add some text first.', 'warn');
+    showExportToast('Nothing to export â€” add some text first.', 'warn');
     return;
   }
 
@@ -2680,7 +2702,7 @@ async function exportImage(format) {
 
   try {
     if (pages.length === 1) {
-      showExportToast('Exporting ' + ext.toUpperCase() + '…', 'info');
+      showExportToast('Exporting ' + ext.toUpperCase() + 'â€¦', 'info');
       pages[0].toBlob((blob) => {
         if (!blob) {
           showExportToast('Export failed: Blob generation failed', 'error');
@@ -2689,11 +2711,11 @@ async function exportImage(format) {
         const url = URL.createObjectURL(blob);
         triggerDownload(url, 'inkflow-notes.' + ext);
         setTimeout(() => URL.revokeObjectURL(url), 1000);
-        showExportToast('✓ ' + ext.toUpperCase() + ' saved!', 'success');
+        showExportToast('âœ“ ' + ext.toUpperCase() + ' saved!', 'success');
       }, mimeType, quality);
     } else {
       for (let i = 0; i < pages.length; i++) {
-        showExportToast(`Exporting ${ext.toUpperCase()} (Page ${i + 1}/${pages.length})…`, 'info');
+        showExportToast(`Exporting ${ext.toUpperCase()} (Page ${i + 1}/${pages.length})â€¦`, 'info');
         await new Promise((resolve) => {
           pages[i].toBlob((blob) => {
             if (!blob) {
@@ -2708,7 +2730,7 @@ async function exportImage(format) {
         });
         await new Promise(r => setTimeout(r, 120));
       }
-      showExportToast('✓ ' + ext.toUpperCase() + ' pages saved!', 'success');
+      showExportToast('âœ“ ' + ext.toUpperCase() + ' pages saved!', 'success');
     }
   } catch (e) {
     showExportToast('Export failed: ' + e.message, 'error');
@@ -2716,9 +2738,158 @@ async function exportImage(format) {
   }
 }
 
+async function exportTransparentPNG() {
+  if (!pages || pages.length === 0) {
+    showExportToast('Nothing to export â€” add some text first.', 'warn');
+    return;
+  }
+
+  if (document.activeElement && document.activeElement.classList.contains('page-editor')) {
+    document.activeElement.blur();
+    await new Promise(r => setTimeout(r, 320));
+  }
+
+  const queue = window.currentRenderQueue || [];
+  const ext = 'png';
+
+  try {
+    for (let i = 0; i < pages.length; i++) {
+      showExportToast(`Exporting transparent PNG (Page ${i + 1}/${pages.length})â€¦`, 'info');
+      const tmpCanvas = document.createElement('canvas');
+      tmpCanvas.width = PAGE_W;
+      tmpCanvas.height = PAGE_H;
+      const tmpCtx = tmpCanvas.getContext('2d');
+
+      const pageItems = queue.filter(item => item.pageIdx === i);
+      if (S.cursiveMode && cursiveConnector) {
+        renderCursiveConnectionsOn(tmpCtx, tmpCanvas, pageItems);
+      }
+      renderQueueItems(tmpCtx, tmpCanvas, pageItems);
+
+      await new Promise((resolve) => {
+        tmpCanvas.toBlob((blob) => {
+          if (!blob) { resolve(); return; }
+          const url = URL.createObjectURL(blob);
+          triggerDownload(url, `inkflow-transparent-page${i + 1}.${ext}`);
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+          resolve();
+        }, 'image/png', 1.0);
+      });
+      await new Promise(r => setTimeout(r, 120));
+    }
+    showExportToast('âœ“ Transparent PNGs saved!', 'success');
+  } catch (e) {
+    showExportToast('Export failed: ' + e.message, 'error');
+    console.error('[Inkflow] exportTransparentPNG error:', e);
+  }
+}
+
+function renderCursiveConnectionsOn(ctx, canvas, pageItems) {
+  if (!cursiveConnector) return;
+  const charList = pageItems.filter(item => !item.type && !item.isIndic);
+  for (let i = 0; i < charList.length - 1; i++) {
+    const curr = charList[i];
+    const next = charList[i + 1];
+    if (!cursiveConnector.shouldRenderConnection(curr.ch, next.ch, curr.isIndic)) continue;
+    if (curr.penKey !== next.penKey) continue;
+    const gap = next.x - (curr.x + (curr.charWidth || 20));
+    if (gap > S.fontSize * 0.6) continue;
+
+    const currW = curr.charWidth || 20;
+    const nextW = next.charWidth || 20;
+    const exitPoint = cursiveConnector.getExitPoint(curr.ch, currW, S.fontSize);
+    const entryPoint = cursiveConnector.getEntryPoint(next.ch, nextW, S.fontSize);
+    cursiveConnector.renderConnectionStroke(
+      ctx, { x: curr.x, y: curr.y }, exitPoint,
+      { x: next.x, y: next.y }, entryPoint,
+      curr.inkColor || S.inkColor, curr.v.pressureMod, S.fontSize
+    );
+  }
+}
+
+function renderQueueItems(ctx, canvas, pageItems) {
+  if (typeof rough !== 'undefined' && !window._rcCache) window._rcCache = new Map();
+  let rc = window._rcCache?.get(canvas);
+  if (!rc && typeof rough !== 'undefined') {
+    rc = rough.canvas(canvas);
+    window._rcCache?.set(canvas, rc);
+  }
+
+  const options = { roughness: S.pressure * 4, stroke: S.inkColor, strokeWidth: 1.2, bowing: S.rotationMax * 2 };
+
+  pageItems.forEach(item => {
+    if (item.type === 'mermaid') {
+      const diag = getDiagramImage(item.content);
+      if (diag.ready && diag.img && !diag.error) {
+        ctx.save();
+        ctx.translate(item.x, item.y);
+        ctx.globalAlpha = 0.9;
+        ctx.drawImage(diag.img, 0, 0, item.w, item.h);
+        ctx.restore();
+      }
+      return;
+    }
+    if (item.type === 'shape') {
+      if (rc) {
+        if (item.shape === 'circle') rc.circle(item.x, item.y, Math.max(item.w, item.h), options);
+        else if (item.shape === 'diamond') {
+          const hw = item.w / 2, hh = item.h / 2;
+          rc.polygon([[item.x, item.y-hh],[item.x+hw,item.y],[item.x,item.y+hh],[item.x-hw,item.y]], options);
+        } else if (item.shape === 'pill' || item.shape === 'rounded') {
+          rc.roundRect(item.x - item.w/2, item.y - item.h/2, item.w, item.h, 12, options);
+        } else if (item.shape === 'hexagon') {
+          const hw=item.w/2,hh=item.h/2,inset=hw*0.3;
+          rc.polygon([[item.x-hw+inset,item.y-hh],[item.x+hw-inset,item.y-hh],[item.x+hw,item.y],[item.x+hw-inset,item.y+hh],[item.x-hw+inset,item.y+hh],[item.x-hw,item.y]], options);
+        } else rc.rectangle(item.x-item.w/2,item.y-item.h/2,item.w,item.h,options);
+      } else {
+        ctx.strokeStyle = S.inkColor; ctx.lineWidth = 1.2; ctx.beginPath();
+        if (item.shape === 'circle') ctx.arc(item.x,item.y,Math.max(item.w,item.h)/2,0,Math.PI*2);
+        else ctx.rect(item.x-item.w/2,item.y-item.h/2,item.w,item.h);
+        ctx.stroke();
+      }
+      return;
+    }
+    if (item.type === 'edge') {
+      if (rc) {
+        rc.line(item.from.x,item.from.y,item.to.x,item.to.y,options);
+      } else {
+        ctx.strokeStyle = S.inkColor; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.moveTo(item.from.x,item.from.y); ctx.lineTo(item.to.x,item.to.y); ctx.stroke();
+      }
+      if (item.label) {
+        const mx=(item.from.x+item.to.x)/2, my=(item.from.y+item.to.y)/2;
+        ctx.save(); ctx.font=`${Math.max(10,S.fontSize*0.7)}px ${S.font}`;
+        ctx.fillStyle=S.inkColor; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(item.label,mx,my); ctx.restore();
+      }
+      return;
+    }
+    if (item.type === 'diagram-label') {
+      ctx.save();
+      ctx.font = `${Math.max(10, S.fontSize * 0.7)}px ${item.fontStack || S.font}`;
+      ctx.fillStyle = item.inkColor || S.inkColor;
+      ctx.globalAlpha = 0.9;
+      ctx.fillText(item.ch, item.x, item.y);
+      ctx.restore();
+      return;
+    }
+    const v = item.v;
+    ctx.save();
+    ctx.translate(item.x, item.y);
+    ctx.rotate((v.tiltDeg * (item.isIndic ? 0.3 : 1) * Math.PI) / 180);
+    ctx.scale(v.scaleX, v.scaleY);
+    const pxSize = S.fontSize * v.pressureMod;
+    ctx.font = `${Math.max(10, pxSize)}px ${item.fontStack}`;
+    ctx.globalAlpha = v.opacity;
+    ctx.fillStyle = item.inkColor || S.inkColor;
+    ctx.fillText(item.ch, 0, 0);
+    ctx.restore();
+  });
+}
+
 async function exportPDF() {
   if (!pages || pages.length === 0) {
-    showExportToast('Nothing to export — add some text first.', 'warn');
+    showExportToast('Nothing to export â€” add some text first.', 'warn');
     return;
   }
 
@@ -2742,7 +2913,7 @@ async function exportPDF() {
     });
 
     for (let i = 0; i < pages.length; i++) {
-      showExportToast(`Building PDF (Page ${i + 1}/${pages.length})…`, 'info');
+      showExportToast(`Building PDF (Page ${i + 1}/${pages.length})â€¦`, 'info');
       await new Promise(r => setTimeout(r, 60));
       if (i > 0) doc.addPage();
       const imgData = pages[i].toDataURL('image/jpeg', 0.93);
@@ -2750,7 +2921,7 @@ async function exportPDF() {
     }
 
     doc.save('inkflow-notes.pdf');
-    showExportToast('✓ PDF saved!', 'success');
+    showExportToast('âœ“ PDF saved!', 'success');
   } catch (e) {
     showExportToast('PDF export failed: ' + e.message, 'error');
     console.error('[Inkflow] exportPDF error:', e);
@@ -2759,7 +2930,7 @@ async function exportPDF() {
 
 async function exportSVG() {
   if (!pages || pages.length === 0) {
-    showExportToast('Nothing to export — add some text first.', 'warn');
+    showExportToast('Nothing to export â€” add some text first.', 'warn');
     return;
   }
 
@@ -2770,7 +2941,7 @@ async function exportSVG() {
 
   try {
     for (let i = 0; i < pages.length; i++) {
-      showExportToast(`Building SVG (Page ${i + 1}/${pages.length})…`, 'info');
+      showExportToast(`Building SVG (Page ${i + 1}/${pages.length})â€¦`, 'info');
       await new Promise(r => setTimeout(r, 60));
       const imgData = pages[i].toDataURL('image/png', 1.0);
       const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
@@ -2785,7 +2956,7 @@ async function exportSVG() {
       URL.revokeObjectURL(url);
       await new Promise(r => setTimeout(r, 120));
     }
-    showExportToast('✓ SVG saved!', 'success');
+    showExportToast('âœ“ SVG saved!', 'success');
   } catch (e) {
     showExportToast('SVG export failed: ' + e.message, 'error');
     console.error('[Inkflow] exportSVG error:', e);
@@ -2794,7 +2965,7 @@ async function exportSVG() {
 
 async function copyToClipboard() {
   if (!pages || pages.length === 0) {
-    showExportToast('Nothing to copy — add some text first.', 'warn');
+    showExportToast('Nothing to copy â€” add some text first.', 'warn');
     return;
   }
   try {
@@ -2804,7 +2975,7 @@ async function copyToClipboard() {
         await navigator.clipboard.write([
           new ClipboardItem({ 'image/png': blob })
         ]);
-        showExportToast('✓ Copied to clipboard!', 'success');
+        showExportToast('âœ“ Copied to clipboard!', 'success');
       } catch (e) {
         showExportToast('Clipboard copy failed: ' + e.message, 'error');
       }
@@ -2814,9 +2985,9 @@ async function copyToClipboard() {
   }
 }
 
-/* ───────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    SHARED EXPORT HELPERS
-─────────────────────────────────────────── */
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function triggerDownload(url, filename) {
   const a = document.createElement('a');
   a.href = url;
@@ -2846,9 +3017,9 @@ function showExportToast(msg, type = 'info') {
 const showToast = showExportToast;
 
 
-/* ───────────────────────────────────────────
-   PHASE 8.6–8.7 — AUTOSAVE & STATE RESTORE
-─────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   PHASE 8.6â€“8.7 â€” AUTOSAVE & STATE RESTORE
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const DB_NAME = 'InkflowDB';
 const DB_VERSION = 1;
 const STORE_NAME = 'draftedGlyphs';
@@ -2987,6 +3158,7 @@ function autosave() {
       markdownMultiPen: S.markdownMultiPen,
       markdownPenProfiles: S.markdownPenProfiles,
       textAlignment: S.textAlignment,
+      animSpeed: S.animSpeed,
     };
     localStorage.setItem('inkflow-state', JSON.stringify(state));
   }, 1000);
@@ -3074,6 +3246,21 @@ async function restoreState() {
     syncHinglishControls();
     if (state.textAlignment) {
       S.textAlignment = state.textAlignment;
+      document.querySelectorAll('.align-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.align === state.textAlignment);
+      });
+      const labels = { top: 'Upper', middle: 'Middle', bottom: 'Lower' };
+      const alignVal = document.getElementById('align-val');
+      if (alignVal) alignVal.textContent = labels[state.textAlignment] || 'Middle';
+    }
+    if (state.animSpeed !== undefined) {
+      S.animSpeed = state.animSpeed;
+      const slider = document.getElementById('speed-slider');
+      if (slider) {
+        slider.value = state.animSpeed;
+        const label = document.getElementById('spd-val');
+        if (label) label.textContent = state.animSpeed;
+      }
     }
 
     // 2. Migrate draftedGlyphs if they exist in localStorage state
@@ -3116,9 +3303,9 @@ async function restoreState() {
 }
 
 
-/* ───────────────────────────────────────────
-   PHASE 8.8 — PAGE NAVIGATION
-─────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   PHASE 8.8 â€” PAGE NAVIGATION
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function updatePageNav() {
   const total = pages.length || 1;
   const cur = Math.min(S.currentPage + 1, total);
@@ -3138,9 +3325,9 @@ function navigatePage(dir) {
   updatePageNav();
 }
 
-/* ───────────────────────────────────────────
-   PHASE 8.7 + INIT — APP BOOT
-─────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   PHASE 8.7 + INIT â€” APP BOOT
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 async function initApp() {
   await restoreState();
   setupFileUpload();
@@ -3177,7 +3364,7 @@ async function initApp() {
     bgCtx.font = `italic 18px "${S.font}"`;
     bgCtx.fillStyle = S.inkColor;
     bgCtx.globalAlpha = 0.18;
-    bgCtx.fillText('Start typing in the panel to the left…', S.margin, S.margin + S.fontSize + lineH);
+    bgCtx.fillText('Start typing in the panel to the leftâ€¦', S.margin, S.margin + S.fontSize + lineH);
     bgCtx.restore();
     // If we used a layer canvas, composite now; otherwise content is already on the main canvas
     if (window.layerCompositor && bgCtx !== canvas.getContext('2d')) {
@@ -3189,18 +3376,19 @@ async function initApp() {
 // Wire all slider controls to autosave
 ['font-size-slider', 'line-spacing', 'word-spacing', 'margin-slider',
   'rotation-slider', 'bleed-slider', 'pressure-slider', 'speed-slider'].forEach(id => {
-    document.getElementById(id).addEventListener('change', autosave);
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('change', autosave);
   });
-fontSelect.addEventListener('change', autosave);
-inkColorInput.addEventListener('change', autosave);
-inkColorInput.addEventListener('change', syncMarkdownPenControls);
+if (fontSelect) fontSelect.addEventListener('change', autosave);
+if (inkColorInput) inkColorInput.addEventListener('change', autosave);
+if (inkColorInput) inkColorInput.addEventListener('change', syncMarkdownPenControls);
 
 // Boot
 initApp();
 
-/* ───────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    PREMIUM FILE UPLOAD MODULE
-─────────────────────────────────────────── */
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function setupFileUpload() {
   const fileUpload = document.getElementById('file-upload');
   const dropZone = document.getElementById('drop-zone');
@@ -3282,14 +3470,14 @@ function setupFileUpload() {
       renderText(text);
       autosave();
       
-      statusText.textContent = '✓ File loaded successfully!';
+      statusText.textContent = 'âœ“ File loaded successfully!';
       statusText.style.color = '#2d6a4f';
       statusText.style.fontWeight = '600';
       setTimeout(() => {
         uploadStatus.style.display = 'none';
       }, 3500);
     } catch (e) {
-      statusText.textContent = `✕ Error: ${e.message}`;
+      statusText.textContent = `âœ• Error: ${e.message}`;
       statusText.style.color = '#8b0000';
       statusText.style.fontWeight = '600';
       console.error(e);
@@ -3347,9 +3535,9 @@ function setupFileUpload() {
   }
 }
 
-/* ───────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    RESET PARAMETERS TO DEFAULTS
-─────────────────────────────────────────── */
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function resetToDefaults() {
   const defaults = {
     font: 'Caveat',
@@ -3399,7 +3587,7 @@ function resetToDefaults() {
   const inkColorInput = document.getElementById('ink-color');
   if (inkColorInput) {
     inkColorInput.value = defaults.inkColor;
-    document.getElementById('ink-color-label').textContent = defaults.inkColor + ' — Navy';
+    document.getElementById('ink-color-label').textContent = defaults.inkColor + ' â€” Navy';
   }
 
   // Update Text Alignment
@@ -3421,9 +3609,9 @@ function resetToDefaults() {
   debounceRender();
 }
 
-/* ───────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    HANDFONTED STUDIO CUSTOM FONT BUILDER
-─────────────────────────────────────────── */
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 // Modal Toggles
 
@@ -3659,9 +3847,9 @@ function saveActiveCharacter() {
   const canvas = document.getElementById('sketch-canvas');
   if (!canvas) return;
   
-  // Phase 9.8 — Check if canvas has any significant ink before saving
+  // Phase 9.8 â€” Check if canvas has any significant ink before saving
   if (isCellBlank(canvas)) {
-    alert('Nothing drawn — sketch the character before saving with dark ink.');
+    alert('Nothing drawn â€” sketch the character before saving with dark ink.');
     return;
   }
   
@@ -3711,7 +3899,7 @@ function showCharPreview(dataUrl) {
   const previewCanvas = document.getElementById('char-preview-canvas');
   if (!container || !previewCanvas) return;
   
-  container.style.display = 'flex';
+  container.classList.remove('d-none');
   const ctx = previewCanvas.getContext('2d');
   const img = new Image();
   img.onload = () => {
@@ -3744,7 +3932,7 @@ function exportFontProject() {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
   
-  showToast(`✅ Project saved: ${projectData.totalGlyphs} characters`, 'success');
+  showToast(`âœ… Project saved: ${projectData.totalGlyphs} characters`, 'success');
 }
 
 // Import font project from JSON
@@ -3783,11 +3971,11 @@ function importFontProject(event) {
         selectSketchCharacter(ALL_TEMPLATE_CHARS[0]);
       }
       
-      showToast(`✅ Loaded ${Object.keys(projectData.glyphs).length} characters`, 'success');
+      showToast(`âœ… Loaded ${Object.keys(projectData.glyphs).length} characters`, 'success');
       
     } catch (error) {
       console.error('Error loading project:', error);
-      showToast('❌ Failed to load project file', 'error');
+      showToast('âŒ Failed to load project file', 'error');
     }
   };
   reader.readAsText(file);
@@ -3796,9 +3984,9 @@ function importFontProject(event) {
   event.target.value = '';
 }
 
-/* ───────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    DEVICE & RESOLUTION DETECTION
-─────────────────────────────────────────── */
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function getDeviceType() {
   const width = window.innerWidth;
@@ -3850,8 +4038,6 @@ function adjustCanvasSizeForDevice() {
     wrapper.style.touchAction = 'pan-x pan-y';
   }
   
-  // Log device info for debugging
-  console.log(`Device: ${device.type}, Canvas: ${canvas.width}x${canvas.height}, DPR: ${dpr}, Touch: ${device.isTouchDevice}`);
 }
 
 // Detect high refresh rate displays
@@ -3873,11 +4059,11 @@ function advanceActiveCharacter() {
     selectSketchCharacter(chars[curIdx + 1]);
   } else {
     if (activeSheet === 'letters') {
-      if (confirm('🎉 Finished Letters template! Would you like to switch to Numbers & Symbols?')) {
+      if (confirm('ðŸŽ‰ Finished Letters template! Would you like to switch to Numbers & Symbols?')) {
         switchSheet('symbols');
       }
     } else {
-      alert('🎉 You have drafted all characters in this set! Click "Generate & Apply Font" below to compile your TrueType handwriting font.');
+      alert('ðŸŽ‰ You have drafted all characters in this set! Click "Generate & Apply Font" below to compile your TrueType handwriting font.');
     }
   }
 }
@@ -3908,7 +4094,7 @@ function generateDownloadTemplate() {
   frontCtx.fillStyle = '#c0622a';
   frontCtx.font = 'bold 72px serif';
   frontCtx.textAlign = 'center';
-  frontCtx.fillText('✨ HandFonted Studio', 800, 200);
+  frontCtx.fillText('âœ¨ HandFonted Studio', 800, 200);
   
   frontCtx.fillStyle = '#1c2340';
   frontCtx.font = '42px serif';
@@ -3930,7 +4116,7 @@ function generateDownloadTemplate() {
   frontCtx.fillStyle = '#c0622a';
   frontCtx.font = 'bold 36px sans-serif';
   frontCtx.textAlign = 'left';
-  frontCtx.fillText('📋 Instructions:', 200, 490);
+  frontCtx.fillText('ðŸ“‹ Instructions:', 200, 490);
   
   // Instructions text
   frontCtx.fillStyle = '#1c2340';
@@ -3944,14 +4130,14 @@ function generateDownloadTemplate() {
     '3. Write naturally - your unique style will be captured!',
     '',
     '4. For best results:',
-    '   • Keep characters centered in each box',
-    '   • Use consistent size and slant',
-    '   • Write on a flat surface with good lighting',
-    '   • Avoid touching the box edges',
+    '   â€¢ Keep characters centered in each box',
+    '   â€¢ Use consistent size and slant',
+    '   â€¢ Write on a flat surface with good lighting',
+    '   â€¢ Avoid touching the box edges',
     '',
     '5. Scan or photograph the completed sheets',
-    '   • Use high contrast (300 DPI recommended)',
-    '   • Ensure the image is well-lit and in focus',
+    '   â€¢ Use high contrast (300 DPI recommended)',
+    '   â€¢ Ensure the image is well-lit and in focus',
     '',
     '6. Upload your sheets in Inkflow\'s HandFonted Studio',
     '',
@@ -3974,7 +4160,7 @@ function generateDownloadTemplate() {
   frontCtx.fillStyle = '#9e9078';
   frontCtx.font = 'italic 20px serif';
   frontCtx.textAlign = 'center';
-  frontCtx.fillText('Powered by Inkflow — AI Handwritten Notes Generator', 800, 1500);
+  frontCtx.fillText('Powered by Inkflow â€” AI Handwritten Notes Generator', 800, 1500);
   frontCtx.fillText('inkflow.app', 800, 1535);
   
   sheets.push({
@@ -4003,7 +4189,7 @@ function generateDownloadTemplate() {
     ctx.fillStyle = '#1c2340';
     ctx.font = 'bold 36px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(`HandFonted Studio — ${sheetType.title}`, 800, 70);
+    ctx.fillText(`HandFonted Studio â€” ${sheetType.title}`, 800, 70);
     ctx.font = '22px sans-serif';
     ctx.fillStyle = '#555';
     ctx.fillText('Write each character clearly inside its designated box', 800, 110);
@@ -4423,7 +4609,7 @@ function loadImageToCanvas(dataUrl) {
       canvas.width = 256;
       canvas.height = 256;
       const ctx = canvas.getContext('2d');
-      // Draw image centered and scaled to fit within 256×256 while preserving aspect ratio
+      // Draw image centered and scaled to fit within 256Ã—256 while preserving aspect ratio
       const scale = Math.min(256 / img.width, 256 / img.height);
       const scaledW = img.width * scale;
       const scaledH = img.height * scale;
@@ -4571,14 +4757,14 @@ async function buildCustomFont() {
         }
       }
       
-      // Phase 9.8 — Check if cell is blank before processing
+      // Phase 9.8 â€” Check if cell is blank before processing
       if (isCellBlank(cellCanvas)) {
         continue;
       }
 
       const path = canvasToOpentypePath(cellCanvas);
       
-      // Skip cells with no ink — let the browser fall back to a system font
+      // Skip cells with no ink â€” let the browser fall back to a system font
       // for these instead of baking in an invisible glyph.
       if (!path.commands || path.commands.length === 0) {
         continue;
@@ -4665,7 +4851,7 @@ async function buildCustomFont() {
     setTimeout(() => {
       progressDiv.classList.add('hidden');
       closeHandFontedModal();
-      alert(`🎉 Congratulation! "${fontName}" has been successfully created and applied to your handwritten notes!`);
+      alert(`ðŸŽ‰ Congratulation! "${fontName}" has been successfully created and applied to your handwritten notes!`);
     }, 1000);
     
   } catch (err) {
@@ -4676,9 +4862,9 @@ async function buildCustomFont() {
 }
 
 
-/* ═════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    PHASE 16 - LAYER MANAGER UI
-═════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 let currentLayerPage = 0; // The page whose layers are being viewed/edited in the UI
 
 function updateLayerUI(pageIdx = 0) {
@@ -4698,13 +4884,13 @@ function updateLayerUI(pageIdx = 0) {
     // Drag handle
     const drag = document.createElement('div');
     drag.className = 'layer-drag';
-    drag.textContent = '≡';
+    drag.textContent = 'â‰¡';
     drag.title = "Drag to reorder";
     
     // Visibility toggle
     const vis = document.createElement('div');
     vis.className = 'layer-vis';
-    vis.textContent = layer.visible ? '👁️' : '🚫';
+    vis.textContent = layer.visible ? 'ðŸ‘ï¸' : 'ðŸš«';
     vis.title = "Toggle visibility";
     vis.onclick = () => {
       window.layerCompositor.setLayerProperty(pageIdx, layer.id, 'visible', !layer.visible);
@@ -4758,7 +4944,7 @@ function updateLayerUI(pageIdx = 0) {
     // Delete
     const del = document.createElement('div');
     del.className = 'layer-delete';
-    del.textContent = '✖';
+    del.textContent = 'âœ–';
     del.title = "Delete layer";
     del.onclick = () => {
       if (window.layerCompositor.deleteLayer(pageIdx, layer.id)) {
@@ -4786,8 +4972,19 @@ function addNewLayer() {
 
 function flattenAllLayers() {
   if (!window.layerCompositor || !confirm("Are you sure you want to flatten all layers on this page?")) return;
-  // Complex implementation skipped for brevity, just redraw for now.
-  alert("Flatten not implemented in this demo.");
+  const pageIdx = S.currentPage;
+  const canvas = pages[pageIdx];
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  // Flatten: draw all layers onto the main canvas, then remove layers
+  const layers = window.layerCompositor.getLayers(pageIdx);
+  if (layers && layers.length > 1) {
+    layers.forEach(layer => {
+      if (layer.canvas) ctx.drawImage(layer.canvas, 0, 0);
+    });
+    window.layerCompositor.clearPage(pageIdx);
+  }
+  updateLayerUI(pageIdx);
 }
 
 function requestPageRender(pageIdx) {

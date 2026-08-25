@@ -36,6 +36,7 @@ graph TD
         J[layoutText — Unified Layout Engine]
         K[Writing Queue & Animation Engine]
         L[Page Editor Sync Layer]
+        DE[Diagram Engine — layoutCycle, layoutFlowchart, layoutHierarchy]
     end
 
     subgraph External_Layer [Integration & Export Services]
@@ -84,7 +85,7 @@ The visible DOM elements the user interacts with directly. These include the sid
 A centralized global configuration object `S` acts as the single source of truth. Changes to any UI control update `S`, which triggers re-rendering. A debounced autosave module serializes the state to `localStorage` after a 1000ms idle delay. Custom handwriting glyph data is stored in **IndexedDB** (`InkflowDB` → `draftedGlyphs` store) to bypass the 5MB `localStorage` quota limit.
 
 ### 3. Core Execution Engines
-The rendering pipeline that transforms state data into visual canvas output. The key innovation in v1.2.0 is the **unified `layoutText()` engine**, which performs all word-wrap, page-break, and character queue computation in a single pass, ensuring that both static rendering (`renderText`) and animation playback (`buildCharQueue`) produce identical results from the same layout logic.
+The rendering pipeline that transforms state data into visual canvas output. The key innovation in v1.2.0 is the **unified `layoutText()` engine**, which performs all word-wrap, page-break, and character queue computation in a single pass, ensuring that both static rendering (`renderText`) and animation playback (`buildCharQueue`) produce identical results from the same layout logic. The **diagram engine** (`diagram-engine.js`) is a standalone module that handles cycle, flowchart, hierarchy, pipeline, pyramid, and Mermaid diagram rendering via rough.js, exported as `window.DiagramEngine` for browser use and `module.exports` for Node tests.
 
 ### 4. Integration & Export Services
 External integrations for AI text generation (OpenRouter + Anthropic, with SSE streaming), native canvas image exports (Blob URL-based PNG/JPG/SVG), multi-page PDF compilation (jsPDF), clipboard copy (Clipboard API), and native OS print dialog access.
@@ -118,3 +119,4 @@ graph LR
 5. **Inline Page Editing**: Transparent `contenteditable` overlays over each canvas allow direct text editing on the page, with automatic sync back to the global text state.
 6. **Pristine Client-Side Vectorization**: Performs real-time Moore-Neighbor contour tracing, RDP curve simplification, and TTF compilation purely inside the browser.
 7. **Standalone Portability**: All styling, layout logic, rendering scripts, and third-party dependencies run inside a single, portable HTML file that works offline in any browser.
+8. **Modular Diagram Engine**: Extracted diagram layout algorithms into `diagram-engine.js`, supporting 6 diagram types (Cycle, Flowchart, Hierarchy, Pipeline, Pyramid, Mermaid) with rough.js hand-drawn shapes, edge labels, and node labels. Exposed via `window.DiagramEngine` for browser globals and `module.exports` for Node.js testing.

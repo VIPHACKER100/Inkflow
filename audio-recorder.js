@@ -133,7 +133,7 @@ class AudioRecorder {
       const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
       const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
       const secs = String(elapsed % 60).padStart(2, '0');
-      this.timerDisplay.textContent = `${mins}:${secs}`;
+      if (this.timerDisplay) this.timerDisplay.textContent = `${mins}:${secs}`;
     }, 1000);
   }
 
@@ -144,7 +144,7 @@ class AudioRecorder {
   updateSizeDisplay() {
     const bytes = this.audioChunks.reduce((acc, chunk) => acc + chunk.size, 0);
     const kb = (bytes / 1024).toFixed(1);
-    this.sizeDisplay.textContent = `${kb} KB`;
+    if (this.sizeDisplay) this.sizeDisplay.textContent = `${kb} KB`;
   }
 
   updateUIStart() {

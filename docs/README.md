@@ -2,7 +2,7 @@
 
 Welcome to the **Inkflow** documentation hub. This folder contains all technical, design, and operational documentation for the project.
 
-**Current Version**: 1.2.1 — Smart Arrange, Auto-Fit, Font Glyph Pruning, Layout Refinements
+**Current Version**: 1.4.0 — Diagram System, Cursive Mode, Transparent Export, Dated Paper
 
 ---
 
@@ -51,7 +51,7 @@ Welcome to the **Inkflow** documentation hub. This folder contains all technical
 ## 🔗 Quick Links
 
 - **Live App**: Open `index.html` in any modern browser
-- **Source Code**: `index.html` · `index.css` · `index.js`
+- **Source Code**: `index.html` · `index.css` · `index.js` · `diagram-engine.js` · `cursive-connector.js`
 - **Creator**: Aryan Ahirwar (VIPHACKER.100)
 
 ---

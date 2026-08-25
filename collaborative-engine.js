@@ -122,7 +122,6 @@ class CollaborativeEngine {
     this.ws = new WebSocket(url);
 
     this.ws.onopen = () => {
-      console.log('[Collab] Connected to server');
     };
 
     this.ws.onmessage = (event) => {
@@ -136,7 +135,6 @@ class CollaborativeEngine {
 
     this.ws.onclose = () => {
       this.onStatusChange('Offline', false);
-      console.log('[Collab] Disconnected');
     };
 
     this.ws.onerror = (err) => {
@@ -149,6 +147,9 @@ class CollaborativeEngine {
     if (this.ws) {
       this.ws.close();
       this.ws = null;
+    }
+    if (this.textarea && this._onInputBound) {
+      this.textarea.removeEventListener('input', this._onInputBound);
     }
     this.users.clear();
     this.onUsersChange([]);
