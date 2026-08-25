@@ -1,0 +1,31 @@
+{
+  "name": "inkflow",
+  "version": "1.0.0",
+  "description": "AI Handwritten Notes Generator",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VIPHACKER100/Inkflow.git"
+  },
+  "keywords": [
+    "handwriting",
+    "notes",
+    "ai",
+    "generator"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/VIPHACKER100/Inkflow/issues"
+  },
+  "homepage": "https://github.com/VIPHACKER100/Inkflow#readme",
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1"
+  }
+}
