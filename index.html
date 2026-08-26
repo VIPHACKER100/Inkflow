@@ -6,6 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Inkflow — AI Handwritten Notes Generator</title>
 
+  <!-- PWA Manifest & Theme -->
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#7c6af7" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Inkflow" />
+
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -323,7 +330,15 @@ Try pasting a paragraph of lecture notes!"></textarea>
           <select id="ai-provider" onchange="onProviderChange()" title="AI Provider">
             <option value="openrouter" selected>🌐 OpenRouter</option>
             <option value="anthropic">🔑 Anthropic (Direct)</option>
+            <option value="ollama">🦙 Ollama (Local — Private)</option>
           </select>
+
+          <!-- Ollama endpoint URL (shown only when Ollama is selected) -->
+          <div id="ollama-endpoint-row" style="display:none; margin-top:8px;">
+            <div class="sb-label sb-label-sm">Ollama Endpoint URL</div>
+            <input type="text" id="ollama-endpoint" value="http://localhost:11434" placeholder="http://localhost:11434" title="Ollama local server URL" />
+            <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Start Ollama with: <code style="background:var(--sb-bg);padding:1px 4px;border-radius:3px;">ollama serve</code></div>
+          </div>
 
           <!-- Model selector -->
           <div class="sb-label sb-label-sm">Model</div>
@@ -332,9 +347,9 @@ Try pasting a paragraph of lecture notes!"></textarea>
           <!-- API Key input -->
           <div class="sb-label sb-label-sm" id="api-key-label">OpenRouter API Key</div>
           <input type="password" id="api-key" placeholder="sk-or-v1-…" autocomplete="off" title="OpenRouter API Key" />
-          <label class="sb-label sb-label-sm" style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+          <label class="sb-checkbox-label" id="remember-api-key-label">
             <input type="checkbox" id="remember-api-key" />
-            Remember API key on this device
+            <span>Remember API key on this device</span>
           </label>
           <div id="ai-status"></div>
 
@@ -655,6 +670,28 @@ Try pasting a paragraph of lecture notes!"></textarea>
 
   <!-- Custom Script -->
   <script src="index.js"></script>
+
+  <!-- Phase 1 PWA — Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((reg) => {
+            console.log('[Inkflow] Service Worker registered, scope:', reg.scope);
+          })
+          .catch((err) => {
+            console.warn('[Inkflow] Service Worker registration failed:', err);
+          });
+
+        // Listen for autosave sync messages from SW
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          if (event.data && event.data.type === 'SYNC_AUTOSAVE') {
+            if (typeof autosave === 'function') autosave();
+          }
+        });
+      });
+    }
+  </script>
 </body>
 
 </html>

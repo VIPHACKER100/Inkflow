@@ -2,7 +2,7 @@
 
 Welcome to the **Inkflow** documentation hub. This folder contains all technical, design, and operational documentation for the project.
 
-**Current Version**: 1.4.1 — Clean Paper Style, Study Tools, Recalibrated Text Alignment, Full-Viewport Study Mode, Notebooks, Theme Packs, High-Res Exports
+**Current Version**: 1.5.0 — PWA Offline Service Worker, Local Ollama AI Integration, Connected Cursive Ligature Engine, Clean Paper Style, Study Tools, Notebooks, High-Res Exports
 
 ---
 

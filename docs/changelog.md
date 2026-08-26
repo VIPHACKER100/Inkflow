@@ -4,6 +4,15 @@ All notable changes to Inkflow are documented in this file.
 
 ---
 
+## [1.5.0] — 2026-08-27
+
+### ✨ Added
+- **Progressive Web App (PWA) Offline Support**: Added `sw.js` (Service Worker) and `manifest.json` (Web App Manifest). Inkflow can now be installed directly to desktop or mobile home screens and works 100% offline with a Cache-First strategy for CDN assets (Google Fonts, FontAwesome, jsPDF) and Network-First for app shell files.
+- **Ollama Local AI Provider Integration**: Added `ollama` option to the AI Provider selector with support for local models (`Llama 3.2`, `Mistral`, `Phi-4`, `Gemma 2`, `Qwen 2.5`, `DeepSeek R1`, `CodeLlama`). Integrates with Ollama's local REST API (`http://localhost:11434/api/chat`) for 100% private, offline AI notes summarization, smart arranging, and assignment generation without API keys.
+- **Connected Cursive Ligature Engine**: Added `CURSIVE_FONTS` set (`Caveat`, `Homemade Apple`, `Shadows Into Light`, `Nanum Pen Script`, `Reey`, `Amita`, `Kalam`) and `drawCursiveConnector()` quadratic Bezier stroke rendering pipeline that dynamically draws entry/exit ligature connectors between adjacent glyphs for realistic cursive writing.
+
+---
+
 ## [1.4.1] — 2026-08-24
 
 ### ✨ Added

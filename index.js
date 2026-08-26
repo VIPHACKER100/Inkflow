@@ -2405,6 +2405,57 @@ function layoutText(text) {
   return { queue, pageTexts, pageCount: pageIdx + 1 };
 }
 
+/* ───────────────────────────────────────────
+   PHASE 3 — CONNECTED CURSIVE LIGATURE ENGINE
+─────────────────────────────────────────── */
+const CURSIVE_FONTS = new Set([
+  'Caveat',
+  'Homemade Apple',
+  'Shadows Into Light',
+  'Nanum Pen Script',
+  'Reey',
+  'Amita',
+  'Kalam',
+]);
+
+function drawCursiveConnector(ctx, item1, item2, S) {
+  if (!item1 || !item2) return;
+  if (item1.pageIdx !== item2.pageIdx) return;
+  if (Math.abs(item1.y - item2.y) > (item1.fontSize || S.fontSize) * 0.4) return;
+  if (item2.x <= item1.x) return;
+  const dx = item2.x - item1.x;
+  const fs = item1.fontSize || S.fontSize;
+  if (dx > fs * 1.5) return;
+
+  const opacity = ((item1.v?.opacity || 1) + (item2.v?.opacity || 1)) / 2;
+  const strokeWidth = Math.max(0.6, fs * 0.04 * (((item1.v?.pressureMod || 1) + (item2.v?.pressureMod || 1)) / 2));
+
+  ctx.save();
+  ctx.globalAlpha = opacity * 0.75;
+  ctx.strokeStyle = S.inkColor;
+  ctx.lineWidth = strokeWidth;
+  ctx.lineCap = 'round';
+
+  if (S.paperStyle !== 'clean' && S.bleed > 0.05) {
+    ctx.shadowColor = S.shadowColor || S.inkColor;
+    ctx.shadowBlur = S.bleed * 0.8;
+  }
+
+  const startX = item1.x + fs * 0.25;
+  const startY = item1.y + fs * 0.05;
+  const endX = item2.x - fs * 0.2;
+  const endY = item2.y + fs * 0.08;
+
+  const cp1x = startX + (endX - startX) * 0.5;
+  const cp1y = Math.max(startY, endY) + fs * 0.1;
+
+  ctx.beginPath();
+  ctx.moveTo(startX, startY);
+  ctx.quadraticCurveTo(cp1x, cp1y, endX, endY);
+  ctx.stroke();
+  ctx.restore();
+}
+
 // Cache of decoded <img> elements for drafted glyphs, keyed by character.
 // renderText() only draws an entry once it's fully decoded (img.complete-
 // equivalent ready flag), so the drawImage() call always happens
@@ -2521,6 +2572,20 @@ function renderText(text) {
     }
     ctx.restore();
   });
+
+  // ── POST-PASS: Cursive Ligature Connectors ──
+  if (CURSIVE_FONTS.has(S.font)) {
+    for (let i = 0; i < queue.length - 1; i++) {
+      const item1 = queue[i];
+      const item2 = queue[i + 1];
+      if (item1.pageIdx === item2.pageIdx) {
+        const canvas = pages[item1.pageIdx];
+        if (canvas) {
+          drawCursiveConnector(canvas.getContext('2d'), item1, item2, S);
+        }
+      }
+    }
+  }
 
   // ── POST-PASS: Draw Sticky Notes ──
   paintStickyNotes(queue);
@@ -2666,10 +2731,11 @@ function startAnimation() {
 document.getElementById('btn-animate').addEventListener('click', startAnimation);
 document.getElementById('btn-clear').addEventListener('click', clearText);
 
-/* ───────────────────────────────────────────
+/* ─────────────────────────────────────────────
    PHASE 7.2 — MULTI-PROVIDER AI ENGINE
-   Supports: OpenRouter (100+ models) & Anthropic Direct
-─────────────────────────────────────────── */
+   Supports: OpenRouter (100+ models), Anthropic Direct,
+   and Ollama Local (privacy-first, 100% offline)
+───────────────────────────────────────────── */
 
 const AI_MODELS = {
   openrouter: [
@@ -2715,6 +2781,27 @@ const AI_MODELS = {
     { id: 'claude-3-5-haiku-20241022', name: 'Claude 3.5 Haiku (Fast)' },
     { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus (Powerful)' },
     { id: 'claude-3-haiku-20240307', name: 'Claude 3 Haiku (Budget)' },
+  ],
+  // ── Ollama — local models (user must have Ollama running) ──
+  ollama: [
+    { id: 'llama3.2', name: '🦙 Llama 3.2 (3B)' },
+    { id: 'llama3.2:1b', name: '🦙 Llama 3.2 (1B — Fastest)' },
+    { id: 'llama3.1', name: '🦙 Llama 3.1 (8B)' },
+    { id: 'llama3.1:70b', name: '🦙 Llama 3.1 (70B)' },
+    { id: 'mistral', name: '🔷 Mistral (7B)' },
+    { id: 'mistral-nemo', name: '🔷 Mistral Nemo (12B)' },
+    { id: 'phi4', name: '🪩 Phi-4 (14B — Fast & Capable)' },
+    { id: 'phi3.5', name: '🪩 Phi-3.5 (3.8B)' },
+    { id: 'gemma2', name: '⚡ Gemma 2 (9B)' },
+    { id: 'gemma2:2b', name: '⚡ Gemma 2 (2B — Fastest)' },
+    { id: 'gemma2:27b', name: '⚡ Gemma 2 (27B)' },
+    { id: 'qwen2.5', name: '🟠 Qwen 2.5 (7B)' },
+    { id: 'qwen2.5:14b', name: '🟠 Qwen 2.5 (14B)' },
+    { id: 'qwen2.5:72b', name: '🟠 Qwen 2.5 (72B)' },
+    { id: 'deepseek-r1', name: '🌊 DeepSeek R1 (7B — Reasoning)' },
+    { id: 'deepseek-r1:14b', name: '🌊 DeepSeek R1 (14B — Reasoning)' },
+    { id: 'codellama', name: '👨‍💻 CodeLlama (7B)' },
+    { id: 'neural-chat', name: '💬 Neural Chat (7B)' },
   ],
 };
 
@@ -2789,34 +2876,129 @@ async function fetchOpenRouterModels() {
   }
 }
 
+/* ───────────────────────────────────────────
+   API KEY PERSISTENCE (Remember API Key option)
+─────────────────────────────────────────── */
+function initApiKeyPersistence() {
+  const providerSelect = document.getElementById('ai-provider');
+  const keyInput = document.getElementById('api-key');
+  const rememberCheckbox = document.getElementById('remember-api-key');
+
+  if (!providerSelect || !keyInput || !rememberCheckbox) return;
+
+  // Restore global checkbox preference (default to checked if a key was previously saved)
+  const globalRemember = localStorage.getItem('inkflow-remember-api-key');
+  if (globalRemember === '1') {
+    rememberCheckbox.checked = true;
+  } else if (globalRemember === '0') {
+    rememberCheckbox.checked = false;
+  } else {
+    // Default to checked
+    rememberCheckbox.checked = true;
+  }
+
+  function loadSavedKey() {
+    const provider = providerSelect.value;
+    if (provider === 'ollama') return;
+
+    const savedKey = localStorage.getItem('inkflow-api-key-' + provider) || '';
+
+    // If checkbox is checked, restore saved key if available
+    if (rememberCheckbox.checked && savedKey) {
+      keyInput.value = savedKey;
+    }
+  }
+
+  function saveOrClearKey() {
+    const provider = providerSelect.value;
+    if (provider === 'ollama') return;
+
+    if (rememberCheckbox.checked) {
+      localStorage.setItem('inkflow-remember-api-key', '1');
+      const val = keyInput.value.trim();
+      if (val) {
+        localStorage.setItem('inkflow-api-key-' + provider, val);
+      }
+    } else {
+      localStorage.setItem('inkflow-remember-api-key', '0');
+      localStorage.removeItem('inkflow-api-key-openrouter');
+      localStorage.removeItem('inkflow-api-key-anthropic');
+    }
+  }
+
+  // Event listeners: save whenever key is edited or checkbox state changes
+  keyInput.addEventListener('input', () => {
+    if (rememberCheckbox.checked) {
+      saveOrClearKey();
+    }
+  });
+
+  keyInput.addEventListener('change', () => {
+    if (rememberCheckbox.checked) {
+      saveOrClearKey();
+    }
+  });
+
+  rememberCheckbox.addEventListener('change', () => {
+    if (rememberCheckbox.checked) {
+      saveOrClearKey();
+    } else {
+      saveOrClearKey();
+      keyInput.value = '';
+    }
+  });
+
+  window._loadSavedApiKey = loadSavedKey;
+  loadSavedKey();
+}
+
 function onProviderChange() {
   const provider = document.getElementById('ai-provider').value;
   const modelSelect = document.getElementById('ai-model');
   const keyLabel = document.getElementById('api-key-label');
   const keyInput = document.getElementById('api-key');
+  const rememberLabel = document.getElementById('remember-api-key-label');
+  const ollamaRow = document.getElementById('ollama-endpoint-row');
 
   // Update model dropdown
   modelSelect.innerHTML = '';
-  AI_MODELS[provider].forEach(m => {
-    const opt = document.createElement('option');
-    opt.value = m.id;
-    opt.textContent = m.name;
-    modelSelect.appendChild(opt);
-  });
-
-  // Update key label and placeholder
-  if (provider === 'openrouter') {
-    keyLabel.textContent = 'OpenRouter API Key';
-    keyInput.placeholder = 'sk-or-v1-…';
-    // Async fetch up-to-date models automatically from openrouter
-    fetchOpenRouterModels();
-  } else {
-    keyLabel.textContent = 'Anthropic API Key';
-    keyInput.placeholder = 'sk-ant-api…';
+  if (AI_MODELS[provider]) {
+    AI_MODELS[provider].forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m.id;
+      opt.textContent = m.name;
+      modelSelect.appendChild(opt);
+    });
   }
+
+  // Show/hide Ollama endpoint row
+  if (ollamaRow) ollamaRow.style.display = provider === 'ollama' ? 'block' : 'none';
+
+  // Reset label style
+  if (keyLabel) keyLabel.style.color = '';
+
+  // Update key label, placeholder, and container visibility
+  if (provider === 'openrouter') {
+    if (keyLabel) { keyLabel.textContent = 'OpenRouter API Key'; keyLabel.style.display = ''; }
+    if (keyInput) { keyInput.placeholder = 'sk-or-v1-…'; keyInput.style.display = ''; }
+    if (rememberLabel) rememberLabel.style.display = 'flex';
+    fetchOpenRouterModels();
+  } else if (provider === 'anthropic') {
+    if (keyLabel) { keyLabel.textContent = 'Anthropic API Key'; keyLabel.style.display = ''; }
+    if (keyInput) { keyInput.placeholder = 'sk-ant-api…'; keyInput.style.display = ''; }
+    if (rememberLabel) rememberLabel.style.display = 'flex';
+  } else if (provider === 'ollama') {
+    // Ollama runs locally — hide key input & remember checkbox completely
+    if (keyLabel) keyLabel.style.display = 'none';
+    if (keyInput) keyInput.style.display = 'none';
+    if (rememberLabel) rememberLabel.style.display = 'none';
+  }
+
+  if (window._loadSavedApiKey) window._loadSavedApiKey();
 }
 
-// Initialize model dropdown and start auto-fetching on load
+// Initialize API key persistence first, then setup model dropdown and start auto-fetching on load
+initApiKeyPersistence();
 onProviderChange();
 fetchOpenRouterModels();
 
@@ -2933,6 +3115,79 @@ async function callClaude(prompt, systemPrompt, onChunk) {
 
 function setAiStatus(msg) {
   document.getElementById('ai-status').textContent = msg;
+}
+
+/* ───────────────────────────────────────────
+   PHASE 7.2.3 — OLLAMA LOCAL AI ENGINE
+   Routes AI requests to a local Ollama instance
+   (default: http://localhost:11434). No API key needed.
+   100% private — no data leaves your machine.
+─────────────────────────────────────────── */
+async function callOllama(prompt, systemPrompt, model, onChunk) {
+  const endpointInput = document.getElementById('ollama-endpoint');
+  const baseUrl = (endpointInput ? endpointInput.value.trim() : 'http://localhost:11434').replace(/\/$/, '');
+  const url = baseUrl + '/api/chat';
+
+  setAiStatus('🦙 Generating via Ollama (' + model + ')…');
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: model,
+        stream: true,
+        messages: [
+          { role: 'system', content: systemPrompt || 'You are a helpful assistant for a handwritten notes app.' },
+          { role: 'user', content: prompt },
+        ],
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => res.status);
+      setAiStatus('✕ Ollama error: ' + errText);
+      return null;
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let textContent = '';
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      // Ollama streams one JSON object per line
+      const lines = chunk.split('\n').filter(l => l.trim());
+      for (const line of lines) {
+        try {
+          const obj = JSON.parse(line);
+          const delta = obj.message?.content || '';
+          if (delta) {
+            textContent += delta;
+            if (onChunk) onChunk(textContent);
+          }
+          if (obj.done) break;
+        } catch {
+          // Ignore incomplete JSON lines
+        }
+      }
+    }
+
+    setAiStatus('✓ Done — Ollama: ' + model);
+    setTimeout(() => setAiStatus(''), 3000);
+    return textContent;
+
+  } catch (e) {
+    if (e.message.includes('Failed to fetch') || e.message.includes('NetworkError')) {
+      setAiStatus('✕ Cannot reach Ollama. Run: ollama serve');
+    } else {
+      setAiStatus('✕ Ollama error: ' + e.message);
+    }
+    return null;
+  }
 }
 
 /* ───────────────────────────────────────────

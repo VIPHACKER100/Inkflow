@@ -26,3 +26,4 @@ lerna-debug.log*
 .env
 .env.local
 .env.*.local
+strategic_roadmap.md

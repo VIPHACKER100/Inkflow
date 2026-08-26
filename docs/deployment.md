@@ -12,6 +12,8 @@ Inkflow is a fully static, client-side web application. There is no build step, 
   - `index.html` (app shell)
   - `index.css` (styles)
   - `index.js` (application logic)
+  - `sw.js` (PWA Service Worker for offline caching)
+  - `manifest.json` (PWA Web App Manifest for installability)
 
 ---
 

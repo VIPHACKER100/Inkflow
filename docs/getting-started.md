@@ -1,24 +1,24 @@
 # 🚀 Getting Started with Inkflow
 
-Welcome to **Inkflow v1.4.0** — a single-file web app that turns plain text into beautiful, handwritten-style notes with an AI assistant built in.
+Welcome to **Inkflow v1.5.0** — a single-file Progressive Web App (PWA) that turns plain text into beautiful, handwritten-style notes with built-in AI (OpenRouter, Anthropic, and local Ollama).
 
 ---
 
 ## What Is Inkflow?
 
-Inkflow converts typed text into realistic handwriting on virtual A4 paper using your browser. It works fully client-side: no server, no sign-up, no telemetry. Everything runs in your browser tab.
+Inkflow converts typed text into realistic handwriting on virtual A4 paper using your browser. It works fully client-side: no server required, 100% offline-ready via PWA service worker, no sign-up, no telemetry. Everything runs in your browser tab or installed app window.
 
 ---
 
 ## Quick Start
 
-1. **Open the app** — load `index.html` in a modern browser (Chrome, Edge, Firefox, Safari).
+1. **Open or Install the app** — load `index.html` in any browser or click the browser address bar icon to **Install Inkflow** as a PWA app.
 2. **Type or paste text** in the sidebar text area (or drag in a `.txt` / `.md` / `.pdf` file).
 3. Press **Animate** to watch the handwriting animation, or press **✦ Render** for instant output.
 4. Use the floating **page indicator** at the bottom to move between pages.
 5. Export via the **Export** section — PNG, JPG, PDF (lossless), SVG, Copy, or Print.
 
-That's it. There is no installation step.
+That's it. Inkflow functions 100% offline once opened once.
 
 ---
 
