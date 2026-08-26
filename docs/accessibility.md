@@ -13,7 +13,8 @@ This document records Inkflow's current accessibility state and identifies gaps.
 - **Native form controls**: Sliders, selects, checkboxes, and color inputs are native elements with visible value readouts (`<span class="val">` next to every label).
 - **Dark mode**: CSS custom properties in `html.dark` preserve contrast; text remains `#e8e4d8` on `#12121e` (high ratio).
 - **Reduced-motion respect (partial)**: The app uses `requestAnimationFrame` animation that stops cleanly with the **■ Stop** button.
-- **Focus visibility**: Buttons and controls show the browser default focus ring.
+- **Focus visibility & Trapping**: Buttons and controls show focus rings. Open modals (`HandFonted Studio` & `Flashcards`) enforce WCAG 2.1 focus trapping via `trapFocusModal()`, cycling `Tab` / `Shift+Tab` within modal boundaries and restoring focus upon closure.
+- **Keyboard Shortcuts**: `Escape` key closes open modals and exits Study Mode instantly.
 - **Print**: `@media print` rules remove chrome so notes print cleanly.
 
 ### Known Gaps
@@ -21,13 +22,10 @@ This document records Inkflow's current accessibility state and identifies gaps.
 | Area | Gap | Recommendation |
 | :--- | :--- | :--- |
 | `aria-live` regions | No render/export announcements exist | Add `aria-live="polite"` regions for toast + AI status |
-| Modal focus management | HandFonted Studio & Flashcard modals don't trap or restore focus | Add focus trap + return focus to the trigger |
 | Icon-only paper buttons | Emoji labels (📏⬜⊞…) have no `aria-label` | Add `aria-label`/`title` to each `.paper-btn` |
 | Canvas content | The handwriting canvas is not screen-reader readable | Provide the textarea as the accessible source of truth |
 | Contenteditable overlays | `.page-editor` overlays lack `aria-label` / `role` | Add `role="textbox"` + `aria-label="Page N editor"` |
 | Color contrast | Emoji/`Font Awesome` glyphs rely on color alone for ink presets | Add text labels or `title` attributes (some already present) |
-| Keyboard shortcuts | No documented shortcut map | Consider adding and documenting shortcuts |
-| Flashcard modal | Flip uses click only | Add a keyboard shortcut (e.g. Enter/Space to flip) |
 
 ---
 

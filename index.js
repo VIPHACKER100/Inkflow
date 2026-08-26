@@ -3031,7 +3031,7 @@ async function callClaude(prompt, systemPrompt, onChunk) {
           max_tokens: 1500,
           stream: true,
           messages: [
-            { role: 'system', content: systemPrompt || 'You are a helpful assistant for a handwritten notes app.' },
+            { role: 'system', content: systemPrompt || AI_SYSTEM_BASE_PROMPT },
             { role: 'user', content: prompt },
           ],
         }),
@@ -3049,7 +3049,7 @@ async function callClaude(prompt, systemPrompt, onChunk) {
           model: model,
           max_tokens: 1500,
           stream: true,
-          system: systemPrompt || 'You are a helpful assistant for a handwritten notes app.',
+          system: systemPrompt || AI_SYSTEM_BASE_PROMPT,
           messages: [{ role: 'user', content: prompt }],
         }),
       });
@@ -3138,7 +3138,7 @@ async function callOllama(prompt, systemPrompt, model, onChunk) {
         model: model,
         stream: true,
         messages: [
-          { role: 'system', content: systemPrompt || 'You are a helpful assistant for a handwritten notes app.' },
+          { role: 'system', content: systemPrompt || AI_SYSTEM_BASE_PROMPT },
           { role: 'user', content: prompt },
         ],
       }),
@@ -3191,6 +3191,23 @@ async function callOllama(prompt, systemPrompt, model, onChunk) {
 }
 
 /* ───────────────────────────────────────────
+   UPGRADED AI SYSTEM PROMPTS (Rich Syntax Aware)
+─────────────────────────────────────────── */
+const AI_SYSTEM_BASE_PROMPT = `You are an expert AI notebook assistant for Inkflow, a high-fidelity handwritten notes app.
+
+Format your output using Inkflow's native structured syntax so notes render beautifully on paper:
+1. HEADINGS: Use '# Title' for the main note title and '## Subtitle' for section headers.
+2. LISTS: Use '- Item' for bullet lists and '1. Item' for step-by-step numbered points.
+3. HIGHLIGHTS: Wrap core concepts or keywords in '==key term==' to highlight them.
+4. STICKY NOTES: Add margin sticky notes for crucial takeaways using '[sticky:yellow] Note text [sticky]' (colors: yellow, cyan, pink, mint).
+5. CALLOUT BOXES: Add callouts for formulas, definitions, or warnings using '[callout:info] Info text [callout]' (types: info, warning, formula).
+6. FLASHCARDS: Include study questions using 'Q: Question' followed by 'A: Answer' on the next line.
+
+GUIDELINES:
+- Output clean text with Inkflow syntax tags only. Do NOT use markdown code fences (\`\`\`), HTML tags, or raw bold asterisks (\*\*).
+- Keep formatting elegant, human-like, and easy to read on handwritten notebook pages.`;
+
+/* ───────────────────────────────────────────
    PHASE 7.3–7.6 — AI ACTION DISPATCHER
 ─────────────────────────────────────────── */
 async function aiAction(type) {
@@ -3217,7 +3234,7 @@ async function aiAction(type) {
     if (!currentText) { setAiStatus('⚠ Add some text first.'); btns.forEach(b => b.disabled = false); return; }
     result = await callClaude(
       currentText,
-      'Summarize the following text into clear, concise bullet-point notes. Use short sentences. No markdown formatting — plain text only.',
+      `${AI_SYSTEM_BASE_PROMPT}\n\nTASK: Summarize the provided text into clear, structured notebook notes. Include a '# Summary' header, main bullet points with ==highlighted== key terms, a '[sticky:cyan] Key Takeaway [sticky]' box, and 2-3 'Q: ... \\n A: ...' flashcards at the end.`,
       onChunk
     );
   }
@@ -3226,7 +3243,7 @@ async function aiAction(type) {
     if (!currentText) { setAiStatus('⚠ Add some text first.'); btns.forEach(b => b.disabled = false); return; }
     result = await callClaude(
       currentText,
-      'Reorganize and format the following text to look like beautifully arranged handwritten notes. Add appropriate section headers, bullet points, and clean paragraph breaks. Ensure the flow is logical and aesthetic. Use plain text only, no markdown symbols like asterisks or hashtags.',
+      `${AI_SYSTEM_BASE_PROMPT}\n\nTASK: Reorganize and format the provided raw text into beautifully structured handwritten notes. Add a '# Main Title' heading, '## Section' subheadings, bullet lists, ==highlighted key terms==, and a '[callout:info] Key Note [callout]'.`,
       onChunk
     );
   }
@@ -3235,7 +3252,7 @@ async function aiAction(type) {
     if (!currentText) { setAiStatus('⚠ Add some text first.'); btns.forEach(b => b.disabled = false); return; }
     result = await callClaude(
       currentText,
-      'Fix the grammar, spelling, and phrasing of this text. Keep the content and meaning identical. Return plain text only, no markdown.',
+      `${AI_SYSTEM_BASE_PROMPT}\n\nTASK: Fix all grammar, spelling, and phrasing errors in the provided text. Enhance sentence flow while keeping the original meaning intact. Format the polished text into clean notebook sections using '#' headers and bullet points where helpful.`,
       onChunk
     );
   }
@@ -3244,7 +3261,7 @@ async function aiAction(type) {
     if (!currentText) { setAiStatus('⚠ Paste lecture text first.'); btns.forEach(b => b.disabled = false); return; }
     result = await callClaude(
       currentText,
-      'Convert this raw lecture transcript into clean, well-structured handwritten-style notes. Use headings, bullet points, and numbered lists where appropriate. Plain text only, no markdown symbols.',
+      `${AI_SYSTEM_BASE_PROMPT}\n\nTASK: Transform raw lecture transcripts or audio notes into an expert study note set. Include a '# Lecture Notes' title, '## Key Themes', '- ' bullet points, '[callout:formula] Core Concept [callout]', '[sticky:pink] Exam Tip [sticky]', and 'Q: / A:' revision flashcards.`,
       onChunk
     );
   }
@@ -3254,7 +3271,7 @@ async function aiAction(type) {
     if (!topic) { setAiStatus('⚠ Enter a topic first.'); btns.forEach(b => b.disabled = false); return; }
     result = await callClaude(
       'Write a detailed, well-structured academic assignment on the topic: ' + topic,
-      'Generate a complete handwritten-style assignment with an introduction, body paragraphs, and conclusion. Use plain text only. No markdown. Write naturally as someone would write in a notebook.',
+      `${AI_SYSTEM_BASE_PROMPT}\n\nTASK: Write a complete, comprehensive academic assignment on the topic. Include an introduction, structured body sections ('## Section Title'), supporting bullet points, ==highlighted key terminology==, '[callout:info] Conclusion [callout]', and revision flashcards ('Q: / A:').`,
       onChunk
     );
   }
@@ -4130,10 +4147,72 @@ function resetToDefaults() {
 
 // Modal Toggles
 
+/* ───────────────────────────────────────────
+   ACCESSIBILITY & MODAL FOCUS TRAPPING (WCAG 2.1)
+─────────────────────────────────────────── */
+let currentModalFocusTrapCleanups = new Map();
+
+function trapFocusModal(modalElement) {
+  if (!modalElement) return;
+
+  if (currentModalFocusTrapCleanups.has(modalElement)) {
+    currentModalFocusTrapCleanups.get(modalElement)();
+    currentModalFocusTrapCleanups.delete(modalElement);
+  }
+
+  const focusableSelector = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+  const focusables = Array.from(modalElement.querySelectorAll(focusableSelector)).filter(el => {
+    return el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0;
+  });
+
+  if (focusables.length === 0) return;
+
+  const firstEl = focusables[0];
+  const lastEl = focusables[focusables.length - 1];
+  const previouslyFocused = document.activeElement;
+
+  firstEl.focus();
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      modalElement.classList.add('hidden');
+      if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
+        previouslyFocused.focus();
+      }
+      return;
+    }
+
+    if (e.key !== 'Tab') return;
+
+    if (e.shiftKey) {
+      if (document.activeElement === firstEl) {
+        lastEl.focus();
+        e.preventDefault();
+      }
+    } else {
+      if (document.activeElement === lastEl) {
+        firstEl.focus();
+        e.preventDefault();
+      }
+    }
+  };
+
+  modalElement.addEventListener('keydown', handleKeyDown);
+
+  const cleanup = () => {
+    modalElement.removeEventListener('keydown', handleKeyDown);
+  };
+
+  currentModalFocusTrapCleanups.set(modalElement, cleanup);
+}
+
 // Modal Toggles
 function openHandFontedModal() {
   const modal = document.getElementById('handfonted-modal');
-  if (modal) modal.classList.remove('hidden');
+  if (modal) {
+    modal.classList.remove('hidden');
+    trapFocusModal(modal);
+  }
   switchSheet('letters');
 }
 
@@ -5525,6 +5604,7 @@ function openFlashcardsModal() {
   const modal = document.getElementById('flashcards-modal');
   if (modal) {
     modal.classList.remove('hidden');
+    trapFocusModal(modal);
   }
   
   const inner = document.getElementById('flashcard-inner');

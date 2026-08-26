@@ -67,6 +67,9 @@ Generates randomized per-character variation parameters.
 ### `getAlignmentOffset(alignment, fontSize, lineHeight)`
 Returns the vertical baseline shift for `top` (Upper: `-(lineH * 0.62)`), `middle` (Middle: `-(lineH * 0.32)`), and `bottom` (Lower: `0`) text alignments relative to notebook line baselines.
 
+### `drawCursiveConnector(ctx, item1, item2, S)`
+Renders quadratic Bezier stroke curves connecting the exit anchor point of `item1` to the entry anchor point of `item2` for cursive fonts (`Caveat`, `Homemade Apple`, `Kalam`, etc.).
+
 ### `getCachedGlyphImage(char, src)`
 Returns a fully-decoded `<img>` for a drafted glyph (cached), or `null` while decoding; triggers `debounceRender()` when ready.
 
@@ -162,6 +165,15 @@ Sends a streaming request to OpenRouter or Anthropic.
 - **Returns**: Promise resolving to the full response text, or `null` on failure
 - **Streaming**: SSE via `ReadableStream` / `TextDecoder`, `max_tokens: 1500`
 
+### `callOllama(prompt, systemPrompt, model, onChunk)`
+Sends a streaming request to a local Ollama server (default `http://localhost:11434/api/chat`).
+- **Parameters**: `prompt` (String), `systemPrompt` (String), `model` (String), `onChunk` (Function)
+- **Returns**: Promise resolving to full response text, or `null` on failure (e.g. connection error)
+- **Privacy**: 100% private client-side REST call; requires no API key.
+
+### `initApiKeyPersistence()`
+Wires `input` and `change` event listeners to `#api-key` and `#remember-api-key`. Saves `inkflow-api-key-{provider}` to `localStorage` when checked and restores it on page boot or provider change.
+
 ### `aiAction(type)`
 Dispatches an AI workflow and streams the result onto the canvas.
 - **Parameters**: `type` (String — `arrange | summarize | grammar | lecture | assignment`)
@@ -170,7 +182,7 @@ Dispatches an AI workflow and streams the result onto the canvas.
 Asynchronously fetches the OpenRouter model catalog and replaces the fallback list (free models first, then alphabetical).
 
 ### `onProviderChange()`
-Rebuilds the model dropdown and API-key label for the selected provider; triggers `fetchOpenRouterModels()` for OpenRouter.
+Rebuilds the model dropdown and API-key label for the selected provider (`openrouter | anthropic | ollama`); triggers `fetchOpenRouterModels()` for OpenRouter and loads saved API keys.
 
 ### `setAiStatus(msg)`
 Writes a status message into `#ai-status`.
@@ -300,6 +312,9 @@ Toggles a collapsible sidebar section.
 
 ### `applyDark()`
 Toggles dark mode on the root element and updates the toggle icon.
+
+### `trapFocusModal(modalElement)`
+Enforces WCAG 2.1 accessible focus trapping (`Tab` cycling and `Escape` dismissal) within the specified open modal element.
 
 ---
 
