@@ -79,7 +79,7 @@ An interactive 256×256 canvas with:
 
 ---
 
-## 6. OpenType Font Compilation
+## 6. OpenType Font Compilation & Binary Export
 
 `buildCustomFont()` (async):
 1. Lazy-loads `opentype.js` 1.3.4 via `ensureOpentypeLoaded()`
@@ -90,6 +90,10 @@ An interactive 256×256 canvas with:
 6. Builds `opentype.Font` (unitsPerEm 1000, ascender 800, descender −200), serializes to a TTF blob
 7. Registers the result as a `FontFace`, appends it to the font selector, applies it, and re-renders
 8. Aborts with a message if fewer than 2 glyphs are drafted
+
+`exportCustomFontTTF()` (async):
+- Compiles the custom handwriting vectors into a standalone `.ttf` TrueType Font binary file using `font.download(`${fontName}.ttf`)`.
+- Allows users to export their custom drafted handwriting font directly to their operating system for installation in Windows, macOS, Microsoft Word, or Photoshop.
 
 > **Blank-glyph hygiene**: `pruneBlankGlyphs()` runs on boot and after project imports, scanning each glyph for visible ink (`glyphHasInk`) and removing empty entries from memory and IndexedDB so they never render as invisible characters.
 

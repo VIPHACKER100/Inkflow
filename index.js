@@ -5457,6 +5457,121 @@ async function buildCustomFont() {
 }
 
 /* ───────────────────────────────────────────
+   HANDFONTED STUDIO — TTF FONT EXPORTER
+   Compiles vector glyphs into a standalone .ttf file
+   ready for installation on Windows, macOS, or mobile.
+─────────────────────────────────────────── */
+async function exportCustomFontTTF() {
+  const fontNameInput = document.getElementById('custom-font-name');
+  const fontName = (fontNameInput ? fontNameInput.value.replace(/[^a-zA-Z0-9]/g, '') : '') || 'MyHandwriting';
+  
+  const progressDiv = document.getElementById('font-build-progress');
+  const statusText = document.getElementById('font-build-status-text');
+  
+  if (progressDiv) progressDiv.classList.remove('hidden');
+  if (statusText) statusText.textContent = 'Compiling OpenType TTF binary...';
+
+  try {
+    await ensureOpentypeLoaded();
+
+    const glyphsList = [];
+    const notdefGlyph = new window.opentype.Glyph({
+      name: '.notdef',
+      unicode: 0,
+      advanceWidth: 650,
+      path: new window.opentype.Path()
+    });
+    glyphsList.push(notdefGlyph);
+
+    const spaceGlyph = new window.opentype.Glyph({
+      name: 'space',
+      unicode: 32,
+      advanceWidth: 400,
+      path: new window.opentype.Path()
+    });
+    glyphsList.push(spaceGlyph);
+
+    const isTemplateTab = !document.getElementById('panel-template').classList.contains('hidden');
+
+    for (let i = 0; i < ALL_TEMPLATE_CHARS.length; i++) {
+      const char = ALL_TEMPLATE_CHARS[i];
+      let cellCanvas = null;
+
+      let sheetName = 'letters';
+      let charIdx = TEMPLATE_SHEETS.letters.indexOf(char);
+      if (charIdx === -1) {
+        sheetName = 'symbols';
+        charIdx = TEMPLATE_SHEETS.symbols.indexOf(char);
+      }
+
+      if (isTemplateTab) {
+        const img = alignerImages[sheetName];
+        if (img) cellCanvas = cropTemplateCell(charIdx, sheetName);
+        else if (draftedGlyphs[char]) cellCanvas = await loadImageToCanvas(draftedGlyphs[char]);
+        else continue;
+      } else {
+        if (draftedGlyphs[char]) cellCanvas = await loadImageToCanvas(draftedGlyphs[char]);
+        else if (alignerImages[sheetName]) cellCanvas = cropTemplateCell(charIdx, sheetName);
+        else continue;
+      }
+
+      if (isCellBlank(cellCanvas)) continue;
+      const path = canvasToOpentypePath(cellCanvas);
+      if (!path.commands || path.commands.length === 0) continue;
+
+      const ctx = cellCanvas.getContext('2d');
+      const imageData = ctx.getImageData(0, 0, cellCanvas.width, cellCanvas.height);
+      const pixels = imageData.data;
+      let minX = cellCanvas.width, maxX = 0;
+      for (let y = 0; y < cellCanvas.height; y++) {
+        for (let x = 0; x < cellCanvas.width; x++) {
+          const idx = (y * cellCanvas.width + x) * 4;
+          if (pixels[idx + 3] > 50 && (pixels[idx] + pixels[idx + 1] + pixels[idx + 2]) / 3 < 160) {
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+          }
+        }
+      }
+      const scale = 800 / Math.max(cellCanvas.width, cellCanvas.height);
+      const glyphWidth = (maxX - minX) * scale;
+      const advanceWidth = Math.max(Math.round(glyphWidth + 100), 250);
+
+      const glyph = new window.opentype.Glyph({
+        name: char,
+        unicode: char.charCodeAt(0),
+        advanceWidth: advanceWidth,
+        path: path
+      });
+      glyphsList.push(glyph);
+    }
+
+    if (glyphsList.length <= 2) {
+      alert('Please draft at least one character in sketchpad or upload a filled template grid before exporting.');
+      if (progressDiv) progressDiv.classList.add('hidden');
+      return;
+    }
+
+    const font = new window.opentype.Font({
+      familyName: fontName,
+      styleName: 'Regular',
+      unitsPerEm: 1000,
+      ascender: 800,
+      descender: -200,
+      glyphs: glyphsList
+    });
+
+    font.download(`${fontName}.ttf`);
+
+    if (progressDiv) progressDiv.classList.add('hidden');
+    showToast(`✓ Downloaded ${fontName}.ttf! Double-click to install on Windows/macOS.`, 'success');
+  } catch (err) {
+    console.error('[Inkflow] exportCustomFontTTF error:', err);
+    alert('Error exporting TTF font: ' + err.message);
+    if (progressDiv) progressDiv.classList.add('hidden');
+  }
+}
+
+/* ───────────────────────────────────────────
    THEME PACKS ENGINE
 ─────────────────────────────────────────── */
 const THEMES = {

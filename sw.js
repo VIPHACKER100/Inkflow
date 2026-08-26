@@ -21,6 +21,8 @@ const CDN_URLS = [
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
   /* html2canvas (legacy — kept for compatibility) */
   'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+  /* opentype.js for TTF font generation */
+  'https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js',
   /* Font Awesome CSS + primary webfont */
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
   /* Google Fonts stylesheet */

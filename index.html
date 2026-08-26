@@ -30,6 +30,9 @@
     integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA=="
     crossorigin="anonymous"></script>
 
+  <!-- opentype.js for TTF font generation -->
+  <script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
+
   <!-- Font Awesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
@@ -612,6 +615,9 @@ Try pasting a paragraph of lecture notes!"></textarea>
           <span class="font-name-label">Font Name:</span>
           <input type="text" id="custom-font-name" value="MyHandwriting" title="Custom Font Name" />
         </div>
+        <button class="btn secondary" id="btn-download-font" onclick="exportCustomFontTTF()">
+          📥 Download TTF Font
+        </button>
         <button class="btn primary" id="btn-build-font" onclick="buildCustomFont()">
           🚀 Generate & Apply Font
         </button>

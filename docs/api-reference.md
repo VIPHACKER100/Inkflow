@@ -392,6 +392,9 @@ Lazy-loads opentype.js 1.3.4 from CDN. Returns a Promise.
 ### `async buildCustomFont()`
 Compiles all drafted glyphs into a TrueType font, registers it as a `FontFace`, appends it to the font selector, and applies it.
 
+### `async exportCustomFontTTF()`
+Compiles all drafted vector glyphs into a standalone TrueType Font (`.ttf`) binary file using `font.download(`${fontName}.ttf`)` for installation on Windows, macOS, iOS, Microsoft Word, or Photoshop.
+
 ---
 
 ## Device & Misc Helpers

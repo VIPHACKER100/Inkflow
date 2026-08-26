@@ -4,6 +4,16 @@ All notable changes to Inkflow are documented in this file.
 
 ---
 
+## [1.6.0] — 2026-08-27
+
+### ✨ Added
+- **HandFonted Studio Standalone TTF Font Exporter**: Added `exportCustomFontTTF()` and `📥 Download TTF Font` button. Users can now compile their custom sketched or template-scanned vector handwriting font into a standalone `.ttf` TrueType Font binary file to install on Windows, macOS, iOS, Microsoft Word, or Photoshop.
+- **Upgraded AI Workflow System Prompts**: Introduced `AI_SYSTEM_BASE_PROMPT` in `index.js`, instructing OpenRouter, Anthropic, and Ollama AI engines to output Inkflow's native rich study syntax (`#` H1 headers, `##` H2 subheaders, `-` bullet lists, `==highlights==`, `[sticky]` margin notes, `[callout]` inset boxes, and `Q: / A:` flashcards).
+- **API Key Storage Persistence**: Implemented `initApiKeyPersistence()`, persisting API keys per provider (`inkflow-api-key-openrouter`, `inkflow-api-key-anthropic`) in `localStorage` when *"Remember API key on this device"* is checked, restoring them seamlessly on page load.
+- **WCAG 2.1 Modal Focus Trapping**: Added `trapFocusModal()`, enforcing keyboard focus cycling (`Tab` / `Shift+Tab`) and `Escape` key dismissal across `HandFonted Studio` and `Flashcards Review` modals.
+
+---
+
 ## [1.5.0] — 2026-08-27
 
 ### ✨ Added
