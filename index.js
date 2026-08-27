@@ -2739,41 +2739,55 @@ document.getElementById('btn-clear').addEventListener('click', clearText);
 
 const AI_MODELS = {
   openrouter: [
+    // ── Free Models ──
+    { id: 'openrouter/free', name: '🎁 OpenRouter Free Auto-Router (Free)' },
+    { id: 'google/gemma-4-31b-it:free', name: '⚡ Gemma 4 31B (Free)' },
+    { id: 'nvidia/nemotron-3.5-lightning:free', name: '🟩 Nemotron 3.5 Lightning (Free)' },
+    { id: 'z-ai/glm-5.2:free', name: '✨ GLM 5.2 (Free)' },
+    { id: 'liquid/lfm-2.5-2.6b:free', name: '💧 Liquid LFM 2.5 (Free)' },
+
     // ── Google ──
-    { id: 'google/gemini-2.5-flash-preview', name: '⚡ Gemini 2.5 Flash (Free)' },
-    { id: 'google/gemini-2.5-pro-preview', name: '🔥 Gemini 2.5 Pro' },
-    { id: 'google/gemini-2.0-flash-001', name: '⚡ Gemini 2.0 Flash (Free)' },
+    { id: 'google/gemini-3.7-flash', name: '⚡ Gemini 3.7 Flash' },
+    { id: 'google/gemini-3.6-flash', name: '⚡ Gemini 3.6 Flash' },
+    { id: 'google/gemini-3.5-flash', name: '⚡ Gemini 3.5 Flash' },
+    { id: 'google/gemini-3.5-flash-lite', name: '⚡ Gemini 3.5 Flash Lite' },
+
     // ── Anthropic ──
-    { id: 'anthropic/claude-sonnet-4', name: '🟣 Claude Sonnet 4' },
+    { id: 'anthropic/claude-sonnet-5', name: '🟣 Claude Sonnet 5' },
+    { id: 'anthropic/claude-opus-5', name: '🟣 Claude Opus 5' },
+    { id: 'anthropic/claude-fable-5', name: '🟣 Claude Fable 5' },
     { id: 'anthropic/claude-3.5-sonnet', name: '🟣 Claude 3.5 Sonnet' },
-    { id: 'anthropic/claude-3-haiku', name: '🟣 Claude 3 Haiku (Fast)' },
+
     // ── OpenAI ──
-    { id: 'openai/gpt-4.1', name: '🟢 GPT-4.1' },
-    { id: 'openai/gpt-4.1-mini', name: '🟢 GPT-4.1 Mini' },
-    { id: 'openai/gpt-4.1-nano', name: '🟢 GPT-4.1 Nano' },
+    { id: 'openai/gpt-5.6-luna', name: '🟢 GPT-5.6 Luna' },
+    { id: 'openai/gpt-5.6-terra', name: '🟢 GPT-5.6 Terra' },
     { id: 'openai/gpt-4o', name: '🟢 GPT-4o' },
     { id: 'openai/gpt-4o-mini', name: '🟢 GPT-4o Mini' },
-    { id: 'openai/o3-mini', name: '🟢 o3-Mini (Reasoning)' },
+
+    // ── DeepSeek ──
+    { id: 'deepseek/deepseek-v4-flash', name: '🌊 DeepSeek V4 Flash' },
+    { id: 'deepseek/deepseek-v4-pro', name: '🌊 DeepSeek V4 Pro' },
+    { id: 'deepseek/deepseek-v3.2', name: '🌊 DeepSeek V3.2' },
+    { id: 'deepseek/deepseek-r1', name: '🌊 DeepSeek R1 (Reasoning)' },
+
     // ── Meta ──
     { id: 'meta-llama/llama-4-maverick', name: '🦙 Llama 4 Maverick' },
     { id: 'meta-llama/llama-4-scout', name: '🦙 Llama 4 Scout' },
     { id: 'meta-llama/llama-3.3-70b-instruct', name: '🦙 Llama 3.3 70B (Free)' },
-    // ── DeepSeek ──
-    { id: 'deepseek/deepseek-chat-v3-0324', name: '🌊 DeepSeek V3' },
-    { id: 'deepseek/deepseek-r1', name: '🌊 DeepSeek R1 (Reasoning)' },
+
     // ── Mistral ──
-    { id: 'mistralai/mistral-large-2411', name: '🔷 Mistral Large' },
-    { id: 'mistralai/mistral-small-2503', name: '🔷 Mistral Small' },
-    { id: 'mistralai/codestral-mamba', name: '🔷 Codestral Mamba' },
+    { id: 'mistralai/mistral-medium-3-5', name: '🔷 Mistral Medium 3.5' },
+    { id: 'mistralai/mistral-small-2603', name: '🔷 Mistral Small 4' },
+    { id: 'mistralai/mistral-large-2512', name: '🔷 Mistral Large 3' },
+
     // ── Qwen ──
-    { id: 'qwen/qwen-2.5-72b-instruct', name: '🟠 Qwen 2.5 72B' },
-    { id: 'qwen/qwen3-235b-a22b', name: '🟠 Qwen 3 235B' },
+    { id: 'qwen/qwen3.8-flash', name: '🟠 Qwen 3.8 Flash' },
+    { id: 'qwen/qwen3.8-max', name: '🟠 Qwen 3.8 Max' },
+    { id: 'qwen/qwen3.7-flash', name: '🟠 Qwen 3.7 Flash' },
+
     // ── xAI ──
-    { id: 'x-ai/grok-3-mini-beta', name: '✖ Grok 3 Mini' },
-    // ── Others ──
-    { id: 'nvidia/llama-3.1-nemotron-70b-instruct', name: '🟩 Nemotron 70B (Free)' },
-    { id: 'microsoft/phi-4', name: '🪟 Phi-4 (Free)' },
-    { id: 'cohere/command-a', name: '🔴 Command A' },
+    { id: 'x-ai/grok-4.6', name: '✖ Grok 4.6' },
+    { id: 'x-ai/grok-4.5', name: '✖ Grok 4.5' },
   ],
   anthropic: [
     { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4 (Latest)' },
@@ -2805,12 +2819,48 @@ const AI_MODELS = {
   ],
 };
 
+/* ───────────────────────────────────────────
+   AUTOMATICALLY UPDATED AI MODEL LIST SYSTEM
+─────────────────────────────────────────── */
 let openRouterModelsLoaded = false;
 let isFetchingOpenRouterModels = false;
 
-async function fetchOpenRouterModels() {
-  if (openRouterModelsLoaded || isFetchingOpenRouterModels) return;
+// 1. Load cached OpenRouter models instantly from localStorage on startup
+function loadCachedOpenRouterModels() {
+  try {
+    const raw = localStorage.getItem('inkflow-cached-openrouter-models');
+    if (raw) {
+      const cached = JSON.parse(raw);
+      if (Array.isArray(cached) && cached.length > 0) {
+        AI_MODELS.openrouter = cached;
+        openRouterModelsLoaded = true;
+        updateModelSyncBadge(`Cached (${cached.length} models)`, false);
+      }
+    }
+  } catch (e) {
+    console.warn('[Inkflow] Failed to load cached OpenRouter models:', e);
+  }
+}
+
+// Helper to update the UI status badge next to the Model label
+function updateModelSyncBadge(text, isSyncing = false) {
+  const syncText = document.getElementById('model-sync-text');
+  const syncIcon = document.getElementById('model-sync-icon');
+  if (syncText) syncText.textContent = text;
+  if (syncIcon) {
+    if (isSyncing) {
+      syncIcon.classList.add('fa-spin');
+    } else {
+      syncIcon.classList.remove('fa-spin');
+    }
+  }
+}
+
+// 2. Fetch OpenRouter models dynamically from API
+async function fetchOpenRouterModels(force = false) {
+  if (!force && openRouterModelsLoaded && isFetchingOpenRouterModels) return;
   isFetchingOpenRouterModels = true;
+  updateModelSyncBadge('Syncing models...', true);
 
   try {
     const res = await fetch('https://openrouter.ai/api/v1/models');
@@ -2824,7 +2874,7 @@ async function fetchOpenRouterModels() {
         if (id.startsWith('google/')) emoji = '⚡ ';
         else if (id.startsWith('anthropic/')) emoji = '🟣 ';
         else if (id.startsWith('openai/')) emoji = '🟢 ';
-        else if (id.startsWith('meta-llama/')) emoji = '🦙 ';
+        else if (id.startsWith('meta-llama/') || id.startsWith('meta/')) emoji = '🦙 ';
         else if (id.startsWith('deepseek/')) emoji = '🌊 ';
         else if (id.startsWith('mistralai/')) emoji = '🔷 ';
         else if (id.startsWith('qwen/')) emoji = '🟠 ';
@@ -2832,15 +2882,16 @@ async function fetchOpenRouterModels() {
         else if (id.startsWith('cohere/')) emoji = '🔴 ';
         else if (id.startsWith('nvidia/')) emoji = '🟩 ';
         else if (id.startsWith('microsoft/')) emoji = '🪟 ';
+        else if (id.startsWith('openrouter/')) emoji = '🎁 ';
         
-        const isFree = item.pricing && parseFloat(item.pricing.prompt) === 0 && parseFloat(item.pricing.completion) === 0;
+        const isFree = id.endsWith(':free') || (item.pricing && parseFloat(item.pricing.prompt) === 0 && parseFloat(item.pricing.completion) === 0);
         let displayName = item.name || item.id;
         
         // Strip out redundant provider prefixes to keep UI compact
-        displayName = displayName.replace(/^(google|anthropic|openai|meta|deepseek|mistral|qwen|x-ai|cohere|nvidia|microsoft|llama):\s*/i, '');
+        displayName = displayName.replace(/^(google|anthropic|openai|meta|deepseek|mistral|qwen|x-ai|cohere|nvidia|microsoft|llama|spacexai|z\.ai|dots studio|liquidai):\s*/i, '');
         
         let name = `${emoji}${displayName}`;
-        if (isFree) {
+        if (isFree && !name.toLowerCase().includes('(free)')) {
           name += ' (Free)';
         }
         
@@ -2862,19 +2913,73 @@ async function fetchOpenRouterModels() {
         AI_MODELS.openrouter = fetched;
         openRouterModelsLoaded = true;
         
+        // Cache in localStorage
+        try {
+          localStorage.setItem('inkflow-cached-openrouter-models', JSON.stringify(fetched));
+          localStorage.setItem('inkflow-cached-openrouter-time', Date.now().toString());
+        } catch (e) {}
+
+        updateModelSyncBadge(`Live (${fetched.length} models)`, false);
+
         // Refresh UI if currently viewing OpenRouter
-        const provider = document.getElementById('ai-provider').value;
-        if (provider === 'openrouter') {
+        const providerEl = document.getElementById('ai-provider');
+        if (providerEl && providerEl.value === 'openrouter') {
           onProviderChange();
         }
       }
     }
   } catch (e) {
-    console.warn('Could not auto-fetch OpenRouter models, using fallback list:', e);
+    console.warn('[Inkflow] Could not auto-fetch OpenRouter models, using current catalog:', e);
+    updateModelSyncBadge('Offline / Fallback', false);
   } finally {
     isFetchingOpenRouterModels = false;
   }
 }
+
+// 3. Auto-detect installed local Ollama models
+async function fetchOllamaModels(force = false) {
+  const endpointInput = document.getElementById('ollama-endpoint');
+  const endpoint = (endpointInput && endpointInput.value.trim()) || 'http://localhost:11434';
+  updateModelSyncBadge('Checking Ollama...', true);
+
+  try {
+    const res = await fetch(endpoint + '/api/tags');
+    if (!res.ok) throw new Error('HTTP status ' + res.status);
+    const data = await res.json();
+    if (data && Array.isArray(data.models) && data.models.length > 0) {
+      AI_MODELS.ollama = data.models.map(m => ({
+        id: m.name,
+        name: '🦙 ' + m.name
+      }));
+      updateModelSyncBadge(`Local (${data.models.length} installed)`, false);
+      const providerEl = document.getElementById('ai-provider');
+      if (providerEl && providerEl.value === 'ollama') {
+        onProviderChange();
+      }
+    } else {
+      updateModelSyncBadge('Ollama Ready (Default list)', false);
+    }
+  } catch (e) {
+    updateModelSyncBadge('Ollama Offline (Default list)', false);
+  }
+}
+
+// 4. Manual or Provider-based Trigger Refresh
+function refreshCurrentProviderModels(manual = false) {
+  const provider = document.getElementById('ai-provider').value;
+  if (provider === 'openrouter') {
+    fetchOpenRouterModels(true);
+  } else if (provider === 'ollama') {
+    fetchOllamaModels(true);
+  } else {
+    updateModelSyncBadge('Anthropic Direct', false);
+  }
+}
+
+// 5. Automatic periodic background timer & event listeners
+loadCachedOpenRouterModels();
+window.addEventListener('online', () => refreshCurrentProviderModels(true));
+setInterval(() => refreshCurrentProviderModels(false), 30 * 60 * 1000); // Auto update every 30 minutes
 
 /* ───────────────────────────────────────────
    API KEY PERSISTENCE (Remember API Key option)
@@ -2987,11 +3092,13 @@ function onProviderChange() {
     if (keyLabel) { keyLabel.textContent = 'Anthropic API Key'; keyLabel.style.display = ''; }
     if (keyInput) { keyInput.placeholder = 'sk-ant-api…'; keyInput.style.display = ''; }
     if (rememberLabel) rememberLabel.style.display = 'flex';
+    updateModelSyncBadge('Anthropic Direct', false);
   } else if (provider === 'ollama') {
     // Ollama runs locally — hide key input & remember checkbox completely
     if (keyLabel) keyLabel.style.display = 'none';
     if (keyInput) keyInput.style.display = 'none';
     if (rememberLabel) rememberLabel.style.display = 'none';
+    fetchOllamaModels();
   }
 
   if (window._loadSavedApiKey) window._loadSavedApiKey();

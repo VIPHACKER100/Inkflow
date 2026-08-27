@@ -352,7 +352,13 @@ Try pasting a paragraph of lecture notes!"></textarea>
           </div>
 
           <!-- Model selector -->
-          <div class="sb-label sb-label-sm">Model</div>
+          <div class="sb-label sb-label-sm" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>Model</span>
+            <span id="model-sync-status" onclick="refreshCurrentProviderModels(true)" title="Click to auto-update model list from provider" style="cursor: pointer; font-size: 11px; color: var(--accent); font-weight: normal; display: flex; align-items: center; gap: 4px; opacity: 0.9; transition: opacity 0.2s ease;">
+              <i class="fa-solid fa-rotate" id="model-sync-icon"></i>
+              <span id="model-sync-text">Auto-updated</span>
+            </span>
+          </div>
           <select id="ai-model" title="AI Model"></select>
 
           <!-- API Key input -->

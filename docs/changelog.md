@@ -7,6 +7,8 @@ All notable changes to Inkflow are documented in this file.
 ## [1.6.0] — 2026-08-27
 
 ### ✨ Added
+- **Enhanced Inkflow Brand Logo Integration**: Added high-resolution `inkflow_logo.jpeg` brand icon to the top navigation bar with circular glassmorphism container, hover scaling animation, PWA manifest icons, browser tab favicons, and service worker shell pre-caching.
+- **Updated OpenRouter AI Model Catalog**: Modernized the `AI_MODELS.openrouter` static fallback array in `index.js` and upgraded `fetchOpenRouterModels()` parser to support free model auto-routing (`openrouter/free`), Google Gemini (3.7 Flash, 3.6 Flash), Anthropic Claude (Sonnet 5, Opus 5), OpenAI GPT (GPT-5.6 Luna, GPT-4o), DeepSeek (V4 Flash, V4 Pro, R1), Meta Llama (Llama 4 Maverick), Mistral, Qwen, and xAI Grok.
 - **HandFonted Studio Standalone TTF Font Exporter**: Added `exportCustomFontTTF()` and `📥 Download TTF Font` button. Users can now compile their custom sketched or template-scanned vector handwriting font into a standalone `.ttf` TrueType Font binary file to install on Windows, macOS, iOS, Microsoft Word, or Photoshop.
 - **Upgraded AI Workflow System Prompts**: Introduced `AI_SYSTEM_BASE_PROMPT` in `index.js`, instructing OpenRouter, Anthropic, and Ollama AI engines to output Inkflow's native rich study syntax (`#` H1 headers, `##` H2 subheaders, `-` bullet lists, `==highlights==`, `[sticky]` margin notes, `[callout]` inset boxes, and `Q: / A:` flashcards).
 - **API Key Storage Persistence**: Implemented `initApiKeyPersistence()`, persisting API keys per provider (`inkflow-api-key-openrouter`, `inkflow-api-key-anthropic`) in `localStorage` when *"Remember API key on this device"* is checked, restoring them seamlessly on page load.
