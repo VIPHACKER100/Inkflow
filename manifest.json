@@ -12,6 +12,12 @@
   "categories": ["productivity", "education", "utilities"],
   "icons": [
     {
+      "src": "./inkflow_logo.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
       "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='32' fill='%230f1117'/%3E%3Ctext x='96' y='128' font-size='110' text-anchor='middle' font-family='serif'%3E%E2%9C%8D%3C/text%3E%3C/svg%3E",
       "sizes": "192x192",
       "type": "image/svg+xml",

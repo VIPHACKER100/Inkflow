@@ -6,12 +6,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Inkflow — AI Handwritten Notes Generator</title>
 
-  <!-- PWA Manifest & Theme -->
+  <!-- Favicon & PWA Manifest & Theme -->
+  <link rel="icon" type="image/jpeg" href="./inkflow_logo.jpeg" />
+  <link rel="apple-touch-icon" href="./inkflow_logo.jpeg" />
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#7c6af7" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Inkflow" />
+  <meta property="og:image" content="./inkflow_logo.jpeg" />
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -47,7 +50,10 @@
 ════════════════════════════════════════ -->
   <header id="toolbar">
     <button id="hamburger" class="btn icon-btn" aria-label="Toggle sidebar">☰</button>
-    <div class="logo">Ink<span>flow</span></div>
+    <div class="logo">
+      <img src="./inkflow_logo.jpeg" alt="Inkflow Logo" class="logo-img" />
+      <span class="logo-text">Ink<span>flow</span></span>
+    </div>
 
     <div class="toolbar-group">
       <button class="btn sm" id="btn-animate" title="Watch notes write themselves">✍ Animate</button>

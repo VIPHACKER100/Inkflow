@@ -13,6 +13,7 @@ const SHELL_URLS = [
   './index.html',
   './index.css',
   './index.js',
+  './inkflow_logo.jpeg',
 ];
 
 /* ── CDN Assets to pre-cache ── */
@@ -162,7 +163,8 @@ async function networkFirst(request, cacheName) {
 
     return new Response(
       `<!DOCTYPE html><html><body style="font-family:sans-serif;text-align:center;padding:60px">
-        <h1>✍ Inkflow</h1>
+        <img src="./inkflow_logo.jpeg" alt="Inkflow Logo" style="width:64px;height:64px;border-radius:50%;margin-bottom:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15)">
+        <h1 style="margin:0 0 10px 0;color:#7c6af7">Inkflow</h1>
         <p>You're offline. Open Inkflow while connected at least once to cache the app.</p>
       </body></html>`,
       { headers: { 'Content-Type': 'text/html' } }
