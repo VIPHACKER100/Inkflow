@@ -4,6 +4,30 @@ All notable changes to Inkflow are documented in this file.
 
 ---
 
+## [1.5.0] — 2026-08-28
+
+### ✨ Added
+- **Modular Architecture**: Extracted 4 pure-logic modules from index.js, reducing it from ~5,000 to ~3,765 lines (−24.6%).
+- **`font-compilation.js`**: Contour tracing (Moore-Neighbor), RDP path simplification, blank-cell detection, OpenType path compilation.
+- **`paper-renderer.js`**: All 10 paper style renderers, smudge effects, layout decorations, alignment offsets.
+- **`text-layout.js`**: `sanitizeText`, `parseBlocks`, `getGraphemes` — pure text processing helpers.
+- **`export-renderers.js`**: `renderQueueItems` and `renderCursiveConnectionsOn` — pure canvas rendering for exports.
+- **ESLint + Prettier**: Code quality tooling with flat config (ESLint v9+), 0 errors, consistent formatting.
+- **Vitest Test Framework**: Modern test runner with `npm test`, `npm run test:watch`, `npm run test:coverage`.
+
+### ♻️ Changed
+- **index.js reduced to 3,765 lines** (from 4,993) — core UI, state, AI, animation remain.
+- **16 JS modules** total (up from 12), all passing syntax checks.
+- **178+ tests passing** (27 cursive-connector + 23 diagram-engine + 128 Vitest).
+- **Documentation updated** across all 19 files to match actual file structure and feature set.
+- **All JS files formatted** with Prettier (single quotes, trailing commas, 120 print width).
+
+### 🛠️ Fixed
+- **smudge-effects.test.js**: Migrated from Jest to Vitest (`jest.fn()` → `vi.fn()`).
+- **Standalone test files**: `cursive-connector.test.js` and `diagram-engine.test.js` now work with both Node.js and Vitest.
+
+---
+
 ## [1.4.0] — 2026-08-25
 
 ### ✨ Added

@@ -6,7 +6,7 @@ const server = http.createServer();
 const wss = new WebSocket.Server({ server });
 
 // Server state
-let documentText = "";
+let documentText = '';
 let serverRevision = 0;
 const operationHistory = []; // Array of { revision, op }
 const MAX_HISTORY = 1000;
@@ -14,7 +14,24 @@ let historyOffset = 0; // tracks how many entries have been discarded from front
 const connectedClients = new Map();
 
 function generateColor() {
-  const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800', '#ff5722'];
+  const colors = [
+    '#f44336',
+    '#e91e63',
+    '#9c27b0',
+    '#673ab7',
+    '#3f51b5',
+    '#2196f3',
+    '#03a9f4',
+    '#00bcd4',
+    '#009688',
+    '#4caf50',
+    '#8bc34a',
+    '#cddc39',
+    '#ffeb3b',
+    '#ffc107',
+    '#ff9800',
+    '#ff5722',
+  ];
   return colors[Math.floor(Math.random() * colors.length)];
 }
 
@@ -65,7 +82,7 @@ function transform(op1, op2) {
         return { ...op1, position: op1.position - op2.char.length };
       } else {
         // They overlap. We simplify by treating overlapping deletes as doing nothing for the overlapping part.
-        // A full OT system splits operations here. 
+        // A full OT system splits operations here.
         // For simplicity, we just adjust the position.
         return { ...op1, position: op2.position };
       }
@@ -85,21 +102,26 @@ wss.on('connection', (ws) => {
   console.log(`Client connected: ${userId}`);
 
   // Send initial state to the client
-  ws.send(JSON.stringify({
-    type: 'INIT',
-    userId,
-    color,
-    text: documentText,
-    revision: serverRevision,
-    users: Array.from(connectedClients.values()).map(c => ({ userId: c.userId, color: c.color, cursor: c.cursor }))
-  }));
+  ws.send(
+    JSON.stringify({
+      type: 'INIT',
+      userId,
+      color,
+      text: documentText,
+      revision: serverRevision,
+      users: Array.from(connectedClients.values()).map((c) => ({ userId: c.userId, color: c.color, cursor: c.cursor })),
+    })
+  );
 
   // Broadcast the new user to everyone else
-  broadcast({
-    type: 'USER_JOINED',
-    userId,
-    color
-  }, userId);
+  broadcast(
+    {
+      type: 'USER_JOINED',
+      userId,
+      color,
+    },
+    userId
+  );
 
   ws.on('message', (message) => {
     try {
@@ -107,12 +129,21 @@ wss.on('connection', (ws) => {
 
       if (msg.type === 'OPERATION') {
         let op = msg.operation;
-        if (!op || !op.type) { ws.close(); return; }
+        if (!op || !op.type) {
+          ws.close();
+          return;
+        }
         const clientRevision = msg.revision || 0;
 
         // OT logic: transform incoming operation against all history operations that happened after clientRevision
-        if (clientRevision < 0 || clientRevision > serverRevision) { ws.close(); return; }
-        if (clientRevision < historyOffset) { ws.close(); return; } // history too old
+        if (clientRevision < 0 || clientRevision > serverRevision) {
+          ws.close();
+          return;
+        }
+        if (clientRevision < historyOffset) {
+          ws.close();
+          return;
+        } // history too old
         for (let i = clientRevision; i < serverRevision; i++) {
           const pastOp = operationHistory[i - historyOffset].op;
           op = transform(op, pastOp);
@@ -135,28 +166,34 @@ wss.on('connection', (ws) => {
           historyOffset += discard;
         }
 
-
         // Send ACK to the sender (just updates their revision, no re-apply)
-        ws.send(JSON.stringify({
-          type: 'ACK',
-          revision: serverRevision
-        }));
+        ws.send(
+          JSON.stringify({
+            type: 'ACK',
+            revision: serverRevision,
+          })
+        );
 
         // Broadcast the transformed operation to all OTHER clients
-        broadcast({
-          type: 'OPERATION',
-          operation: op,
-          revision: serverRevision,
-          sourceUserId: userId
-        }, userId);
-
+        broadcast(
+          {
+            type: 'OPERATION',
+            operation: op,
+            revision: serverRevision,
+            sourceUserId: userId,
+          },
+          userId
+        );
       } else if (msg.type === 'CURSOR') {
         clientInfo.cursor = msg.position;
-        broadcast({
-          type: 'CURSOR',
-          userId,
-          position: msg.position
-        }, userId);
+        broadcast(
+          {
+            type: 'CURSOR',
+            userId,
+            position: msg.position,
+          },
+          userId
+        );
       }
     } catch (e) {
       console.error('Error processing message:', e);
@@ -168,7 +205,7 @@ wss.on('connection', (ws) => {
     connectedClients.delete(userId);
     broadcast({
       type: 'USER_LEFT',
-      userId
+      userId,
     });
   });
 });

@@ -22,8 +22,8 @@
     heading: { inkColor: '#0a3d62', pressure: 0.14, rotationScale: 1.12 },
     body: { inkColor: null },
     bullet: { inkColor: '#2d6a4f', pressure: 0.13 },
-    emphasis: { inkColor: '#8b0000', pressure: 0.15, rotationScale: 1.08 }
-  }
+    emphasis: { inkColor: '#8b0000', pressure: 0.15, rotationScale: 1.08 },
+  },
 };
 
 /* Canvas pages array */
@@ -66,11 +66,11 @@ function getStyledLineSegments(lineText) {
     return [{ text: lineText, type: 'body', emphasisType: null, level: null }];
   }
 
-  return parsed.map(seg => ({
+  return parsed.map((seg) => ({
     text: seg.text || '',
     type: seg.type || 'body',
     emphasisType: seg.emphasisType || null,
-    level: seg.level || null
+    level: seg.level || null,
   }));
 }
 
@@ -82,7 +82,7 @@ function getPenProfileForSegment(segment) {
     inkColor: profile.inkColor || null,
     pressure: typeof profile.pressure === 'number' ? profile.pressure : null,
     rotationScale: typeof profile.rotationScale === 'number' ? profile.rotationScale : 1,
-    key: `${type}:${segment?.emphasisType || 'none'}:${segment?.level || 0}`
+    key: `${type}:${segment?.emphasisType || 'none'}:${segment?.level || 0}`,
   };
 }
 
@@ -121,8 +121,8 @@ if (typeof mermaid !== 'undefined') {
       primaryBorderColor: '#1c2340',
       lineColor: '#1c2340',
       secondaryColor: '#f8f4ea',
-      tertiaryColor: '#f8f4ea'
-    }
+      tertiaryColor: '#f8f4ea',
+    },
   });
 }
 
@@ -144,32 +144,108 @@ function drawArrowhead(ctx, rc, x, y, angle, size, color, roughness) {
   const p1 = { x: x, y: y };
   const p2 = {
     x: x - size * Math.cos(angle - Math.PI / 6),
-    y: y - size * Math.sin(angle - Math.PI / 6)
+    y: y - size * Math.sin(angle - Math.PI / 6),
   };
   const p3 = {
     x: x - size * Math.cos(angle + Math.PI / 6),
-    y: y - size * Math.sin(angle + Math.PI / 6)
+    y: y - size * Math.sin(angle + Math.PI / 6),
   };
-  
+
   rc.line(p1.x, p1.y, p2.x, p2.y, { stroke: color, roughness: roughness });
   rc.line(p1.x, p1.y, p3.x, p3.y, { stroke: color, roughness: roughness });
 }
 
 const TEMPLATE_SHEETS = {
   letters: [
-    'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
-    'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'
+    'A',
+    'B',
+    'C',
+    'D',
+    'E',
+    'F',
+    'G',
+    'H',
+    'I',
+    'J',
+    'K',
+    'L',
+    'M',
+    'N',
+    'O',
+    'P',
+    'Q',
+    'R',
+    'S',
+    'T',
+    'U',
+    'V',
+    'W',
+    'X',
+    'Y',
+    'Z',
+    'a',
+    'b',
+    'c',
+    'd',
+    'e',
+    'f',
+    'g',
+    'h',
+    'i',
+    'j',
+    'k',
+    'l',
+    'm',
+    'n',
+    'o',
+    'p',
+    'q',
+    'r',
+    's',
+    't',
+    'u',
+    'v',
+    'w',
+    'x',
+    'y',
+    'z',
   ],
   symbols: [
-    '0','1','2','3','4','5','6','7','8','9',
-    ',','.','?','!','@','#','$','%','^','&','*',
-    '(',')','-','_','+','=','/',':',';','\'','"'
-  ]
+    '0',
+    '1',
+    '2',
+    '3',
+    '4',
+    '5',
+    '6',
+    '7',
+    '8',
+    '9',
+    ',',
+    '.',
+    '?',
+    '!',
+    '@',
+    '#',
+    '$',
+    '%',
+    '^',
+    '&',
+    '*',
+    '(',
+    ')',
+    '-',
+    '_',
+    '+',
+    '=',
+    '/',
+    ':',
+    ';',
+    "'",
+    '"',
+  ],
 };
-const ALL_TEMPLATE_CHARS = [
-  ...TEMPLATE_SHEETS.letters,
-  ...TEMPLATE_SHEETS.symbols
-];
+const ALL_TEMPLATE_CHARS = [...TEMPLATE_SHEETS.letters, ...TEMPLATE_SHEETS.symbols];
 let activeChar = 'A';
 let activeSheet = 'letters';
 let activeUploadSheet = 'letters';
@@ -177,7 +253,7 @@ const draftedGlyphs = {};
 const alignerImages = { letters: null, symbols: null };
 const gridConfigs = {
   letters: { gridX: 22, gridY: 36, gridW: 315, gridH: 315 },
-  symbols: { gridX: 22, gridY: 36, gridW: 315, gridH: 315 }
+  symbols: { gridX: 22, gridY: 36, gridW: 315, gridH: 315 },
 };
 let gridX = 22;
 let gridY = 36;
@@ -236,11 +312,14 @@ fontSelect.addEventListener('change', () => {
   S.font = fontSelect.value;
   fontSelect.style.fontFamily = S.font;
   if (document.fonts) {
-    document.fonts.load(`${S.fontSize}px "${S.font}"`).then(() => {
-      debounceRender();
-    }).catch(() => {
-      debounceRender();
-    });
+    document.fonts
+      .load(`${S.fontSize}px "${S.font}"`)
+      .then(() => {
+        debounceRender();
+      })
+      .catch(() => {
+        debounceRender();
+      });
   } else {
     debounceRender();
   }
@@ -304,12 +383,13 @@ function autoFitFontSize() {
   // Binary search for a font size that fits text within 1 or 2 pages optimally
   // but let's target fitting the current text precisely into the first page if it's short,
   // or just generally reducing it if it overflows.
-  
-  for (let i = 0; i < 6; i++) { // 6 iterations is enough for 14-52 range
+
+  for (let i = 0; i < 6; i++) {
+    // 6 iterations is enough for 14-52 range
     const mid = Math.floor((min + max) / 2);
     S.fontSize = mid;
     const { pageCount } = layoutText(text);
-    
+
     if (pageCount > 1) {
       max = mid;
     } else {
@@ -319,7 +399,7 @@ function autoFitFontSize() {
   }
 
   S.fontSize = bestSize;
-  
+
   // Sync UI
   const slider = document.getElementById('font-size-slider');
   if (slider) slider.value = S.fontSize;
@@ -442,10 +522,10 @@ const markdownPenInputMap = {
   heading: 'pen-color-heading',
   body: 'pen-color-body',
   bullet: 'pen-color-bullet',
-  emphasis: 'pen-color-emphasis'
+  emphasis: 'pen-color-emphasis',
 };
 
-Object.keys(markdownPenInputMap).forEach(type => {
+Object.keys(markdownPenInputMap).forEach((type) => {
   const el = document.getElementById(markdownPenInputMap[type]);
   if (!el) return;
   el.addEventListener('input', () => onMarkdownPenColorChange(type, el.value));
@@ -487,7 +567,7 @@ if (cursiveModeToggle) {
    PHASE 5.7 â€” PAPER STYLE BUTTONS
 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function setPaper(btn) {
-  document.querySelectorAll('.paper-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.paper-btn').forEach((b) => b.classList.remove('active'));
   btn.classList.add('active');
   S.paperStyle = btn.dataset.style;
   debounceRender();
@@ -498,17 +578,17 @@ function setPaper(btn) {
 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function setTextAlignment(alignment) {
   S.textAlignment = alignment;
-  
+
   // Update UI
-  document.querySelectorAll('.align-btn').forEach(btn => {
+  document.querySelectorAll('.align-btn').forEach((btn) => {
     btn.classList.remove('active');
   });
   document.querySelector(`.align-btn[data-align="${alignment}"]`).classList.add('active');
-  
+
   // Update label
   const labels = { top: 'Upper', middle: 'Middle', bottom: 'Lower' };
   document.getElementById('align-val').textContent = labels[alignment] || 'Middle';
-  
+
   // Re-render with new alignment
   debounceRender();
 }
@@ -533,7 +613,7 @@ function createPage(pageNum) {
   canvas.height = PAGE_H;
   canvas.id = 'page-' + pageNum;
   canvas.style.width = Math.min(PAGE_W, 720) + 'px';
-  canvas.style.height = Math.min(PAGE_H, 720 * PAGE_H / PAGE_W) + 'px';
+  canvas.style.height = Math.min(PAGE_H, (720 * PAGE_H) / PAGE_W) + 'px';
 
   const editor = document.createElement('div');
   editor.className = 'page-editor';
@@ -544,7 +624,7 @@ function createPage(pageNum) {
   // Focus: clear canvas text (draw only background) and show overlay text
   editor.addEventListener('focus', () => {
     const ctx = canvas.getContext('2d');
-    drawPaperBackground(ctx, S.paperStyle);
+    window.PaperRenderer.drawPaperBackground(ctx, S.paperStyle);
     editor.style.color = S.inkColor;
   });
 
@@ -561,7 +641,8 @@ function createPage(pageNum) {
     document.getElementById('text-input').value = globalText;
     autosave();
     // Re-evaluate font family stack dynamically in case Indic characters were typed
-editor.style.fontFamily = fontSwitcher?.getFontStack(ScriptDetector.isIndicScript(editor.innerText), S.font) ?? S.font;
+    editor.style.fontFamily =
+      fontSwitcher?.getFontStack(ScriptDetector.isIndicScript(editor.innerText), S.font) ?? S.font;
   });
 
   // Create margin text overlay for left side notes
@@ -575,7 +656,8 @@ editor.style.fontFamily = fontSwitcher?.getFontStack(ScriptDetector.isIndicScrip
 
   // Update font when typing
   marginText.addEventListener('input', () => {
-    marginText.style.fontFamily = fontSwitcher?.getFontStack(ScriptDetector.isIndicScript(marginText.innerText), S.font) ?? S.font;
+    marginText.style.fontFamily =
+      fontSwitcher?.getFontStack(ScriptDetector.isIndicScript(marginText.innerText), S.font) ?? S.font;
   });
 
   container.appendChild(canvas);
@@ -597,13 +679,14 @@ function updateEditorStyles(editor, canvas) {
   if (!editor || !canvas) return;
   const actualWidth = canvas.offsetWidth || parseFloat(canvas.style.width) || PAGE_W;
   const scale = actualWidth / PAGE_W;
-  editor.style.fontFamily = fontSwitcher?.getFontStack(ScriptDetector.isIndicScript(editor.innerText), S.font) ?? S.font;
-  editor.style.fontSize = (S.fontSize * scale) + 'px';
+  editor.style.fontFamily =
+    fontSwitcher?.getFontStack(ScriptDetector.isIndicScript(editor.innerText), S.font) ?? S.font;
+  editor.style.fontSize = S.fontSize * scale + 'px';
   editor.style.lineHeight = S.lineHeight;
-  editor.style.paddingTop = (S.margin * scale) + 'px';
-  editor.style.paddingLeft = (S.margin * scale) + 'px';
-  editor.style.paddingRight = (S.margin * scale) + 'px';
-  editor.style.paddingBottom = (S.margin * scale) + 'px';
+  editor.style.paddingTop = S.margin * scale + 'px';
+  editor.style.paddingLeft = S.margin * scale + 'px';
+  editor.style.paddingRight = S.margin * scale + 'px';
+  editor.style.paddingBottom = S.margin * scale + 'px';
 
   if (document.activeElement === editor) {
     editor.style.color = S.inkColor;
@@ -636,522 +719,6 @@ window.addEventListener('resize', () => {
   });
 });
 
-
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   PHASE 4.2 â€” PAPER BACKGROUND RENDERER
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-function drawLayoutDecorations(ctx, noteLayout) {
-  if (noteLayout === 'standard') return;
-  if (!window.templateManager) return;
-
-  const template = window.templateManager.resolveTemplate(noteLayout, PAGE_W, PAGE_H, S.margin);
-  if (!template) return;
-
-  ctx.save();
-  ctx.strokeStyle = S.inkColor;
-  ctx.fillStyle = S.inkColor;
-  
-  // Draw guides
-  if (template.guides) {
-    template.guides.forEach(g => {
-      if (g.type === 'line') {
-        ctx.globalAlpha = g.alpha || 0.35;
-        ctx.lineWidth = 1.0;
-        ctx.beginPath();
-        ctx.moveTo(g.x1, g.y1);
-        ctx.lineTo(g.x2, g.y2);
-        ctx.stroke();
-      }
-    });
-  }
-
-  // Draw labels
-  if (template.labels) {
-    template.labels.forEach(l => {
-      ctx.globalAlpha = l.alpha || 0.5;
-      ctx.font = l.font || `italic bold 11px sans-serif`;
-      ctx.fillText(l.text, l.x, l.y);
-    });
-  }
-
-  ctx.restore();
-}
-
-function drawPaperBackground(ctx, style) {
-  const w = PAGE_W, h = PAGE_H;
-  ctx.clearRect(0, 0, w, h);
-
-  // Paper colors per style
-  const configs = {
-    ruled: { bg: '#f8f4ea', lineColor: '#c5b9a0', lineOpacity: 0.55, redLine: '#e08080' },
-    plain: { bg: '#faf7f0', lineColor: null },
-    grid: { bg: '#f6f2ec', lineColor: '#c0b49a', lineOpacity: 0.35 },
-    legal: { bg: '#fef9c3', lineColor: '#c8b820', lineOpacity: 0.45, redLine: '#e07070' },
-    vintage: { bg: '#f2e8ce', lineColor: '#b8a080', lineOpacity: 0.4 },
-    dark: { bg: '#1a1a2e', lineColor: '#3a3a5e', lineOpacity: 0.7 },
-    dot_grid: { bg: '#f6f2ec', lineColor: '#c0b49a', lineOpacity: 0.35 },
-    engineering: { bg: '#eef6ed', lineColor: '#78a67d', lineOpacity: 0.4 },
-    music: { bg: '#faf7f0', lineColor: '#4a4a4a', lineOpacity: 0.55 },
-    dated: { bg: '#f8f4ea', lineColor: '#c5b9a0', lineOpacity: 0.55, redLine: '#e08080', dateColumn: true },
-  };
-
-  const c = configs[style] || configs.ruled;
-
-  // Fill background
-  ctx.fillStyle = c.bg;
-  ctx.fillRect(0, 0, w, h);
-
-  // Subtle paper texture (noise-like grain using very small rects)
-  if (style !== 'dark') {
-    ctx.save();
-    ctx.globalAlpha = 0.018;
-    // ponytail: seeded PRNG so texture doesn't flicker on re-render
-    let seed = 0;
-    for (let ci = 0; ci < style.length; ci++) seed = ((seed << 5) - seed + style.charCodeAt(ci)) | 0;
-    const rng = () => { seed = (seed * 16807 + 0) % 2147483647; return (seed & 0x7fffffff) / 0x7fffffff; };
-    for (let i = 0; i < 2200; i++) {
-      const gx = rng() * w;
-      const gy = rng() * h;
-      const gs = rng() * 3 + 1;
-      ctx.fillStyle = rng() > 0.5 ? '#8b7355' : '#c8b090';
-      ctx.fillRect(gx, gy, gs, gs * 0.5);
-    }
-    ctx.restore();
-  }
-
-  if (style === 'ruled' || style === 'legal') {
-    // Red margin line
-    ctx.save();
-    ctx.globalAlpha = 0.55;
-    ctx.strokeStyle = c.redLine || '#e08080';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(S.margin - 10, 0);
-    ctx.lineTo(S.margin - 10, h);
-    ctx.stroke();
-    ctx.restore();
-
-    // Horizontal ruled lines
-    ctx.save();
-    ctx.globalAlpha = c.lineOpacity;
-    ctx.strokeStyle = c.lineColor;
-    ctx.lineWidth = 0.8;
-    const lineSpacingPx = S.fontSize * S.lineHeight;
-    for (let y = S.margin + lineSpacingPx; y < h - 20; y += lineSpacingPx) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(w, y);
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  if (style === 'dated') {
-    // Red margin line
-    ctx.save();
-    ctx.globalAlpha = 0.55;
-    ctx.strokeStyle = c.redLine || '#e08080';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(S.margin - 10, 0);
-    ctx.lineTo(S.margin - 10, h);
-    ctx.stroke();
-    ctx.restore();
-
-    // Date column line (left of margin)
-    ctx.save();
-    ctx.globalAlpha = 0.45;
-    ctx.strokeStyle = '#b0a080';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(S.margin - 60, 0);
-    ctx.lineTo(S.margin - 60, h);
-    ctx.stroke();
-    ctx.restore();
-
-    // Horizontal ruled lines
-    ctx.save();
-    ctx.globalAlpha = c.lineOpacity;
-    ctx.strokeStyle = c.lineColor;
-    ctx.lineWidth = 0.8;
-    const lineSpacingPx = S.fontSize * S.lineHeight;
-    for (let y = S.margin + lineSpacingPx; y < h - 20; y += lineSpacingPx) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(w, y);
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  if (style === 'grid') {
-    ctx.save();
-    ctx.globalAlpha = c.lineOpacity;
-    ctx.strokeStyle = c.lineColor;
-    ctx.lineWidth = 0.6;
-    const gridSz = S.fontSize * S.lineHeight;
-    // Align with S.margin for clean layout
-    for (let x = S.margin; x < w; x += gridSz) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
-    }
-    for (let x = S.margin - gridSz; x > 0; x -= gridSz) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
-    }
-    for (let y = S.margin; y < h; y += gridSz) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-    }
-    for (let y = S.margin - gridSz; y > 0; y -= gridSz) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  if (style === 'vintage') {
-    // Aged edges
-    ctx.save();
-    const grd = ctx.createRadialGradient(w / 2, h / 2, h * 0.3, w / 2, h / 2, h * 0.85);
-    grd.addColorStop(0, 'rgba(0,0,0,0)');
-    grd.addColorStop(1, 'rgba(120,80,20,0.14)');
-    ctx.fillStyle = grd;
-    ctx.fillRect(0, 0, w, h);
-    ctx.restore();
-
-    // Faint lines
-    ctx.save();
-    ctx.globalAlpha = 0.3;
-    ctx.strokeStyle = c.lineColor;
-    ctx.lineWidth = 0.7;
-    const vs = S.fontSize * S.lineHeight;
-    for (let y = S.margin + vs; y < h - 20; y += vs) {
-      ctx.beginPath(); ctx.moveTo(20, y); ctx.lineTo(w - 20, y); ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  if (style === 'dark') {
-    ctx.save();
-    ctx.globalAlpha = c.lineOpacity;
-    ctx.strokeStyle = c.lineColor;
-    ctx.lineWidth = 0.7;
-    const vs = S.fontSize * S.lineHeight;
-    for (let y = S.margin + vs; y < h - 20; y += vs) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  if (style === 'dot_grid') {
-    ctx.save();
-    ctx.fillStyle = c.lineColor || '#c0b49a';
-    ctx.globalAlpha = c.lineOpacity;
-    const dotSz = S.fontSize * S.lineHeight;
-    for (let x = S.margin; x < w; x += dotSz) {
-      for (let y = S.margin; y < h; y += dotSz) {
-        ctx.beginPath();
-        ctx.arc(x, y, 1.2, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-    for (let x = S.margin - dotSz; x > 0; x -= dotSz) {
-      for (let y = S.margin; y < h; y += dotSz) {
-        ctx.beginPath();
-        ctx.arc(x, y, 1.2, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-    ctx.restore();
-  }
-
-  if (style === 'engineering') {
-    ctx.save();
-    ctx.strokeStyle = c.lineColor || '#78a67d';
-    const majorSize = S.fontSize * S.lineHeight;
-    const minorSize = majorSize / 5;
-
-    // Draw minor lines
-    ctx.globalAlpha = 0.18;
-    ctx.lineWidth = 0.4;
-    for (let x = S.margin; x < w; x += minorSize) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
-    }
-    for (let x = S.margin - minorSize; x > 0; x -= minorSize) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
-    }
-    for (let y = S.margin; y < h; y += minorSize) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-    }
-    for (let y = S.margin - minorSize; y > 0; y -= minorSize) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-    }
-
-    // Draw major lines
-    ctx.globalAlpha = 0.4;
-    ctx.lineWidth = 0.8;
-    for (let x = S.margin; x < w; x += majorSize) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
-    }
-    for (let x = S.margin - majorSize; x > 0; x -= majorSize) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
-    }
-    for (let y = S.margin; y < h; y += majorSize) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-    }
-    for (let y = S.margin - majorSize; y > 0; y -= majorSize) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-    }
-
-    // Margins
-    ctx.strokeStyle = '#a66858'; // Reddish-brown
-    ctx.globalAlpha = 0.55;
-    ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.moveTo(S.margin - 10, 0); ctx.lineTo(S.margin - 10, h); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0, S.margin); ctx.lineTo(w, S.margin); ctx.stroke();
-    ctx.restore();
-  }
-
-  if (style === 'music') {
-    ctx.save();
-    ctx.strokeStyle = c.lineColor || '#4a4a4a';
-    ctx.lineWidth = 0.8;
-    const baseSpacing = S.fontSize * S.lineHeight;
-    const lineSpacing = baseSpacing * (8 / 33);
-    const staffSpacing = baseSpacing * (72 / 33);
-    const startY = S.margin;
-    ctx.globalAlpha = c.lineOpacity;
-
-    for (let y = startY; y < h - 80; y += staffSpacing) {
-      // Draw 5 staff lines
-      for (let i = 0; i < 5; i++) {
-        const ly = y + i * lineSpacing;
-        ctx.beginPath();
-        ctx.moveTo(S.margin - 20, ly);
-        ctx.lineTo(w - S.margin + 20, ly);
-        ctx.stroke();
-      }
-      // Vertical bracket lines at start and end of staff
-      ctx.beginPath();
-      ctx.moveTo(S.margin - 20, y);
-      ctx.lineTo(S.margin - 20, y + 4 * lineSpacing);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(w - S.margin + 20, y);
-      ctx.lineTo(w - S.margin + 20, y + 4 * lineSpacing);
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  // Page shadow edge
-  ctx.save();
-  ctx.globalAlpha = 0.06;
-  ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, 4, h);
-  ctx.fillRect(w - 4, 0, 4, h);
-  ctx.restore();
-
-  // Draw Layout Decorations (Cornell, etc.)
-  drawLayoutDecorations(ctx, S.noteLayout);
-}
-
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   PHASE 4.3 â€” PER-CHARACTER VARIATION ENGINE (Enhanced)
-   
-   All offsets scale proportionally with fontSize
-   so the handwriting looks natural at any size.
-   
-   Now integrated with CharacterVariationContext for
-   position-aware variation (Requirements 1.1-1.8)
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-// Note: getCharVariation and getCharVariationWithContext are now defined in
-// contextual-jitter-engine.js and available globally
-
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   PHASE 2.2 / 2.3 â€” SMUDGE & ERASER EFFECTS RENDERING
-   
-   Renders semi-transparent overlay shapes to simulate
-   smudges and eraser marks on pages (Requirements 2.2-2.9)
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-function renderSmudgeEffects(ctx, pageIdx) {
-  if (!S.smudgeEffects) return;
-  
-  // Seed random generator for consistent smudges per page
-  // This ensures the same page always has the same smudges
-  const baseSeed = 12345 + pageIdx * 9876;
-  let callCount = 0;
-  const seededRandom = () => {
-    callCount++;
-    const x = Math.sin(baseSeed * 12.9898 + callCount * 78.233) * 43758.5453;
-    return x - Math.floor(x);
-  };
-  
-  // Generate 2-5 random overlay shapes per page
-  const numShapes = Math.floor(seededRandom() * 4) + 2; // 2-5 shapes
-  
-  for (let i = 0; i < numShapes; i++) {
-    // Determine if this is a smudge or eraser effect
-    const isEraser = seededRandom() > 0.6; // 40% smudge, 60% eraser (more eraser-like)
-    
-    // Opacity range: 0.05-0.15 for smudge, 0.03-0.08 for eraser
-    const minOpacity = isEraser ? 0.03 : 0.05;
-    const maxOpacity = isEraser ? 0.08 : 0.15;
-    const opacity = minOpacity + seededRandom() * (maxOpacity - minOpacity);
-    
-    // Dimensions: 40-120px width, 15-40px height
-    const width = 40 + seededRandom() * 80;
-    const height = 15 + seededRandom() * 25;
-    
-    // Position: top edge starting below 100px of page
-    // Shapes can extend into exclusion zone (top 100px)
-    const minY = 100 - height * 0.3; // Allow some shapes to partially overlap top
-    const maxY = PAGE_H - height;
-    const y = minY + seededRandom() * (maxY - minY);
-    const x = seededRandom() * (PAGE_W - width);
-    
-    // Generate random shape (blob or ellipse-like)
-    const shapeType = seededRandom() > 0.5 ? 'blob' : 'ellipse';
-    
-    ctx.save();
-    ctx.globalAlpha = opacity;
-    ctx.fillStyle = S.paperStyle === 'dark' ? '#ffffff' : '#888888'; // Light gray
-    
-    if (shapeType === 'ellipse') {
-      // Draw ellipse using canvas path
-      const radiusX = width / 2;
-      const radiusY = height / 2;
-      const rotation = seededRandom() * Math.PI;
-      
-      ctx.translate(x + radiusX, y + radiusY);
-      ctx.rotate(rotation);
-      ctx.scale(radiusX, radiusY);
-      ctx.beginPath();
-      ctx.arc(0, 0, 1, 0, Math.PI * 2);
-      ctx.fill();
-    } else {
-      // Draw blob shape using multiple overlapping circles
-      ctx.translate(x, y);
-      const blobPoints = 4;
-      for (let j = 0; j < blobPoints; j++) {
-        const bx = (width / 2) * Math.cos((j / blobPoints) * Math.PI * 2);
-        const by = (height / 2) * Math.sin((j / blobPoints) * Math.PI * 2);
-        const blobRadius = Math.min(width, height) * 0.3 * (0.7 + seededRandom() * 0.6);
-        ctx.beginPath();
-        ctx.arc(bx, by, blobRadius, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-    
-    ctx.restore();
-  }
-}
-
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   PHASE 3.1â€“3.9 â€” CURSIVE CONNECTION RENDERING
-   
-   Renders connection strokes between consecutive lowercase letters
-   when cursive mode is enabled. Uses ligature pairs for special
-   letter combinations (Requirements 3.1â€“3.9)
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-function renderCursiveConnections(queue) {
-  if (!cursiveConnector) return;
-
-  // Build a map of character items by page for easier lookup
-  const pageCharMap = {};
-  queue.forEach((item, idx) => {
-    // Only process text characters (not diagrams, shapes, etc.)
-    if (item.type || item.isIndic) return;
-    if (!pageCharMap[item.pageIdx]) {
-      pageCharMap[item.pageIdx] = [];
-    }
-    pageCharMap[item.pageIdx].push({ item, idx });
-  });
-
-  // For each page, process consecutive character pairs to render connections
-  Object.keys(pageCharMap).forEach(pageIdx => {
-    const canvas = pages[parseInt(pageIdx)];
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-
-    const charList = pageCharMap[pageIdx];
-    for (let i = 0; i < charList.length - 1; i++) {
-      const currItem = charList[i].item;
-      const nextItem = charList[i + 1].item;
-
-      // Check if connection should be rendered
-      // Req 3.6: Skip uppercase, whitespace, punctuation
-      if (!cursiveConnector.shouldRenderConnection(currItem.ch, nextItem.ch, currItem.isIndic)) {
-        continue;
-      }
-
-      // Do not connect across style/pen boundaries.
-      if (currItem.penKey !== nextItem.penKey) {
-        continue;
-      }
-
-      // Do not connect across word boundaries (gap indicates a space was between them)
-      const gap = nextItem.x - (currItem.x + (currItem.charWidth || 20));
-      if (gap > S.fontSize * 0.6) {
-        continue;
-      }
-
-      // Check if it's a ligature pair (Req 3.4, 3.5)
-      if (cursiveConnector.isLigaturePair(currItem.ch, nextItem.ch)) {
-        // Render ligature glyph as a connecting element between the two characters
-        const midX = (currItem.x + nextItem.x) / 2;
-        const midY = (currItem.y + nextItem.y) / 2;
-        cursiveConnector.renderLigatureGlyph(
-          ctx, midX, midY,
-          currItem.ch, nextItem.ch,
-          currItem.inkColor || S.inkColor,
-          S.fontSize,
-          currItem.v.pressureMod
-        );
-        continue;
-      }
-
-      // Render connection stroke between characters (Req 3.2, 3.3)
-      const v = currItem.v;
-      const currWidth = currItem.charWidth || 20;
-      const nextWidth = nextItem.charWidth || 20;
-      const exitPoint = cursiveConnector.getExitPoint(currItem.ch, currWidth, S.fontSize);
-      const entryPoint = cursiveConnector.getEntryPoint(nextItem.ch, nextWidth, S.fontSize);
-
-      cursiveConnector.renderConnectionStroke(
-        ctx,
-        { x: currItem.x, y: currItem.y },
-        exitPoint,
-        { x: nextItem.x, y: nextItem.y },
-        entryPoint,
-        currItem.inkColor || S.inkColor,
-        v.pressureMod,
-        S.fontSize
-      );
-    }
-  });
-}
-
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   PHASE 4.1â€“4.8 â€” CLEAR & INIT PAGES
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-
-/* Get vertical alignment offset based on text alignment setting */
-function getAlignmentOffset(alignment, fontSize, lineHeight) {
-  const lineH = fontSize * lineHeight;
-  
-  switch (alignment) {
-    case 'top':
-      // Text touches upper line (shift up by ~40% of line height)
-      return -(lineH * 0.35);
-    case 'bottom':
-      // Text sits on lower line (shift down by ~40% of line height)
-      return (lineH * 0.35);
-    case 'middle':
-    default:
-      // Centered between lines (no offset)
-      return 0;
-  }
-}
-
 function clearPages() {
   pages = [];
   S.currentPage = 0;
@@ -1164,7 +731,7 @@ function clearText() {
   S.text = '';
   clearPages();
   const canvas = createPage(1);
-  drawPaperBackground(canvas.getContext('2d'), S.paperStyle);
+  window.PaperRenderer.drawPaperBackground(canvas.getContext('2d'), S.paperStyle);
   const editor = document.getElementById('editor-1');
   if (editor) {
     editor.innerText = '';
@@ -1173,53 +740,12 @@ function clearText() {
   autosave();
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   PHASE 4.4 â€” HELPER FUNCTIONS
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-function sanitizeText(str) {
-  if (!str) return '';
-  return str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\uE000-\uF8FF]/g, '');
-}
-
-/**
- * Split text into blocks of plain text, mermaid diagrams, and structured diagrams.
- */
-function parseBlocks(text) {
-  const blocks = [];
-  // Match both mermaid and custom diagram blocks
-  const blockRegex = /```(mermaid|diagram)([\s\S]*?)```/g;
-  let lastIndex = 0;
-  let match;
-
-  while ((match = blockRegex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      blocks.push({ type: 'text', content: text.substring(lastIndex, match.index) });
-    }
-    const type = match[1];
-    const content = match[2].trim();
-    blocks.push({ type: type, content: content, raw: match[0] });
-    lastIndex = blockRegex.lastIndex;
-  }
-
-  if (lastIndex < text.length) {
-    blocks.push({ type: 'text', content: text.substring(lastIndex) });
-  }
-
-  return blocks;
-}
+// ponytail: aliases for extracted text-layout.js module
+const sanitizeText = (str) => window.TextLayout.sanitizeText(str);
+const parseBlocks = (text) => window.TextLayout.parseBlocks(text);
+const getGraphemes = (text) => window.TextLayout.getGraphemes(text);
 
 // ponytail: diagramCache and getDiagramImage are in diagram-engine.js
-
-function getGraphemes(text) {
-  if (!text) return [];
-  if (typeof Intl !== 'undefined' && Intl.Segmenter) {
-    const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
-    return Array.from(segmenter.segment(text)).map(s => s.segment);
-  }
-  return Array.from(text);
-}
-
-
 
 function layoutText(text) {
   const originalLength = text ? text.length : 0;
@@ -1280,11 +806,14 @@ function layoutTextTemplated(text) {
   const variationContext = new CharacterVariationContext();
 
   const margin = S.margin;
-  const template = window.templateManager ? window.templateManager.resolveTemplate(S.noteLayout, PAGE_W, PAGE_H, margin) : null;
-  const zones = template && template.zones && template.zones.length > 0 
-    ? template.zones 
-    : [{ id: 'main', x: margin, y: margin, width: PAGE_W - margin * 2, height: PAGE_H - margin * 2, nextZone: null }];
-  
+  const template = window.templateManager
+    ? window.templateManager.resolveTemplate(S.noteLayout, PAGE_W, PAGE_H, margin)
+    : null;
+  const zones =
+    template && template.zones && template.zones.length > 0
+      ? template.zones
+      : [{ id: 'main', x: margin, y: margin, width: PAGE_W - margin * 2, height: PAGE_H - margin * 2, nextZone: null }];
+
   let activeZone = zones[0];
   let x = activeZone.x;
   const lineH = S.fontSize * S.lineHeight;
@@ -1301,7 +830,7 @@ function layoutTextTemplated(text) {
     variationContext.resetAtLineBreak();
     if (y + lineH > activeZone.y + activeZone.height) {
       if (activeZone.nextZone) {
-        activeZone = zones.find(z => z.id === activeZone.nextZone) || zones[0];
+        activeZone = zones.find((z) => z.id === activeZone.nextZone) || zones[0];
       } else {
         pageTexts.push(currentPageText);
         currentPageText = '';
@@ -1318,7 +847,7 @@ function layoutTextTemplated(text) {
   for (const block of blocks) {
     if (block.type === 'mermaid') {
       const diag = getDiagramImage(block.content);
-      
+
       const maxWidth = activeZone.width;
       let dWidth = diag.width || 400;
       let dHeight = diag.height || 200;
@@ -1340,7 +869,7 @@ function layoutTextTemplated(text) {
         y: y,
         w: dWidth,
         h: dHeight,
-        pageIdx
+        pageIdx,
       });
 
       currentPageText += block.raw + '\n';
@@ -1368,53 +897,64 @@ function layoutTextTemplated(text) {
       }
 
       let positionedNodes = [];
-      
+
       // Layout based on diagram type (using imported functions from diagram-engine.js)
       positionedNodes = positionDiagramNodes(data, activeZone.x, y, dWidth, dHeight);
 
       // Push individual shape items
-      positionedNodes.forEach(n => {
+      positionedNodes.forEach((n) => {
         const shape = n.shape || (data.type === 'cycle' ? 'circle' : 'box');
         queue.push({
-          type: 'shape', shape,
+          type: 'shape',
+          shape,
           label: n.label || '',
-          x: n.x, y: n.y, w: n.w || 100, h: n.h || 40,
-          pageIdx
+          x: n.x,
+          y: n.y,
+          w: n.w || 100,
+          h: n.h || 40,
+          pageIdx,
         });
       });
 
       // Push individual edge items with labels
-      (data.edges || []).forEach(e => {
-        const fromNode = positionedNodes.find(n => n.id === e.from);
-        const toNode = positionedNodes.find(n => n.id === e.to);
+      (data.edges || []).forEach((e) => {
+        const fromNode = positionedNodes.find((n) => n.id === e.from);
+        const toNode = positionedNodes.find((n) => n.id === e.to);
         if (!fromNode || !toNode) return;
         queue.push({
           type: 'edge',
           from: { x: fromNode.x, y: fromNode.y },
           to: { x: toNode.x, y: toNode.y },
           label: e.label || '',
-          pageIdx
+          pageIdx,
         });
       });
 
-      positionedNodes.forEach(n => {
+      positionedNodes.forEach((n) => {
         if (!n.label) return;
         const words = n.label.split(' ');
         let ly = n.y - 5;
         const labelLineHeight = S.fontSize * 1.2;
         ctx.font = `${S.fontSize}px ${S.font}`;
-        
-        words.forEach(word => {
+
+        words.forEach((word) => {
           let lx = n.x - ctx.measureText(word).width / 2;
           const chars = getGraphemes(word);
           chars.forEach((ch, ci) => {
             const v = getCharVariation(S.rotationMax * 0.5, S.pressure, S.fontSize);
             const cw = ctx.measureText(ch).width + v.spacingExtra;
             queue.push({
-              ch, x: lx, y: ly + v.baselineOff, v,
-              pageIdx, isIndic: false, type: 'diagram-label',
+              ch,
+              x: lx,
+              y: ly + v.baselineOff,
+              v,
+              pageIdx,
+              isIndic: false,
+              type: 'diagram-label',
               fontStack: fontSwitcher?.getFontStack(false, S.font) ?? S.font,
-              inkColor: S.inkColor, penKey: 'body', charWidth: cw
+              inkColor: S.inkColor,
+              penKey: 'body',
+              charWidth: cw,
             });
             lx += cw;
           });
@@ -1473,7 +1013,7 @@ function layoutTextTemplated(text) {
 
           const scriptRuns = fontSwitcher?.getTokenScriptRuns(lineWord, S.hinglishAutoSwitch, getGraphemes) || [];
           let wordWidth = S.wordSpacing;
-          scriptRuns.forEach(run => {
+          scriptRuns.forEach((run) => {
             const runFontStack = fontSwitcher?.getFontStack(run.isIndic, S.font) ?? S.font;
             ctx.font = `${S.fontSize}px ${runFontStack}`;
             wordWidth += ctx.measureText(run.text).width;
@@ -1483,19 +1023,37 @@ function layoutTextTemplated(text) {
             advanceLineOrZone();
           }
 
-          scriptRuns.forEach(run => {
+          scriptRuns.forEach((run) => {
             const fontStack = fontSwitcher?.getFontStack(run.isIndic, S.font) ?? S.font;
             if (run.isIndic) {
               const lineLength = Math.max(1, lineText.length);
-              variationContext.updateForCharacter(lineCharIndex, lineLength, lineCharIndex === 0, lineCharIndex === lineLength - 1);
-              const v = getCharVariationWithContext(run.isIndic ? penRotation * 0.3 : penRotation, penPressure, S.fontSize, variationContext);
+              variationContext.updateForCharacter(
+                lineCharIndex,
+                lineLength,
+                lineCharIndex === 0,
+                lineCharIndex === lineLength - 1
+              );
+              const v = getCharVariationWithContext(
+                run.isIndic ? penRotation * 0.3 : penRotation,
+                penPressure,
+                S.fontSize,
+                variationContext
+              );
               const wobble = Math.sin(lineCharIndex * 0.04) * 0.4 * (S.fontSize / 22);
-              const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
-              const cy = y + (v.baselineOff * 0.4) + wobble + alignOffset;
+              const alignOffset = window.PaperRenderer.getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
+              const cy = y + v.baselineOff * 0.4 + wobble + alignOffset;
 
               queue.push({
-                ch: run.text, x, y: cy, v, pageIdx, isIndic: true, fontStack, inkColor, penKey: penProfile.key,
-                charWidth: ctx.measureText(run.text).width + v.spacingExtra
+                ch: run.text,
+                x,
+                y: cy,
+                v,
+                pageIdx,
+                isIndic: true,
+                fontStack,
+                inkColor,
+                penKey: penProfile.key,
+                charWidth: ctx.measureText(run.text).width + v.spacingExtra,
               });
 
               ctx.font = `${S.fontSize}px ${fontStack}`;
@@ -1514,7 +1072,12 @@ function layoutTextTemplated(text) {
               const lineLength = Math.max(1, lineText.length);
               variationContext.updateForCharacter(lineCharIndex, lineLength, isWordStart, isWordEnd);
 
-              const v = getCharVariationWithContext(run.isIndic ? penRotation * 0.3 : penRotation, penPressure, S.fontSize, variationContext);
+              const v = getCharVariationWithContext(
+                run.isIndic ? penRotation * 0.3 : penRotation,
+                penPressure,
+                S.fontSize,
+                variationContext
+              );
               ctx.font = `${S.fontSize}px ${fontStack}`;
               const charWidth = ctx.measureText(ch).width + v.spacingExtra;
 
@@ -1523,12 +1086,20 @@ function layoutTextTemplated(text) {
               }
 
               const wobble = Math.sin(lineCharIndex * 0.04) * 0.8 * (S.fontSize / 22);
-              const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
+              const alignOffset = window.PaperRenderer.getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
               const cy = y + v.baselineOff + wobble + alignOffset;
 
               queue.push({
-                ch, x, y: cy, v, pageIdx, isIndic: false, fontStack, inkColor, penKey: penProfile.key,
-                charWidth: ctx.measureText(ch).width + v.spacingExtra
+                ch,
+                x,
+                y: cy,
+                v,
+                pageIdx,
+                isIndic: false,
+                fontStack,
+                inkColor,
+                penKey: penProfile.key,
+                charWidth: ctx.measureText(ch).width + v.spacingExtra,
               });
 
               x += ctx.measureText(ch).width + v.spacingExtra;
@@ -1545,7 +1116,6 @@ function layoutTextTemplated(text) {
   pageTexts.push(currentPageText);
   return { queue, pageTexts, pageCount: pageIdx + 1 };
 }
-
 
 // Cache of decoded <img> elements for drafted glyphs, keyed by character.
 // renderText() only draws an entry once it's fully decoded (img.complete-
@@ -1576,9 +1146,9 @@ function renderText(text) {
   clearPages();
   if (!text.trim()) {
     const canvas = createPage(1);
-    drawPaperBackground(canvas.getContext('2d'), S.paperStyle);
+    window.PaperRenderer.drawPaperBackground(canvas.getContext('2d'), S.paperStyle);
     const ctx = canvas.getContext('2d');
-    renderSmudgeEffects(ctx, 0);
+    window.PaperRenderer.renderSmudgeEffects(ctx, 0);
     const editor = document.getElementById('editor-1');
     if (editor) {
       editor.innerText = '';
@@ -1598,17 +1168,20 @@ function renderText(text) {
   if (window.pageObserver) {
     window.pageObserver.disconnect();
   }
-  window.pageObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      const wrapper = entry.target;
-      if (entry.isIntersecting) {
-        const pageIdx = parseInt(wrapper.dataset.pageIdx, 10);
-        if (!isNaN(pageIdx)) {
-          window.renderSpecificPage(pageIdx);
+  window.pageObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        const wrapper = entry.target;
+        if (entry.isIntersecting) {
+          const pageIdx = parseInt(wrapper.dataset.pageIdx, 10);
+          if (!isNaN(pageIdx)) {
+            window.renderSpecificPage(pageIdx);
+          }
         }
-      }
-    });
-  }, { rootMargin: '600px 0px' });
+      });
+    },
+    { rootMargin: '600px 0px' }
+  );
 
   // Group queue by page and save globally for lazy rendering
   window.currentRenderQueue = queue;
@@ -1623,7 +1196,7 @@ function renderText(text) {
       c.dataset.text = pageTexts[idx] || '';
       updateEditorStyles(editor, c);
     }
-    
+
     c.dataset.rendered = 'false';
     const wrapper = c.parentElement;
     wrapper.dataset.pageIdx = idx;
@@ -1640,7 +1213,7 @@ function renderText(text) {
   });
 }
 
-window.renderSpecificPage = function(pageIdx, forceRedraw) {
+window.renderSpecificPage = function (pageIdx, forceRedraw) {
   const canvas = pages[pageIdx];
   if (!canvas) return;
   if (canvas.dataset.rendered === 'true' && !forceRedraw && !arguments[1]) return;
@@ -1648,31 +1221,32 @@ window.renderSpecificPage = function(pageIdx, forceRedraw) {
 
   // Always draw directly to the main canvas for reliability
   const ctx = canvas.getContext('2d');
-  drawPaperBackground(ctx, S.paperStyle);
-  renderSmudgeEffects(ctx, pageIdx);
+  window.PaperRenderer.drawPaperBackground(ctx, S.paperStyle);
+  window.PaperRenderer.renderSmudgeEffects(ctx, pageIdx);
 
   // Also update layer compositor background layer if available (for layer UI)
   if (window.layerCompositor) {
     try {
       window.layerCompositor.clearPage(pageIdx);
       const bgStack = window.layerCompositor.getStack(pageIdx);
-      const bgLayer = bgStack.layers.find(l => l.name === 'Background');
+      const bgLayer = bgStack.layers.find((l) => l.name === 'Background');
       if (bgLayer) {
         const bgCtx = bgLayer.canvas.getContext('2d');
-        drawPaperBackground(bgCtx, S.paperStyle);
-        renderSmudgeEffects(bgCtx, pageIdx);
+        window.PaperRenderer.drawPaperBackground(bgCtx, S.paperStyle);
+        window.PaperRenderer.renderSmudgeEffects(bgCtx, pageIdx);
       }
-    } catch(e) { /* ignore compositor errors */ }
+    } catch (e) {
+      /* ignore compositor errors */
+    }
   }
 
-  const pageItems = (window.currentRenderQueue || []).filter(item => item.pageIdx === pageIdx);
+  const pageItems = (window.currentRenderQueue || []).filter((item) => item.pageIdx === pageIdx);
 
   if (S.cursiveMode && cursiveConnector) {
     renderCursiveConnections(pageItems);
   }
 
   pageItems.forEach((item) => {
-
     if (item.type === 'mermaid') {
       const diag = getDiagramImage(item.content);
       if (diag.ready && diag.img && !diag.error) {
@@ -1680,8 +1254,10 @@ window.renderSpecificPage = function(pageIdx, forceRedraw) {
         ctx.translate(item.x, item.y);
         // ponytail: seeded rotation so diagrams don't jitter on re-render
         let hash = 0;
-        for (let ci = 0; ci < item.content.length; ci++) { hash = ((hash << 5) - hash + item.content.charCodeAt(ci)) | 0; }
-        ctx.rotate((hash % 40 - 20) / 100 * Math.PI / 180);
+        for (let ci = 0; ci < item.content.length; ci++) {
+          hash = ((hash << 5) - hash + item.content.charCodeAt(ci)) | 0;
+        }
+        ctx.rotate(((((hash % 40) - 20) / 100) * Math.PI) / 180);
         ctx.globalAlpha = 0.9;
         ctx.drawImage(diag.img, 0, 0, item.w, item.h);
         ctx.restore();
@@ -1714,7 +1290,7 @@ window.renderSpecificPage = function(pageIdx, forceRedraw) {
         roughness: S.pressure * 4,
         stroke: S.inkColor,
         strokeWidth: 1.2,
-        bowing: S.rotationMax * 2
+        bowing: S.rotationMax * 2,
       };
 
       if (item.type === 'shape') {
@@ -1724,25 +1300,32 @@ window.renderSpecificPage = function(pageIdx, forceRedraw) {
           } else if (item.shape === 'diamond') {
             const halfW = item.w / 2;
             const halfH = item.h / 2;
-            rc.polygon([
-              [item.x, item.y - halfH],
-              [item.x + halfW, item.y],
-              [item.x, item.y + halfH],
-              [item.x - halfW, item.y]
-            ], options);
+            rc.polygon(
+              [
+                [item.x, item.y - halfH],
+                [item.x + halfW, item.y],
+                [item.x, item.y + halfH],
+                [item.x - halfW, item.y],
+              ],
+              options
+            );
           } else if (item.shape === 'pill' || item.shape === 'rounded') {
             rc.roundRect(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h, 12, options);
           } else if (item.shape === 'hexagon') {
-            const hw = item.w / 2, hh = item.h / 2;
+            const hw = item.w / 2,
+              hh = item.h / 2;
             const inset = hw * 0.3;
-            rc.polygon([
-              [item.x - hw + inset, item.y - hh],
-              [item.x + hw - inset, item.y - hh],
-              [item.x + hw, item.y],
-              [item.x + hw - inset, item.y + hh],
-              [item.x - hw + inset, item.y + hh],
-              [item.x - hw, item.y]
-            ], options);
+            rc.polygon(
+              [
+                [item.x - hw + inset, item.y - hh],
+                [item.x + hw - inset, item.y - hh],
+                [item.x + hw, item.y],
+                [item.x + hw - inset, item.y + hh],
+                [item.x - hw + inset, item.y + hh],
+                [item.x - hw, item.y],
+              ],
+              options
+            );
           } else {
             rc.rectangle(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h, options);
           }
@@ -1764,7 +1347,8 @@ window.renderSpecificPage = function(pageIdx, forceRedraw) {
             const rad = Math.min(12, item.h / 2);
             ctx.roundRect(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h, rad);
           } else if (item.shape === 'hexagon') {
-            const hw = item.w / 2, hh = item.h / 2;
+            const hw = item.w / 2,
+              hh = item.h / 2;
             const inset = hw * 0.3;
             ctx.moveTo(item.x - hw + inset, item.y - hh);
             ctx.lineTo(item.x + hw - inset, item.y - hh);
@@ -1858,7 +1442,7 @@ window.renderSpecificPage = function(pageIdx, forceRedraw) {
   });
 
   // Draw template decorations on top of content
-  drawLayoutDecorations(ctx, S.noteLayout);
+  window.PaperRenderer.drawLayoutDecorations(ctx, S.noteLayout);
 
   // Update layer UI if needed
   if (window.layerCompositor && typeof updateLayerUI === 'function' && pageIdx === currentLayerPage) {
@@ -1870,10 +1454,10 @@ function onTextInputChange() {
   if (!predictionEngine) return;
   const textarea = document.getElementById('text-input');
   if (!textarea) return;
-  
+
   const text = textarea.value;
   const cursor = textarea.selectionStart;
-  
+
   // Only predict if the cursor is at the very end of the text
   if (cursor === text.length) {
     const preds = predictionEngine.predict(text, 1);
@@ -1895,20 +1479,20 @@ if (textInputEl) {
   textInputEl.addEventListener('keydown', function (e) {
     if (e.key === 'Tab' && typeof currentPrediction !== 'undefined' && currentPrediction) {
       e.preventDefault();
-      
+
       const start = this.selectionStart;
       const end = this.selectionEnd;
       const originalValue = this.value;
-      
+
       // Accept prediction
       this.value = originalValue.slice(0, start) + currentPrediction + originalValue.slice(end);
       this.selectionStart = this.selectionEnd = start + currentPrediction.length;
-      
+
       S.text = this.value;
       currentPrediction = '';
-      
+
       onTextInputChange();
-      
+
       // Notify collaboration server if connected
       if (collabEngine && collabEngine.isConnected()) {
         const event = new Event('input', { bubbles: true });
@@ -2013,7 +1597,8 @@ function toggleCollaboration() {
       const btn = document.getElementById('btn-collab-connect');
 
       statusText.textContent = text;
-      indicator.className = 'status-indicator ' + (isOnline ? 'online' : (text === 'Connection error' ? 'error' : 'offline'));
+      indicator.className =
+        'status-indicator ' + (isOnline ? 'online' : text === 'Connection error' ? 'error' : 'offline');
 
       if (isOnline) {
         btn.textContent = 'Disconnect';
@@ -2021,14 +1606,16 @@ function toggleCollaboration() {
       } else if (text !== 'Connectingâ€¦') {
         btn.textContent = 'Connect to Session';
       }
-    }
+    },
   });
 
   collabEngine.initialize();
   collabEngine.connect(COLLAB_SERVER_URL);
   btn.textContent = 'Connectingâ€¦';
   btn.disabled = true;
-  setTimeout(() => { btn.disabled = false; }, 2000);
+  setTimeout(() => {
+    btn.disabled = false;
+  }, 2000);
 }
 
 /**
@@ -2041,19 +1628,25 @@ function insertDiagramTemplate(type) {
   const current = textarea.value;
 
   const templates = {
-    cycle: '\n```diagram\n{\n  "type": "cycle",\n  "nodes": [\n    { "id": "n1", "label": "Start" },\n    { "id": "n2", "label": "Develop" },\n    { "id": "n3", "label": "Review" },\n    { "id": "n4", "label": "Ship" }\n  ],\n  "edges": [\n    { "from": "n1", "to": "n2" },\n    { "from": "n2", "to": "n3" },\n    { "from": "n3", "to": "n4" },\n    { "from": "n4", "to": "n1" }\n  ]\n}\n```\n',
-    flowchart: '\n```diagram\n{\n  "type": "flowchart",\n  "nodes": [\n    { "id": "s1", "label": "Input", "shape": "box" },\n    { "id": "s2", "label": "Verify?", "shape": "diamond" },\n    { "id": "s3", "label": "Success", "shape": "box" },\n    { "id": "s4", "label": "Retry", "shape": "box" }\n  ],\n  "edges": [\n    { "from": "s1", "to": "s2" },\n    { "from": "s2", "to": "s3", "label": "Yes" },\n    { "from": "s2", "to": "s4", "label": "No" }\n  ]\n}\n```\n',
-    hierarchy: '\n```diagram\n{\n  "type": "hierarchy",\n  "nodes": [\n    { "id": "ceo", "label": "CEO", "shape": "rounded" },\n    { "id": "eng", "label": "Engineering", "shape": "box" },\n    { "id": "design", "label": "Design", "shape": "box" },\n    { "id": "mkt", "label": "Marketing", "shape": "box" },\n    { "id": "fe", "label": "Frontend", "shape": "pill" },\n    { "id": "be", "label": "Backend", "shape": "pill" }\n  ],\n  "edges": [\n    { "from": "ceo", "to": "eng" },\n    { "from": "ceo", "to": "design" },\n    { "from": "ceo", "to": "mkt" },\n    { "from": "eng", "to": "fe" },\n    { "from": "eng", "to": "be" }\n  ]\n}\n```\n',
-    pyramid: '\n```diagram\n{\n  "type": "pyramid",\n  "nodes": [\n    { "id": "t", "label": "Vision", "shape": "diamond" },\n    { "id": "m", "label": "Strategy", "shape": "box" },\n    { "id": "b", "label": "Execution", "shape": "hexagon" }\n  ],\n  "edges": [\n    { "from": "t", "to": "m" },\n    { "from": "m", "to": "b" }\n  ]\n}\n```\n',
-    pipeline: '\n```diagram\n{\n  "type": "flowchart",\n  "nodes": [\n    { "id": "p1", "label": "Plan", "shape": "rounded" },\n    { "id": "p2", "label": "Build", "shape": "box" },\n    { "id": "p3", "label": "Test", "shape": "hexagon" },\n    { "id": "p4", "label": "Deploy", "shape": "pill" }\n  ],\n  "edges": [\n    { "from": "p1", "to": "p2" },\n    { "from": "p2", "to": "p3" },\n    { "from": "p3", "to": "p4" }\n  ]\n}\n```\n',
-    mermaid: '\n```mermaid\ngraph TD\n  A[Idea] --> B(Writing)\n  B --> C{Good?}\n  C -->|Yes| D[Publish]\n  C -->|No| B\n```\n'
+    cycle:
+      '\n```diagram\n{\n  "type": "cycle",\n  "nodes": [\n    { "id": "n1", "label": "Start" },\n    { "id": "n2", "label": "Develop" },\n    { "id": "n3", "label": "Review" },\n    { "id": "n4", "label": "Ship" }\n  ],\n  "edges": [\n    { "from": "n1", "to": "n2" },\n    { "from": "n2", "to": "n3" },\n    { "from": "n3", "to": "n4" },\n    { "from": "n4", "to": "n1" }\n  ]\n}\n```\n',
+    flowchart:
+      '\n```diagram\n{\n  "type": "flowchart",\n  "nodes": [\n    { "id": "s1", "label": "Input", "shape": "box" },\n    { "id": "s2", "label": "Verify?", "shape": "diamond" },\n    { "id": "s3", "label": "Success", "shape": "box" },\n    { "id": "s4", "label": "Retry", "shape": "box" }\n  ],\n  "edges": [\n    { "from": "s1", "to": "s2" },\n    { "from": "s2", "to": "s3", "label": "Yes" },\n    { "from": "s2", "to": "s4", "label": "No" }\n  ]\n}\n```\n',
+    hierarchy:
+      '\n```diagram\n{\n  "type": "hierarchy",\n  "nodes": [\n    { "id": "ceo", "label": "CEO", "shape": "rounded" },\n    { "id": "eng", "label": "Engineering", "shape": "box" },\n    { "id": "design", "label": "Design", "shape": "box" },\n    { "id": "mkt", "label": "Marketing", "shape": "box" },\n    { "id": "fe", "label": "Frontend", "shape": "pill" },\n    { "id": "be", "label": "Backend", "shape": "pill" }\n  ],\n  "edges": [\n    { "from": "ceo", "to": "eng" },\n    { "from": "ceo", "to": "design" },\n    { "from": "ceo", "to": "mkt" },\n    { "from": "eng", "to": "fe" },\n    { "from": "eng", "to": "be" }\n  ]\n}\n```\n',
+    pyramid:
+      '\n```diagram\n{\n  "type": "pyramid",\n  "nodes": [\n    { "id": "t", "label": "Vision", "shape": "diamond" },\n    { "id": "m", "label": "Strategy", "shape": "box" },\n    { "id": "b", "label": "Execution", "shape": "hexagon" }\n  ],\n  "edges": [\n    { "from": "t", "to": "m" },\n    { "from": "m", "to": "b" }\n  ]\n}\n```\n',
+    pipeline:
+      '\n```diagram\n{\n  "type": "flowchart",\n  "nodes": [\n    { "id": "p1", "label": "Plan", "shape": "rounded" },\n    { "id": "p2", "label": "Build", "shape": "box" },\n    { "id": "p3", "label": "Test", "shape": "hexagon" },\n    { "id": "p4", "label": "Deploy", "shape": "pill" }\n  ],\n  "edges": [\n    { "from": "p1", "to": "p2" },\n    { "from": "p2", "to": "p3" },\n    { "from": "p3", "to": "p4" }\n  ]\n}\n```\n',
+    mermaid:
+      '\n```mermaid\ngraph TD\n  A[Idea] --> B(Writing)\n  B --> C{Good?}\n  C -->|Yes| D[Publish]\n  C -->|No| B\n```\n',
   };
 
   const template = templates[type] || templates.flowchart;
   textarea.value = current.substring(0, start) + template + current.substring(end);
   textarea.focus();
   textarea.selectionStart = textarea.selectionEnd = start + template.length;
-  
+
   S.text = textarea.value;
   debounceRender();
 }
@@ -2081,7 +1674,7 @@ function startAnimation() {
   const { queue, pageTexts, pageCount } = layoutText(text);
   for (let i = 0; i < pageCount; i++) {
     const c = createPage(i + 1);
-    drawPaperBackground(c.getContext('2d'), S.paperStyle);
+    window.PaperRenderer.drawPaperBackground(c.getContext('2d'), S.paperStyle);
   }
 
   let idx = 0;
@@ -2107,7 +1700,7 @@ function startAnimation() {
         if (diag.ready && diag.img && !diag.error) {
           ctx.save();
           ctx.translate(item.x, item.y);
-          ctx.rotate((Math.random() * 0.4 - 0.2) * Math.PI / 180);
+          ctx.rotate(((Math.random() * 0.4 - 0.2) * Math.PI) / 180);
           ctx.globalAlpha = 0.9;
           ctx.drawImage(diag.img, 0, 0, item.w, item.h);
           ctx.restore();
@@ -2116,12 +1709,12 @@ function startAnimation() {
       }
 
       if (item.type === 'shape' || item.type === 'edge') {
-        const rc = (typeof rough !== 'undefined') ? rough.canvas(canvas) : null;
+        const rc = typeof rough !== 'undefined' ? rough.canvas(canvas) : null;
         const options = {
           roughness: S.pressure * 4,
           stroke: S.inkColor,
           strokeWidth: 1.2,
-          bowing: S.rotationMax * 2
+          bowing: S.rotationMax * 2,
         };
 
         if (item.type === 'shape') {
@@ -2129,13 +1722,34 @@ function startAnimation() {
             if (item.shape === 'circle') {
               rc.circle(item.x, item.y, Math.max(item.w, item.h), options);
             } else if (item.shape === 'diamond') {
-              const halfW = item.w / 2, halfH = item.h / 2;
-              rc.polygon([[item.x, item.y - halfH], [item.x + halfW, item.y], [item.x, item.y + halfH], [item.x - halfW, item.y]], options);
+              const halfW = item.w / 2,
+                halfH = item.h / 2;
+              rc.polygon(
+                [
+                  [item.x, item.y - halfH],
+                  [item.x + halfW, item.y],
+                  [item.x, item.y + halfH],
+                  [item.x - halfW, item.y],
+                ],
+                options
+              );
             } else if (item.shape === 'pill' || item.shape === 'rounded') {
               rc.roundRect(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h, 12, options);
             } else if (item.shape === 'hexagon') {
-              const hw = item.w / 2, hh = item.h / 2, inset = hw * 0.3;
-              rc.polygon([[item.x-hw+inset,item.y-hh],[item.x+hw-inset,item.y-hh],[item.x+hw,item.y],[item.x+hw-inset,item.y+hh],[item.x-hw+inset,item.y+hh],[item.x-hw,item.y]], options);
+              const hw = item.w / 2,
+                hh = item.h / 2,
+                inset = hw * 0.3;
+              rc.polygon(
+                [
+                  [item.x - hw + inset, item.y - hh],
+                  [item.x + hw - inset, item.y - hh],
+                  [item.x + hw, item.y],
+                  [item.x + hw - inset, item.y + hh],
+                  [item.x - hw + inset, item.y + hh],
+                  [item.x - hw, item.y],
+                ],
+                options
+              );
             } else {
               rc.rectangle(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h, options);
             }
@@ -2148,8 +1762,16 @@ function startAnimation() {
             } else if (item.shape === 'pill' || item.shape === 'rounded') {
               ctx.roundRect(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h, 12);
             } else if (item.shape === 'hexagon') {
-              const hw = item.w / 2, hh = item.h / 2, inset = hw * 0.3;
-              ctx.moveTo(item.x-hw+inset,item.y-hh); ctx.lineTo(item.x+hw-inset,item.y-hh); ctx.lineTo(item.x+hw,item.y); ctx.lineTo(item.x+hw-inset,item.y+hh); ctx.lineTo(item.x-hw+inset,item.y+hh); ctx.lineTo(item.x-hw,item.y); ctx.closePath();
+              const hw = item.w / 2,
+                hh = item.h / 2,
+                inset = hw * 0.3;
+              ctx.moveTo(item.x - hw + inset, item.y - hh);
+              ctx.lineTo(item.x + hw - inset, item.y - hh);
+              ctx.lineTo(item.x + hw, item.y);
+              ctx.lineTo(item.x + hw - inset, item.y + hh);
+              ctx.lineTo(item.x - hw + inset, item.y + hh);
+              ctx.lineTo(item.x - hw, item.y);
+              ctx.closePath();
             } else {
               ctx.rect(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h);
             }
@@ -2179,7 +1801,10 @@ function startAnimation() {
       const pxSize = S.fontSize * v.pressureMod;
       ctx.font = `${Math.max(10, pxSize)}px ${item.fontStack}`;
       ctx.globalAlpha = v.opacity;
-      if (S.bleed > 0.05) { ctx.shadowColor = S.inkColor; ctx.shadowBlur = S.bleed * 1.4; }
+      if (S.bleed > 0.05) {
+        ctx.shadowColor = S.inkColor;
+        ctx.shadowBlur = S.bleed * 1.4;
+      }
       ctx.fillStyle = S.inkColor;
       ctx.fillText(item.ch, 0, 0);
       ctx.restore();
@@ -2199,7 +1824,7 @@ function startAnimation() {
         if (rect.top + item.y * scaleY < 120 || rect.top + item.y * scaleY > window.innerHeight - 120) {
           window.scrollTo({
             top: Math.max(0, targetScroll),
-            behavior: 'smooth'
+            behavior: 'smooth',
           });
         }
       }
@@ -2276,10 +1901,10 @@ async function fetchOpenRouterModels() {
     if (!res.ok) throw new Error('HTTP status ' + res.status);
     const data = await res.json();
     if (data && Array.isArray(data.data)) {
-      const fetched = data.data.map(item => {
+      const fetched = data.data.map((item) => {
         let emoji = 'ðŸ¤– ';
         const id = item.id.toLowerCase();
-        
+
         if (id.startsWith('google/')) emoji = 'âš¡ ';
         else if (id.startsWith('anthropic/')) emoji = 'ðŸŸ£ ';
         else if (id.startsWith('openai/')) emoji = 'ðŸŸ¢ ';
@@ -2291,22 +1916,26 @@ async function fetchOpenRouterModels() {
         else if (id.startsWith('cohere/')) emoji = 'ðŸ”´ ';
         else if (id.startsWith('nvidia/')) emoji = 'ðŸŸ© ';
         else if (id.startsWith('microsoft/')) emoji = 'ðŸªŸ ';
-        
-        const isFree = item.pricing && parseFloat(item.pricing.prompt) === 0 && parseFloat(item.pricing.completion) === 0;
+
+        const isFree =
+          item.pricing && parseFloat(item.pricing.prompt) === 0 && parseFloat(item.pricing.completion) === 0;
         let displayName = item.name || item.id;
-        
+
         // Strip out redundant provider prefixes to keep UI compact
-        displayName = displayName.replace(/^(google|anthropic|openai|meta|deepseek|mistral|qwen|x-ai|cohere|nvidia|microsoft|llama):\s*/i, '');
-        
+        displayName = displayName.replace(
+          /^(google|anthropic|openai|meta|deepseek|mistral|qwen|x-ai|cohere|nvidia|microsoft|llama):\s*/i,
+          ''
+        );
+
         let name = `${emoji}${displayName}`;
         if (isFree) {
           name += ' (Free)';
         }
-        
+
         return {
           id: item.id,
           name: name,
-          isFree: isFree
+          isFree: isFree,
         };
       });
 
@@ -2320,7 +1949,7 @@ async function fetchOpenRouterModels() {
       if (fetched.length > 0) {
         AI_MODELS.openrouter = fetched;
         openRouterModelsLoaded = true;
-        
+
         // Refresh UI if currently viewing OpenRouter
         const provider = document.getElementById('ai-provider').value;
         if (provider === 'openrouter') {
@@ -2343,7 +1972,7 @@ function onProviderChange() {
 
   // Update model dropdown
   modelSelect.innerHTML = '';
-  AI_MODELS[provider].forEach(m => {
+  AI_MODELS[provider].forEach((m) => {
     const opt = document.createElement('option');
     opt.value = m.id;
     opt.textContent = m.name;
@@ -2386,7 +2015,7 @@ async function callClaude(prompt, systemPrompt, onChunk) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + key,
+          Authorization: 'Bearer ' + key,
           'HTTP-Referer': window.location.href,
           'X-Title': 'Inkflow Notes Generator',
         },
@@ -2470,7 +2099,6 @@ async function callClaude(prompt, systemPrompt, onChunk) {
     setAiStatus('âœ“ Done â€” ' + model.split('/').pop());
     setTimeout(() => setAiStatus(''), 3000);
     return textContent;
-
   } catch (e) {
     setAiStatus('âœ• Network error: ' + e.message);
     return null;
@@ -2490,11 +2118,11 @@ class GrammarCorrector {
     let devanagariCount = 0;
     let latinCount = 0;
     const graphemes = getGraphemes(text);
-    graphemes.forEach(ch => {
+    graphemes.forEach((ch) => {
       if (ScriptDetector.isIndicScript(ch)) devanagariCount++;
       else if (ScriptDetector.isBasicLatin(ch)) latinCount++;
     });
-    
+
     if (devanagariCount > latinCount) return 'hindi'; // >50% Devanagari
     if (devanagariCount > 0 && latinCount > 0) return 'hinglish';
     return 'english';
@@ -2535,7 +2163,7 @@ async function aiAction(type) {
   const currentText = textarea.value.trim();
 
   const btns = document.querySelectorAll('.ai-btn-group .btn');
-  btns.forEach(b => b.disabled = true);
+  btns.forEach((b) => (b.disabled = true));
 
   let result = null;
   let lastRenderTime = 0;
@@ -2553,10 +2181,10 @@ async function aiAction(type) {
   if (type === 'doubt') {
     if (!currentText) {
       setAiStatus('âš  Please enter a problem to solve');
-      btns.forEach(b => b.disabled = false);
+      btns.forEach((b) => (b.disabled = false));
       return;
     }
-    
+
     const systemPrompt = `You are an expert tutor helping Indian students solve math and physics problems aligned with CBSE, ICSE, and State Board curricula.
 
 Your task is to provide step-by-step solutions with clear working and explanations suitable for student learning.
@@ -2571,18 +2199,18 @@ Format your response as:
 - Maintain handwriting-suitable formatting with proper line breaks
 
 Focus on conceptual clarity and helping students understand the problem-solving process.`;
-    
-    result = await callClaude(
-      'Solve this problem step by step:\n\n' + currentText,
-      systemPrompt,
-      onChunk
-    );
+
+    result = await callClaude('Solve this problem step by step:\n\n' + currentText, systemPrompt, onChunk);
   }
 
   if (type === 'diagram') {
     const topic = document.getElementById('ai-topic').value.trim() || currentText;
-    if (!topic) { setAiStatus('âš  Enter a topic first.'); btns.forEach(b => b.disabled = false); return; }
-    
+    if (!topic) {
+      setAiStatus('âš  Enter a topic first.');
+      btns.forEach((b) => (b.disabled = false));
+      return;
+    }
+
     // For diagram, we need a special prompt that forces structured JSON
     const systemPrompt = `Generate a structured diagram JSON for the topic: ${topic}.
 Return ONLY a JSON object surrounded by \`\`\`diagram and \`\`\` tags.
@@ -2593,7 +2221,7 @@ Constraints:
 - If Hindi is detected, use Devanagari.
 - Cycle format: { "type": "cycle", "nodes": [{ "id": "n1", "label": "Text" }, ...], "edges": [{ "from": "n1", "to": "n2" }, ...] }
 - Flowchart format: { "type": "flowchart", "nodes": [{ "id": "s1", "label": "Step", "shape": "box/diamond/oval" }, ...], "edges": [{ "from": "s1", "to": "s2", "label": "Yes/No" }, ...] }`;
-    
+
     result = await callClaude(
       'Generate a ' + (topic.length > 20 ? 'diagram of ' : '') + topic,
       systemPrompt,
@@ -2602,14 +2230,18 @@ Constraints:
         S.text = text;
         // Don't render until it's likely finished or at least has a valid block
         if (text.includes('```diagram') && text.includes('```')) {
-           debounceRender();
+          debounceRender();
         }
       }
     );
   }
 
   if (type === 'summarize') {
-    if (!currentText) { setAiStatus('âš  Add some text first.'); btns.forEach(b => b.disabled = false); return; }
+    if (!currentText) {
+      setAiStatus('âš  Add some text first.');
+      btns.forEach((b) => (b.disabled = false));
+      return;
+    }
     result = await callClaude(
       currentText,
       'Summarize the following text into clear, concise bullet-point notes. Use short sentences. No markdown formatting â€” plain text only.',
@@ -2618,7 +2250,11 @@ Constraints:
   }
 
   if (type === 'arrange') {
-    if (!currentText) { setAiStatus('âš  Add some text first.'); btns.forEach(b => b.disabled = false); return; }
+    if (!currentText) {
+      setAiStatus('âš  Add some text first.');
+      btns.forEach((b) => (b.disabled = false));
+      return;
+    }
     result = await callClaude(
       currentText,
       'Reorganize and format the following text to look like beautifully arranged handwritten notes. Add appropriate section headers, bullet points, and clean paragraph breaks. Ensure the flow is logical and aesthetic. Use plain text only, no markdown symbols like asterisks or hashtags.',
@@ -2627,31 +2263,36 @@ Constraints:
   }
 
   if (type === 'grammar') {
-    if (!currentText) { setAiStatus('âš  Add some text first.'); btns.forEach(b => b.disabled = false); return; }
-    
+    if (!currentText) {
+      setAiStatus('âš  Add some text first.');
+      btns.forEach((b) => (b.disabled = false));
+      return;
+    }
+
     const language = GrammarCorrector.detectLanguage(currentText);
     if (language === 'hindi') setAiStatus('Using Hindi grammar model...');
     else if (language === 'hinglish') setAiStatus('Using Hinglish grammar model...');
-    
+
     document.getElementById('grammar-original').value = currentText;
     document.getElementById('grammar-corrected').value = 'Correcting...';
-    document.getElementById('grammar-lang-badge').textContent = language === 'hindi' ? 'Hindi' : (language === 'hinglish' ? 'Hinglish' : 'English');
+    document.getElementById('grammar-lang-badge').textContent =
+      language === 'hindi' ? 'Hindi' : language === 'hinglish' ? 'Hinglish' : 'English';
     document.getElementById('grammar-modal').classList.remove('hidden');
 
-    result = await callClaude(
-      currentText,
-      GrammarCorrector.getPrompt(language),
-      (text) => {
-        document.getElementById('grammar-corrected').value = text;
-      }
-    );
-    
-    btns.forEach(b => b.disabled = false);
+    result = await callClaude(currentText, GrammarCorrector.getPrompt(language), (text) => {
+      document.getElementById('grammar-corrected').value = text;
+    });
+
+    btns.forEach((b) => (b.disabled = false));
     return;
   }
 
   if (type === 'lecture') {
-    if (!currentText) { setAiStatus('âš  Paste lecture text first.'); btns.forEach(b => b.disabled = false); return; }
+    if (!currentText) {
+      setAiStatus('âš  Paste lecture text first.');
+      btns.forEach((b) => (b.disabled = false));
+      return;
+    }
     result = await callClaude(
       currentText,
       'Convert this raw lecture transcript into clean, well-structured handwritten-style notes. Use headings, bullet points, and numbered lists where appropriate. Plain text only, no markdown symbols.',
@@ -2661,7 +2302,11 @@ Constraints:
 
   if (type === 'assignment') {
     const topic = document.getElementById('ai-topic').value.trim() || currentText;
-    if (!topic) { setAiStatus('âš  Enter a topic first.'); btns.forEach(b => b.disabled = false); return; }
+    if (!topic) {
+      setAiStatus('âš  Enter a topic first.');
+      btns.forEach((b) => (b.disabled = false));
+      return;
+    }
     result = await callClaude(
       'Write a detailed, well-structured academic assignment on the topic: ' + topic,
       'Generate a complete handwritten-style assignment with an introduction, body paragraphs, and conclusion. Use plain text only. No markdown. Write naturally as someone would write in a notebook.',
@@ -2676,9 +2321,8 @@ Constraints:
     autosave();
   }
 
-  btns.forEach(b => b.disabled = false);
+  btns.forEach((b) => (b.disabled = false));
 }
-
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    PHASE 8.1â€“8.2 â€” IMAGE EXPORT (PNG / JPG)
@@ -2693,42 +2337,50 @@ async function exportImage(format) {
 
   if (document.activeElement && document.activeElement.classList.contains('page-editor')) {
     document.activeElement.blur();
-    await new Promise(r => setTimeout(r, 320));
+    await new Promise((r) => setTimeout(r, 320));
   }
 
   const mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
-  const quality  = format === 'png' ? 1.0 : 0.93;
-  const ext      = format === 'png' ? 'png' : 'jpg';
+  const quality = format === 'png' ? 1.0 : 0.93;
+  const ext = format === 'png' ? 'png' : 'jpg';
 
   try {
     if (pages.length === 1) {
       showExportToast('Exporting ' + ext.toUpperCase() + 'â€¦', 'info');
-      pages[0].toBlob((blob) => {
-        if (!blob) {
-          showExportToast('Export failed: Blob generation failed', 'error');
-          return;
-        }
-        const url = URL.createObjectURL(blob);
-        triggerDownload(url, 'inkflow-notes.' + ext);
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-        showExportToast('âœ“ ' + ext.toUpperCase() + ' saved!', 'success');
-      }, mimeType, quality);
+      pages[0].toBlob(
+        (blob) => {
+          if (!blob) {
+            showExportToast('Export failed: Blob generation failed', 'error');
+            return;
+          }
+          const url = URL.createObjectURL(blob);
+          triggerDownload(url, 'inkflow-notes.' + ext);
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+          showExportToast('âœ“ ' + ext.toUpperCase() + ' saved!', 'success');
+        },
+        mimeType,
+        quality
+      );
     } else {
       for (let i = 0; i < pages.length; i++) {
         showExportToast(`Exporting ${ext.toUpperCase()} (Page ${i + 1}/${pages.length})â€¦`, 'info');
         await new Promise((resolve) => {
-          pages[i].toBlob((blob) => {
-            if (!blob) {
+          pages[i].toBlob(
+            (blob) => {
+              if (!blob) {
+                resolve();
+                return;
+              }
+              const url = URL.createObjectURL(blob);
+              triggerDownload(url, `inkflow-notes-page${i + 1}.${ext}`);
+              setTimeout(() => URL.revokeObjectURL(url), 1000);
               resolve();
-              return;
-            }
-            const url = URL.createObjectURL(blob);
-            triggerDownload(url, `inkflow-notes-page${i + 1}.${ext}`);
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-            resolve();
-          }, mimeType, quality);
+            },
+            mimeType,
+            quality
+          );
         });
-        await new Promise(r => setTimeout(r, 120));
+        await new Promise((r) => setTimeout(r, 120));
       }
       showExportToast('âœ“ ' + ext.toUpperCase() + ' pages saved!', 'success');
     }
@@ -2746,7 +2398,7 @@ async function exportTransparentPNG() {
 
   if (document.activeElement && document.activeElement.classList.contains('page-editor')) {
     document.activeElement.blur();
-    await new Promise(r => setTimeout(r, 320));
+    await new Promise((r) => setTimeout(r, 320));
   }
 
   const queue = window.currentRenderQueue || [];
@@ -2760,131 +2412,35 @@ async function exportTransparentPNG() {
       tmpCanvas.height = PAGE_H;
       const tmpCtx = tmpCanvas.getContext('2d');
 
-      const pageItems = queue.filter(item => item.pageIdx === i);
+      const pageItems = queue.filter((item) => item.pageIdx === i);
       if (S.cursiveMode && cursiveConnector) {
-        renderCursiveConnectionsOn(tmpCtx, tmpCanvas, pageItems);
+        window.ExportRenderers.renderCursiveConnectionsOn(tmpCtx, tmpCanvas, pageItems);
       }
-      renderQueueItems(tmpCtx, tmpCanvas, pageItems);
+      window.ExportRenderers.renderQueueItems(tmpCtx, tmpCanvas, pageItems);
 
       await new Promise((resolve) => {
-        tmpCanvas.toBlob((blob) => {
-          if (!blob) { resolve(); return; }
-          const url = URL.createObjectURL(blob);
-          triggerDownload(url, `inkflow-transparent-page${i + 1}.${ext}`);
-          setTimeout(() => URL.revokeObjectURL(url), 1000);
-          resolve();
-        }, 'image/png', 1.0);
+        tmpCanvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              resolve();
+              return;
+            }
+            const url = URL.createObjectURL(blob);
+            triggerDownload(url, `inkflow-transparent-page${i + 1}.${ext}`);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            resolve();
+          },
+          'image/png',
+          1.0
+        );
       });
-      await new Promise(r => setTimeout(r, 120));
+      await new Promise((r) => setTimeout(r, 120));
     }
     showExportToast('âœ“ Transparent PNGs saved!', 'success');
   } catch (e) {
     showExportToast('Export failed: ' + e.message, 'error');
     console.error('[Inkflow] exportTransparentPNG error:', e);
   }
-}
-
-function renderCursiveConnectionsOn(ctx, canvas, pageItems) {
-  if (!cursiveConnector) return;
-  const charList = pageItems.filter(item => !item.type && !item.isIndic);
-  for (let i = 0; i < charList.length - 1; i++) {
-    const curr = charList[i];
-    const next = charList[i + 1];
-    if (!cursiveConnector.shouldRenderConnection(curr.ch, next.ch, curr.isIndic)) continue;
-    if (curr.penKey !== next.penKey) continue;
-    const gap = next.x - (curr.x + (curr.charWidth || 20));
-    if (gap > S.fontSize * 0.6) continue;
-
-    const currW = curr.charWidth || 20;
-    const nextW = next.charWidth || 20;
-    const exitPoint = cursiveConnector.getExitPoint(curr.ch, currW, S.fontSize);
-    const entryPoint = cursiveConnector.getEntryPoint(next.ch, nextW, S.fontSize);
-    cursiveConnector.renderConnectionStroke(
-      ctx, { x: curr.x, y: curr.y }, exitPoint,
-      { x: next.x, y: next.y }, entryPoint,
-      curr.inkColor || S.inkColor, curr.v.pressureMod, S.fontSize
-    );
-  }
-}
-
-function renderQueueItems(ctx, canvas, pageItems) {
-  if (typeof rough !== 'undefined' && !window._rcCache) window._rcCache = new Map();
-  let rc = window._rcCache?.get(canvas);
-  if (!rc && typeof rough !== 'undefined') {
-    rc = rough.canvas(canvas);
-    window._rcCache?.set(canvas, rc);
-  }
-
-  const options = { roughness: S.pressure * 4, stroke: S.inkColor, strokeWidth: 1.2, bowing: S.rotationMax * 2 };
-
-  pageItems.forEach(item => {
-    if (item.type === 'mermaid') {
-      const diag = getDiagramImage(item.content);
-      if (diag.ready && diag.img && !diag.error) {
-        ctx.save();
-        ctx.translate(item.x, item.y);
-        ctx.globalAlpha = 0.9;
-        ctx.drawImage(diag.img, 0, 0, item.w, item.h);
-        ctx.restore();
-      }
-      return;
-    }
-    if (item.type === 'shape') {
-      if (rc) {
-        if (item.shape === 'circle') rc.circle(item.x, item.y, Math.max(item.w, item.h), options);
-        else if (item.shape === 'diamond') {
-          const hw = item.w / 2, hh = item.h / 2;
-          rc.polygon([[item.x, item.y-hh],[item.x+hw,item.y],[item.x,item.y+hh],[item.x-hw,item.y]], options);
-        } else if (item.shape === 'pill' || item.shape === 'rounded') {
-          rc.roundRect(item.x - item.w/2, item.y - item.h/2, item.w, item.h, 12, options);
-        } else if (item.shape === 'hexagon') {
-          const hw=item.w/2,hh=item.h/2,inset=hw*0.3;
-          rc.polygon([[item.x-hw+inset,item.y-hh],[item.x+hw-inset,item.y-hh],[item.x+hw,item.y],[item.x+hw-inset,item.y+hh],[item.x-hw+inset,item.y+hh],[item.x-hw,item.y]], options);
-        } else rc.rectangle(item.x-item.w/2,item.y-item.h/2,item.w,item.h,options);
-      } else {
-        ctx.strokeStyle = S.inkColor; ctx.lineWidth = 1.2; ctx.beginPath();
-        if (item.shape === 'circle') ctx.arc(item.x,item.y,Math.max(item.w,item.h)/2,0,Math.PI*2);
-        else ctx.rect(item.x-item.w/2,item.y-item.h/2,item.w,item.h);
-        ctx.stroke();
-      }
-      return;
-    }
-    if (item.type === 'edge') {
-      if (rc) {
-        rc.line(item.from.x,item.from.y,item.to.x,item.to.y,options);
-      } else {
-        ctx.strokeStyle = S.inkColor; ctx.lineWidth = 1.2;
-        ctx.beginPath(); ctx.moveTo(item.from.x,item.from.y); ctx.lineTo(item.to.x,item.to.y); ctx.stroke();
-      }
-      if (item.label) {
-        const mx=(item.from.x+item.to.x)/2, my=(item.from.y+item.to.y)/2;
-        ctx.save(); ctx.font=`${Math.max(10,S.fontSize*0.7)}px ${S.font}`;
-        ctx.fillStyle=S.inkColor; ctx.textAlign='center'; ctx.textBaseline='middle';
-        ctx.fillText(item.label,mx,my); ctx.restore();
-      }
-      return;
-    }
-    if (item.type === 'diagram-label') {
-      ctx.save();
-      ctx.font = `${Math.max(10, S.fontSize * 0.7)}px ${item.fontStack || S.font}`;
-      ctx.fillStyle = item.inkColor || S.inkColor;
-      ctx.globalAlpha = 0.9;
-      ctx.fillText(item.ch, item.x, item.y);
-      ctx.restore();
-      return;
-    }
-    const v = item.v;
-    ctx.save();
-    ctx.translate(item.x, item.y);
-    ctx.rotate((v.tiltDeg * (item.isIndic ? 0.3 : 1) * Math.PI) / 180);
-    ctx.scale(v.scaleX, v.scaleY);
-    const pxSize = S.fontSize * v.pressureMod;
-    ctx.font = `${Math.max(10, pxSize)}px ${item.fontStack}`;
-    ctx.globalAlpha = v.opacity;
-    ctx.fillStyle = item.inkColor || S.inkColor;
-    ctx.fillText(item.ch, 0, 0);
-    ctx.restore();
-  });
 }
 
 async function exportPDF() {
@@ -2900,7 +2456,7 @@ async function exportPDF() {
 
   if (document.activeElement && document.activeElement.classList.contains('page-editor')) {
     document.activeElement.blur();
-    await new Promise(r => setTimeout(r, 320));
+    await new Promise((r) => setTimeout(r, 320));
   }
 
   try {
@@ -2914,7 +2470,7 @@ async function exportPDF() {
 
     for (let i = 0; i < pages.length; i++) {
       showExportToast(`Building PDF (Page ${i + 1}/${pages.length})â€¦`, 'info');
-      await new Promise(r => setTimeout(r, 60));
+      await new Promise((r) => setTimeout(r, 60));
       if (i > 0) doc.addPage();
       const imgData = pages[i].toDataURL('image/jpeg', 0.93);
       doc.addImage(imgData, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
@@ -2936,13 +2492,13 @@ async function exportSVG() {
 
   if (document.activeElement && document.activeElement.classList.contains('page-editor')) {
     document.activeElement.blur();
-    await new Promise(r => setTimeout(r, 320));
+    await new Promise((r) => setTimeout(r, 320));
   }
 
   try {
     for (let i = 0; i < pages.length; i++) {
       showExportToast(`Building SVG (Page ${i + 1}/${pages.length})â€¦`, 'info');
-      await new Promise(r => setTimeout(r, 60));
+      await new Promise((r) => setTimeout(r, 60));
       const imgData = pages[i].toDataURL('image/png', 1.0);
       const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -2954,7 +2510,7 @@ async function exportSVG() {
       const suffix = pages.length > 1 ? `-page${i + 1}` : '';
       triggerDownload(url, `inkflow-notes${suffix}.svg`);
       URL.revokeObjectURL(url);
-      await new Promise(r => setTimeout(r, 120));
+      await new Promise((r) => setTimeout(r, 120));
     }
     showExportToast('âœ“ SVG saved!', 'success');
   } catch (e) {
@@ -2970,16 +2526,18 @@ async function copyToClipboard() {
   }
   try {
     const canvas = pages[S.currentPage] || pages[0];
-    canvas.toBlob(async (blob) => {
-      try {
-        await navigator.clipboard.write([
-          new ClipboardItem({ 'image/png': blob })
-        ]);
-        showExportToast('âœ“ Copied to clipboard!', 'success');
-      } catch (e) {
-        showExportToast('Clipboard copy failed: ' + e.message, 'error');
-      }
-    }, 'image/png', 1.0);
+    canvas.toBlob(
+      async (blob) => {
+        try {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          showExportToast('âœ“ Copied to clipboard!', 'success');
+        } catch (e) {
+          showExportToast('Clipboard copy failed: ' + e.message, 'error');
+        }
+      },
+      'image/png',
+      1.0
+    );
   } catch (e) {
     showExportToast('Copy failed: ' + e.message, 'error');
   }
@@ -3011,11 +2569,12 @@ function showExportToast(msg, type = 'info') {
   toast.style.opacity = '1';
   clearTimeout(exportToastTimer);
   if (type !== 'info') {
-    exportToastTimer = setTimeout(() => { toast.style.opacity = '0'; }, 3000);
+    exportToastTimer = setTimeout(() => {
+      toast.style.opacity = '0';
+    }, 3000);
   }
 }
 const showToast = showExportToast;
-
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    PHASE 8.6â€“8.7 â€” AUTOSAVE & STATE RESTORE
@@ -3046,7 +2605,7 @@ function getDB() {
 }
 
 function saveGlyphDB(char, dataUrl) {
-  return getDB().then(db => {
+  return getDB().then((db) => {
     return new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, 'readwrite');
       const store = tx.objectStore(STORE_NAME);
@@ -3058,7 +2617,7 @@ function saveGlyphDB(char, dataUrl) {
 }
 
 function getGlyphsDB() {
-  return getDB().then(db => {
+  return getDB().then((db) => {
     return new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, 'readonly');
       const store = tx.objectStore(STORE_NAME);
@@ -3083,7 +2642,10 @@ function getGlyphsDB() {
 // saved before the ink-check guard existed in saveActiveCharacter().
 function glyphHasInk(dataUrl) {
   return new Promise((resolve) => {
-    if (!dataUrl) { resolve(false); return; }
+    if (!dataUrl) {
+      resolve(false);
+      return;
+    }
     const img = new Image();
     img.onload = () => {
       const c = document.createElement('canvas');
@@ -3093,7 +2655,7 @@ function glyphHasInk(dataUrl) {
       cctx.drawImage(img, 0, 0);
       try {
         // Phase 9.8 — Use stricter isCellBlank check
-        resolve(!isCellBlank(c));
+        resolve(!window.FontCompilation.isCellBlank(c));
       } catch (e) {
         // Can't inspect it (e.g. tainted canvas) — don't destroy data we can't verify.
         resolve(true);
@@ -3166,13 +2728,13 @@ function autosave() {
 
 async function restoreState() {
   const raw = localStorage.getItem('inkflow-state');
-  
+
   // 1. Try to load from IndexedDB
   try {
     const dbGlyphs = await getGlyphsDB();
     Object.assign(draftedGlyphs, dbGlyphs);
   } catch (err) {
-    console.error("Error loading glyphs from IndexedDB:", err);
+    console.error('Error loading glyphs from IndexedDB:', err);
   }
 
   if (!raw) return;
@@ -3197,7 +2759,10 @@ async function restoreState() {
       if (state[key] !== undefined) {
         S[key] = state[key];
         const el = document.getElementById(id);
-        if (el) { el.value = state[key]; document.getElementById(valId).textContent = state[key]; }
+        if (el) {
+          el.value = state[key];
+          document.getElementById(valId).textContent = state[key];
+        }
       }
     });
     if (state.inkColor) {
@@ -3207,11 +2772,14 @@ async function restoreState() {
     if (state.font) {
       S.font = state.font;
       const opt = document.querySelector(`#font-select option[value="${state.font}"]`);
-      if (opt) { fontSelect.value = state.font; fontSelect.style.fontFamily = state.font; }
+      if (opt) {
+        fontSelect.value = state.font;
+        fontSelect.style.fontFamily = state.font;
+      }
     }
     if (state.paperStyle) {
       S.paperStyle = state.paperStyle;
-      document.querySelectorAll('.paper-btn').forEach(btn => {
+      document.querySelectorAll('.paper-btn').forEach((btn) => {
         btn.classList.toggle('active', btn.dataset.style === state.paperStyle);
       });
     }
@@ -3239,14 +2807,14 @@ async function restoreState() {
     if (state.markdownPenProfiles && typeof state.markdownPenProfiles === 'object') {
       S.markdownPenProfiles = {
         ...S.markdownPenProfiles,
-        ...state.markdownPenProfiles
+        ...state.markdownPenProfiles,
       };
     }
     syncMarkdownPenControls();
     syncHinglishControls();
     if (state.textAlignment) {
       S.textAlignment = state.textAlignment;
-      document.querySelectorAll('.align-btn').forEach(btn => {
+      document.querySelectorAll('.align-btn').forEach((btn) => {
         btn.classList.toggle('active', btn.dataset.align === state.textAlignment);
       });
       const labels = { top: 'Upper', middle: 'Middle', bottom: 'Lower' };
@@ -3266,7 +2834,7 @@ async function restoreState() {
     // 2. Migrate draftedGlyphs if they exist in localStorage state
     if (state.draftedGlyphs && Object.keys(state.draftedGlyphs).length > 0) {
       Object.assign(draftedGlyphs, state.draftedGlyphs);
-      
+
       // Save all of them to IndexedDB
       for (const char of Object.keys(state.draftedGlyphs)) {
         const val = state.draftedGlyphs[char];
@@ -3278,12 +2846,14 @@ async function restoreState() {
           }
         }
       }
-      
+
       // Remove draftedGlyphs from localStorage and save back
       delete state.draftedGlyphs;
       localStorage.setItem('inkflow-state', JSON.stringify(state));
     }
-  } catch (e) { /* ignore corrupt state */ }
+  } catch (e) {
+    /* ignore corrupt state */
+  }
 
   // 2.5. Remove any stale blank glyphs (e.g. saved before the ink-check guard
   // existed, or pulled in via the localStorage migration above) so they
@@ -3291,9 +2861,9 @@ async function restoreState() {
   await pruneBlankGlyphs();
 
   // 3. Highlight drafted characters in UI
-  ALL_TEMPLATE_CHARS.forEach(char => {
+  ALL_TEMPLATE_CHARS.forEach((char) => {
     if (draftedGlyphs[char] && draftedGlyphs[char].length > 0) {
-      const btn = Array.from(document.querySelectorAll('.char-btn')).find(b => b.textContent === char);
+      const btn = Array.from(document.querySelectorAll('.char-btn')).find((b) => b.textContent === char);
       if (btn) btn.classList.add('drafted');
     }
   });
@@ -3301,7 +2871,6 @@ async function restoreState() {
   // Optionally redraw if studio is open
   if (typeof drawStudioCanvas === 'function') drawStudioCanvas();
 }
-
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    PHASE 8.8 â€” PAGE NAVIGATION
@@ -3351,13 +2920,13 @@ async function initApp() {
     let bgCtx;
     if (window.layerCompositor) {
       const bgStack = window.layerCompositor.getStack(0);
-      const bgLayer = bgStack.layers.find(l => l.name === 'Background');
+      const bgLayer = bgStack.layers.find((l) => l.name === 'Background');
       bgCtx = bgLayer ? bgLayer.canvas.getContext('2d') : canvas.getContext('2d');
     } else {
       bgCtx = canvas.getContext('2d');
     }
-    drawPaperBackground(bgCtx, S.paperStyle);
-    renderSmudgeEffects(bgCtx, 0);
+    window.PaperRenderer.drawPaperBackground(bgCtx, S.paperStyle);
+    window.PaperRenderer.renderSmudgeEffects(bgCtx, 0);
     // Subtle placeholder text
     bgCtx.save();
     const lineH = S.fontSize * S.lineHeight;
@@ -3374,11 +2943,19 @@ async function initApp() {
 }
 
 // Wire all slider controls to autosave
-['font-size-slider', 'line-spacing', 'word-spacing', 'margin-slider',
-  'rotation-slider', 'bleed-slider', 'pressure-slider', 'speed-slider'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('change', autosave);
-  });
+[
+  'font-size-slider',
+  'line-spacing',
+  'word-spacing',
+  'margin-slider',
+  'rotation-slider',
+  'bleed-slider',
+  'pressure-slider',
+  'speed-slider',
+].forEach((id) => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('change', autosave);
+});
 if (fontSelect) fontSelect.addEventListener('change', autosave);
 if (inkColorInput) inkColorInput.addEventListener('change', autosave);
 if (inkColorInput) inkColorInput.addEventListener('change', syncMarkdownPenControls);
@@ -3424,13 +3001,13 @@ function setupFileUpload() {
 
   async function handleUploadedFile(file) {
     const ext = file.name.split('.').pop().toLowerCase();
-    
+
     // Show status
     uploadStatus.style.display = 'flex';
     const spinner = document.createElement('span');
     spinner.className = 'spinner';
     statusText.replaceChildren(spinner, document.createTextNode(` Processing "${file.name}"...`));
-    
+
     try {
       let text = '';
       if (ext === 'txt' || ext === 'md') {
@@ -3440,13 +3017,15 @@ function setupFileUpload() {
         const progBar = document.getElementById('progress-bar');
         if (progContainer) progContainer.style.display = 'block';
         if (progBar) progBar.style.width = '0%';
-        
+
         text = await extractTextFromPDF(file, (percent) => {
           if (progBar) progBar.style.width = `${percent}%`;
         });
-        
+
         if (progContainer) {
-          setTimeout(() => { progContainer.style.display = 'none'; }, 500);
+          setTimeout(() => {
+            progContainer.style.display = 'none';
+          }, 500);
         }
       } else if (ext === 'docx') {
         if (typeof mammoth === 'undefined') {
@@ -3456,20 +3035,20 @@ function setupFileUpload() {
       } else {
         throw new Error('Unsupported file format. Please upload PDF, TXT, MD, or DOCX.');
       }
-      
+
       if (!text.trim()) {
         throw new Error('File appears to be empty or contains no extractable text.');
       }
-      
+
       // Populate text-input
       const textarea = document.getElementById('text-input');
       textarea.value = text;
       S.text = text;
-      
+
       // Render handwriting & save state
       renderText(text);
       autosave();
-      
+
       statusText.textContent = 'âœ“ File loaded successfully!';
       statusText.style.color = '#2d6a4f';
       statusText.style.fontWeight = '600';
@@ -3496,13 +3075,20 @@ function setupFileUpload() {
   async function extractTextFromDOCX(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = function(event) {
+      reader.onload = function (event) {
         const arrayBuffer = event.target.result;
-        mammoth.extractRawText({ arrayBuffer: arrayBuffer })
-          .then(function(result) { resolve(result.value); })
-          .catch(function(err) { reject(err); });
+        mammoth
+          .extractRawText({ arrayBuffer: arrayBuffer })
+          .then(function (result) {
+            resolve(result.value);
+          })
+          .catch(function (err) {
+            reject(err);
+          });
       };
-      reader.onerror = function(err) { reject(err); };
+      reader.onerror = function (err) {
+        reject(err);
+      };
       reader.readAsArrayBuffer(file);
     });
   }
@@ -3517,7 +3103,8 @@ function setupFileUpload() {
         document.head.appendChild(script);
       });
     }
-    window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -3526,7 +3113,7 @@ function setupFileUpload() {
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
-      const pageText = content.items.map(item => item.str).join(' ');
+      const pageText = content.items.map((item) => item.str).join(' ');
       fullText += pageText + '\n\n';
       if (onProgress) onProgress((i / pdf.numPages) * 100);
     }
@@ -3554,7 +3141,7 @@ function resetToDefaults() {
   };
 
   // Apply state
-  Object.keys(defaults).forEach(key => {
+  Object.keys(defaults).forEach((key) => {
     S[key] = defaults[key];
   });
 
@@ -3591,7 +3178,7 @@ function resetToDefaults() {
   }
 
   // Update Text Alignment
-  document.querySelectorAll('.align-btn').forEach(btn => {
+  document.querySelectorAll('.align-btn').forEach((btn) => {
     btn.classList.remove('active');
   });
   const alignBtn = document.querySelector(`.align-btn[data-align="${defaults.textAlignment}"]`);
@@ -3600,7 +3187,7 @@ function resetToDefaults() {
   if (alignVal) alignVal.textContent = 'Middle';
 
   // Update Paper styles active classes
-  document.querySelectorAll('.paper-btn').forEach(btn => {
+  document.querySelectorAll('.paper-btn').forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.style === defaults.paperStyle);
   });
 
@@ -3629,10 +3216,10 @@ function closeHandFontedModal() {
 
 function switchSheet(sheet) {
   activeSheet = sheet;
-  document.querySelectorAll('.sheet-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.sheet-tab').forEach((b) => b.classList.remove('active'));
   const btn = document.getElementById(`sheet-tab-${sheet}`);
   if (btn) btn.classList.add('active');
-  
+
   renderSketchCharGrid();
   const firstChar = TEMPLATE_SHEETS[sheet][0];
   selectSketchCharacter(firstChar);
@@ -3643,7 +3230,7 @@ function switchFontTab(tab) {
   const btnTemp = document.getElementById('tab-btn-template');
   const panelSketch = document.getElementById('panel-sketchpad');
   const panelTemp = document.getElementById('panel-template');
-  
+
   if (tab === 'sketchpad') {
     btnSketch.classList.add('active');
     btnTemp.classList.remove('active');
@@ -3654,7 +3241,7 @@ function switchFontTab(tab) {
     btnTemp.classList.add('active');
     panelSketch.classList.add('hidden');
     panelTemp.classList.remove('hidden');
-    
+
     // Trigger grid render if aligner already has an image
     if (alignerImages[activeUploadSheet]) {
       setTimeout(updateAlignerGrid, 50);
@@ -3666,36 +3253,36 @@ function switchFontTab(tab) {
 function initHandFontedStudio() {
   const btn = document.getElementById('btn-handfonted-studio');
   if (btn) btn.addEventListener('click', openHandFontedModal);
-  
+
   // Initialize progress bar
   updateCharProgress();
-  
+
   // Adjust canvas size based on device
   adjustCanvasSizeForDevice();
-  
+
   // Listen for orientation changes
   window.addEventListener('resize', adjustCanvasSizeForDevice);
   window.addEventListener('orientationchange', () => {
     setTimeout(adjustCanvasSizeForDevice, 300);
   });
-  
+
   const canvas = document.getElementById('sketch-canvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  
+
   // Stroke history for undo functionality
   let strokes = [];
   let currentStroke = [];
   let brushSize = 3;
-  
+
   // High quality stroke aesthetics
   ctx.strokeStyle = '#1a1a1a';
   ctx.lineWidth = brushSize;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
-  
+
   let drawing = false;
-  
+
   function getPos(e) {
     const rect = canvas.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -3704,10 +3291,10 @@ function initHandFontedStudio() {
     const scaleY = canvas.height / rect.height;
     return {
       x: (clientX - rect.left) * scaleX,
-      y: (clientY - rect.top) * scaleY
+      y: (clientY - rect.top) * scaleY,
     };
   }
-  
+
   function startDraw(e) {
     e.preventDefault();
     drawing = true;
@@ -3717,7 +3304,7 @@ function initHandFontedStudio() {
     ctx.beginPath();
     ctx.moveTo(pos.x, pos.y);
   }
-  
+
   function draw(e) {
     if (!drawing) return;
     e.preventDefault();
@@ -3726,38 +3313,38 @@ function initHandFontedStudio() {
     ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
   }
-  
+
   function stopDraw() {
     if (drawing && currentStroke.length > 0) {
       strokes.push({
         points: [...currentStroke],
         size: brushSize,
-        color: ctx.strokeStyle
+        color: ctx.strokeStyle,
       });
       currentStroke = [];
     }
     drawing = false;
   }
-  
+
   // Undo functionality
-  window.undoSketchStroke = function() {
+  window.undoSketchStroke = function () {
     if (strokes.length === 0) return;
     strokes.pop();
     redrawCanvas();
   };
-  
+
   // Brush size update
-  window.updateBrushSize = function() {
+  window.updateBrushSize = function () {
     const slider = document.getElementById('brush-size-slider');
     brushSize = parseFloat(slider.value);
     document.getElementById('brush-size-val').textContent = brushSize.toFixed(1);
     ctx.lineWidth = brushSize;
   };
-  
+
   // Redraw all strokes
   function redrawCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    strokes.forEach(stroke => {
+    strokes.forEach((stroke) => {
       ctx.strokeStyle = stroke.color;
       ctx.lineWidth = stroke.size;
       ctx.beginPath();
@@ -3773,24 +3360,24 @@ function initHandFontedStudio() {
     ctx.strokeStyle = '#1a1a1a';
     ctx.lineWidth = brushSize;
   }
-  
+
   // Clear canvas - also clear stroke history
   const originalClear = window.clearSketchCanvas;
-  window.clearSketchCanvas = function() {
+  window.clearSketchCanvas = function () {
     strokes = [];
     currentStroke = [];
     originalClear();
   };
-  
+
   canvas.addEventListener('mousedown', startDraw);
   canvas.addEventListener('mousemove', draw);
   canvas.addEventListener('mouseup', stopDraw);
   canvas.addEventListener('mouseleave', stopDraw);
-  
+
   canvas.addEventListener('touchstart', startDraw, { passive: false });
   canvas.addEventListener('touchmove', draw, { passive: false });
   canvas.addEventListener('touchend', stopDraw);
-  
+
   renderSketchCharGrid();
   setupTemplateUploader();
 }
@@ -3806,9 +3393,9 @@ function renderSketchCharGrid() {
   const container = document.getElementById('sketch-char-grid');
   if (!container) return;
   container.innerHTML = '';
-  
+
   const chars = TEMPLATE_SHEETS[activeSheet];
-  chars.forEach(char => {
+  chars.forEach((char) => {
     const btn = document.createElement('div');
     btn.className = 'char-btn';
     btn.id = `char-btn-${char}`;
@@ -3821,17 +3408,17 @@ function renderSketchCharGrid() {
 
 function selectSketchCharacter(char) {
   activeChar = char;
-  
-  document.querySelectorAll('.char-btn').forEach(btn => btn.classList.remove('active'));
+
+  document.querySelectorAll('.char-btn').forEach((btn) => btn.classList.remove('active'));
   const activeBtn = document.getElementById(`char-btn-${char}`);
   if (activeBtn) activeBtn.classList.add('active');
-  
+
   document.getElementById('current-char-display').textContent = char;
   document.getElementById('canvas-guide-letter').textContent = char;
-  
+
   if (typeof window.clearSketchCanvas === 'function') window.clearSketchCanvas();
   else clearSketchCanvas();
-  
+
   if (draftedGlyphs[char]) {
     const img = new Image();
     img.onload = () => {
@@ -3846,30 +3433,30 @@ function selectSketchCharacter(char) {
 function saveActiveCharacter() {
   const canvas = document.getElementById('sketch-canvas');
   if (!canvas) return;
-  
+
   // Phase 9.8 â€” Check if canvas has any significant ink before saving
-  if (isCellBlank(canvas)) {
+  if (window.FontCompilation.isCellBlank(canvas)) {
     alert('Nothing drawn â€” sketch the character before saving with dark ink.');
     return;
   }
-  
+
   // Save canvas as image data URL
   const dataUrl = canvas.toDataURL();
   draftedGlyphs[activeChar] = dataUrl;
-  
+
   // Update sidebar grids
   const btn = document.getElementById(`char-btn-${activeChar}`);
   if (btn) btn.classList.add('drafted');
-  
+
   // Update progress indicator
   updateCharProgress();
-  
+
   // Show preview
   showCharPreview(dataUrl);
-  
+
   // Persist to IndexedDB
-  saveGlyphDB(activeChar, dataUrl).catch(err => console.error("Error saving glyph to IndexedDB:", err));
-  
+  saveGlyphDB(activeChar, dataUrl).catch((err) => console.error('Error saving glyph to IndexedDB:', err));
+
   // Micro-interaction: visual confirmation
   const wrapper = canvas.parentElement;
   wrapper.style.borderColor = 'var(--accent)';
@@ -3883,11 +3470,11 @@ function updateCharProgress() {
   const totalChars = ALL_TEMPLATE_CHARS.length;
   const completedChars = Object.keys(draftedGlyphs).length;
   const percent = Math.round((completedChars / totalChars) * 100);
-  
+
   const countEl = document.getElementById('char-progress-count');
   const percentEl = document.getElementById('char-progress-percent');
   const fillEl = document.getElementById('char-progress-fill');
-  
+
   if (countEl) countEl.textContent = `${completedChars}/${totalChars}`;
   if (percentEl) percentEl.textContent = `${percent}%`;
   if (fillEl) fillEl.style.width = `${percent}%`;
@@ -3898,7 +3485,7 @@ function showCharPreview(dataUrl) {
   const container = document.getElementById('char-preview-container');
   const previewCanvas = document.getElementById('char-preview-canvas');
   if (!container || !previewCanvas) return;
-  
+
   container.classList.remove('d-none');
   const ctx = previewCanvas.getContext('2d');
   const img = new Image();
@@ -3917,13 +3504,13 @@ function exportFontProject() {
     exportDate: new Date().toISOString(),
     glyphs: draftedGlyphs,
     fontName: document.getElementById('custom-font-name')?.value || 'MyHandwriting',
-    totalGlyphs: Object.keys(draftedGlyphs).length
+    totalGlyphs: Object.keys(draftedGlyphs).length,
   };
-  
+
   const dataStr = JSON.stringify(projectData, null, 2);
   const blob = new Blob([dataStr], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
-  
+
   const link = document.createElement('a');
   link.download = `${projectData.fontName}-project.json`;
   link.href = url;
@@ -3931,7 +3518,7 @@ function exportFontProject() {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
-  
+
   showToast(`âœ… Project saved: ${projectData.totalGlyphs} characters`, 'success');
 }
 
@@ -3939,47 +3526,46 @@ function exportFontProject() {
 function importFontProject(event) {
   const file = event.target.files[0];
   if (!file) return;
-  
+
   const reader = new FileReader();
-  reader.onload = async function(e) {
+  reader.onload = async function (e) {
     try {
       const projectData = JSON.parse(e.target.result);
-      
+
       if (!projectData.glyphs || typeof projectData.glyphs !== 'object') {
         throw new Error('Invalid project file format');
       }
-      
+
       // Load glyphs
       Object.assign(draftedGlyphs, projectData.glyphs);
 
       // Strip any blank entries that may have come from an older export
       // (saved before the ink-check guard existed).
       await pruneBlankGlyphs();
-      
+
       // Update font name if available
       if (projectData.fontName) {
         const nameInput = document.getElementById('custom-font-name');
         if (nameInput) nameInput.value = projectData.fontName;
       }
-      
+
       // Refresh UI
       renderSketchCharGrid();
       updateCharProgress();
-      
+
       // Select first character
       if (ALL_TEMPLATE_CHARS.length > 0) {
         selectSketchCharacter(ALL_TEMPLATE_CHARS[0]);
       }
-      
+
       showToast(`âœ… Loaded ${Object.keys(projectData.glyphs).length} characters`, 'success');
-      
     } catch (error) {
       console.error('Error loading project:', error);
       showToast('âŒ Failed to load project file', 'error');
     }
   };
   reader.readAsText(file);
-  
+
   // Reset input so same file can be loaded again
   event.target.value = '';
 }
@@ -3992,7 +3578,7 @@ function getDeviceType() {
   const width = window.innerWidth;
   const height = window.innerHeight;
   const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-  
+
   if (width <= 480) {
     return { type: 'mobile', canvasSize: Math.min(280, width - 60), isTouchDevice };
   } else if (width <= 767) {
@@ -4010,13 +3596,13 @@ function adjustCanvasSizeForDevice() {
   const device = getDeviceType();
   const canvas = document.getElementById('sketch-canvas');
   const wrapper = document.querySelector('.canvas-wrapper');
-  
+
   if (!canvas || !wrapper) return;
-  
+
   // Set canvas internal resolution (for drawing quality)
   const dpr = window.devicePixelRatio || 1;
   const baseSize = 256;
-  
+
   // High DPI devices get higher resolution canvas
   if (dpr > 1) {
     canvas.width = baseSize * Math.min(dpr, 2);
@@ -4025,34 +3611,33 @@ function adjustCanvasSizeForDevice() {
     canvas.width = baseSize;
     canvas.height = baseSize;
   }
-  
+
   // Visual size is set by CSS (already responsive)
   // But we can add device-specific optimizations
-  
+
   if (device.isTouchDevice) {
     // Increase touch target sizes
     canvas.style.touchAction = 'none';
     wrapper.style.cursor = 'crosshair';
-    
+
     // Prevent zoom on double-tap
     wrapper.style.touchAction = 'pan-x pan-y';
   }
-  
 }
 
 // Detect high refresh rate displays
 function getOptimalAnimationSettings() {
   const refreshRate = screen.refreshRate || 60;
-  
+
   return {
     useRAF: refreshRate >= 90, // Use requestAnimationFrame for smooth drawing on high refresh displays
-    smoothing: refreshRate >= 120
+    smoothing: refreshRate >= 120,
   };
 }
 
 function advanceActiveCharacter() {
   saveActiveCharacter();
-  
+
   const chars = TEMPLATE_SHEETS[activeSheet];
   const curIdx = chars.indexOf(activeChar);
   if (curIdx < chars.length - 1) {
@@ -4063,7 +3648,9 @@ function advanceActiveCharacter() {
         switchSheet('symbols');
       }
     } else {
-      alert('ðŸŽ‰ You have drafted all characters in this set! Click "Generate & Apply Font" below to compile your TrueType handwriting font.');
+      alert(
+        'ðŸŽ‰ You have drafted all characters in this set! Click "Generate & Apply Font" below to compile your TrueType handwriting font.'
+      );
     }
   }
 }
@@ -4072,7 +3659,7 @@ function advanceActiveCharacter() {
 function generateDownloadTemplate() {
   // Create a container for multiple sheets
   const sheets = [];
-  
+
   // ========================================
   // SHEET 1: FRONT COVER / INSTRUCTIONS
   // ========================================
@@ -4080,44 +3667,44 @@ function generateDownloadTemplate() {
   frontCanvas.width = 1600;
   frontCanvas.height = 1600;
   const frontCtx = frontCanvas.getContext('2d');
-  
+
   // Background
   frontCtx.fillStyle = '#f7f3ea';
   frontCtx.fillRect(0, 0, 1600, 1600);
-  
+
   // Decorative border
   frontCtx.strokeStyle = '#c0622a';
   frontCtx.lineWidth = 8;
   frontCtx.strokeRect(40, 40, 1520, 1520);
-  
+
   // Title
   frontCtx.fillStyle = '#c0622a';
   frontCtx.font = 'bold 72px serif';
   frontCtx.textAlign = 'center';
   frontCtx.fillText('âœ¨ HandFonted Studio', 800, 200);
-  
+
   frontCtx.fillStyle = '#1c2340';
   frontCtx.font = '42px serif';
   frontCtx.fillText('Custom Handwriting Font Creator', 800, 270);
-  
+
   // Subtitle
   frontCtx.fillStyle = '#6b6148';
   frontCtx.font = 'italic 28px serif';
   frontCtx.fillText('Transform your handwriting into a digital font', 800, 340);
-  
+
   // Instructions box
   frontCtx.fillStyle = 'rgba(192, 98, 42, 0.08)';
   frontCtx.fillRect(150, 420, 1300, 900);
   frontCtx.strokeStyle = '#c0622a';
   frontCtx.lineWidth = 3;
   frontCtx.strokeRect(150, 420, 1300, 900);
-  
+
   // Instructions title
   frontCtx.fillStyle = '#c0622a';
   frontCtx.font = 'bold 36px sans-serif';
   frontCtx.textAlign = 'left';
   frontCtx.fillText('ðŸ“‹ Instructions:', 200, 490);
-  
+
   // Instructions text
   frontCtx.fillStyle = '#1c2340';
   frontCtx.font = '24px sans-serif';
@@ -4139,15 +3726,15 @@ function generateDownloadTemplate() {
     '   â€¢ Use high contrast (300 DPI recommended)',
     '   â€¢ Ensure the image is well-lit and in focus',
     '',
-    '6. Upload your sheets in Inkflow\'s HandFonted Studio',
+    "6. Upload your sheets in Inkflow's HandFonted Studio",
     '',
     '7. Align the grid overlay to match your written template',
     '',
     '8. Click "Generate & Apply Font" to create your custom font!',
   ];
-  
+
   let yPos = 550;
-  instructions.forEach(line => {
+  instructions.forEach((line) => {
     if (line === '') {
       yPos += 15;
     } else {
@@ -4155,36 +3742,36 @@ function generateDownloadTemplate() {
       yPos += 35;
     }
   });
-  
+
   // Footer
   frontCtx.fillStyle = '#9e9078';
   frontCtx.font = 'italic 20px serif';
   frontCtx.textAlign = 'center';
   frontCtx.fillText('Powered by Inkflow â€” AI Handwritten Notes Generator', 800, 1500);
   frontCtx.fillText('inkflow.app', 800, 1535);
-  
+
   sheets.push({
     canvas: frontCanvas,
-    name: 'cover'
+    name: 'cover',
   });
-  
+
   // ========================================
   // SHEET 2 & 3: CHARACTER TEMPLATES
   // ========================================
   const sheetTypes = [
     { key: 'letters', title: 'Letters (A-Z, a-z)' },
-    { key: 'symbols', title: 'Numbers & Symbols' }
+    { key: 'symbols', title: 'Numbers & Symbols' },
   ];
-  
-  sheetTypes.forEach(sheetType => {
+
+  sheetTypes.forEach((sheetType) => {
     const canvas = document.createElement('canvas');
     canvas.width = 1600;
     canvas.height = 1600;
     const ctx = canvas.getContext('2d');
-    
+
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, 1600, 1600);
-    
+
     // Sheet Headers
     ctx.fillStyle = '#1c2340';
     ctx.font = 'bold 36px sans-serif';
@@ -4193,27 +3780,27 @@ function generateDownloadTemplate() {
     ctx.font = '22px sans-serif';
     ctx.fillStyle = '#555';
     ctx.fillText('Write each character clearly inside its designated box', 800, 110);
-    
+
     const startX = 100;
     const startY = 160;
     const size = 175; // 8 * 175 = 1400px wide
-    
+
     ctx.strokeStyle = '#cccccc';
     ctx.lineWidth = 2;
-    
+
     const chars = TEMPLATE_SHEETS[sheetType.key];
-    
+
     for (let r = 0; r < 8; r++) {
       for (let c = 0; c < 8; c++) {
         const x = startX + c * size;
         const y = startY + r * size;
         const char = chars[r * 8 + c] || '';
-        
+
         // Outer square
         ctx.strokeStyle = '#cccccc';
         ctx.lineWidth = 2;
         ctx.strokeRect(x, y, size, size);
-        
+
         // Center baseline helper
         ctx.strokeStyle = '#e2e2e2';
         ctx.setLineDash([6, 6]);
@@ -4222,7 +3809,7 @@ function generateDownloadTemplate() {
         ctx.lineTo(x + size, y + size * 0.7);
         ctx.stroke();
         ctx.setLineDash([]);
-        
+
         // Guide label tags
         if (char) {
           ctx.fillStyle = '#888888';
@@ -4233,13 +3820,13 @@ function generateDownloadTemplate() {
         }
       }
     }
-    
+
     sheets.push({
       canvas: canvas,
-      name: sheetType.key
+      name: sheetType.key,
     });
   });
-  
+
   // ========================================
   // DOWNLOAD ALL SHEETS AS ZIP OR INDIVIDUAL
   // ========================================
@@ -4263,7 +3850,7 @@ function generateDownloadTemplate() {
         document.body.removeChild(link);
       }, index * 300); // Stagger downloads to avoid browser blocking
     });
-    
+
     // Show toast notification
     showToast('Downloading 3 sheets: Instructions + 2 templates', 'info');
   }
@@ -4274,20 +3861,20 @@ function setupTemplateUploader() {
   const dropzone = document.getElementById('template-dropzone');
   const input = document.getElementById('template-image-input');
   if (!dropzone || !input) return;
-  
+
   dropzone.addEventListener('click', () => input.click());
-  
+
   dropzone.addEventListener('dragover', (e) => {
     e.preventDefault();
     dropzone.style.borderColor = 'var(--accent)';
     dropzone.style.background = 'rgba(230, 100, 50, 0.04)';
   });
-  
+
   dropzone.addEventListener('dragleave', () => {
     dropzone.style.borderColor = '';
     dropzone.style.background = '';
   });
-  
+
   dropzone.addEventListener('drop', (e) => {
     e.preventDefault();
     dropzone.style.borderColor = '';
@@ -4295,7 +3882,7 @@ function setupTemplateUploader() {
     const file = e.dataTransfer.files[0];
     if (file) handleTemplateImage(file);
   });
-  
+
   input.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) handleTemplateImage(file);
@@ -4305,14 +3892,14 @@ function setupTemplateUploader() {
   if (sheetSelect) {
     sheetSelect.addEventListener('change', () => {
       activeUploadSheet = sheetSelect.value;
-      
+
       // Load config to sliders
       const config = gridConfigs[activeUploadSheet];
       document.getElementById('slider-grid-x').value = config.gridX;
       document.getElementById('slider-grid-y').value = config.gridY;
       document.getElementById('slider-grid-w').value = config.gridW;
       document.getElementById('slider-grid-h').value = config.gridH;
-      
+
       // Show/hide aligner container
       const img = alignerImages[activeUploadSheet];
       const container = document.getElementById('template-aligner-container');
@@ -4321,7 +3908,7 @@ function setupTemplateUploader() {
       } else {
         container.classList.add('hidden');
       }
-      
+
       updateAlignerGrid();
     });
   }
@@ -4334,19 +3921,19 @@ function handleTemplateImage(file) {
     img.onload = () => {
       alignerImages[activeUploadSheet] = img;
       document.getElementById('template-aligner-container').classList.remove('hidden');
-      
+
       gridX = 22;
       gridY = 36;
       gridW = 315;
       gridH = 315;
-      
+
       gridConfigs[activeUploadSheet] = { gridX, gridY, gridW, gridH };
-      
+
       document.getElementById('slider-grid-x').value = gridX;
       document.getElementById('slider-grid-y').value = gridY;
       document.getElementById('slider-grid-w').value = gridW;
       document.getElementById('slider-grid-h').value = gridH;
-      
+
       updateAlignerGrid();
     };
     img.src = e.target.result;
@@ -4364,43 +3951,43 @@ function updateAlignerGrid() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     return;
   }
-  
+
   // Read dynamic slider parameters
   gridX = parseInt(document.getElementById('slider-grid-x').value);
   gridY = parseInt(document.getElementById('slider-grid-y').value);
   gridW = parseInt(document.getElementById('slider-grid-w').value);
   gridH = parseInt(document.getElementById('slider-grid-h').value);
-  
+
   // Sync to config
   gridConfigs[activeUploadSheet].gridX = gridX;
   gridConfigs[activeUploadSheet].gridY = gridY;
   gridConfigs[activeUploadSheet].gridW = gridW;
   gridConfigs[activeUploadSheet].gridH = gridH;
-  
+
   // Display numbers in UI
   document.getElementById('val-grid-x').textContent = gridX;
   document.getElementById('val-grid-y').textContent = gridY;
   document.getElementById('val-grid-w').textContent = gridW;
   document.getElementById('val-grid-h').textContent = gridH;
-  
+
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  
+
   // Draw base image
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-  
+
   // Semi-transparent shading of outer bounding box
   ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
   ctx.fillRect(0, 0, canvas.width, gridY);
   ctx.fillRect(0, gridY + gridH, canvas.width, canvas.height - (gridY + gridH));
   ctx.fillRect(0, gridY, gridX, gridH);
   ctx.fillRect(gridX + gridW, gridY, canvas.width - (gridX + gridW), gridH);
-  
+
   // Red/Orange alignment grids
   ctx.strokeStyle = 'rgba(230, 100, 50, 0.85)';
   ctx.lineWidth = 1.5;
   const cellW = gridW / 8;
   const cellH = gridH / 8;
-  
+
   ctx.beginPath();
   for (let i = 0; i <= 8; i++) {
     ctx.moveTo(gridX + i * cellW, gridY);
@@ -4418,260 +4005,33 @@ function cropTemplateCell(index, sheetName) {
 
   const col = index % 8;
   const row = Math.floor(index / 8);
-  
+
   const cellCanvas = document.createElement('canvas');
   cellCanvas.width = 128;
   cellCanvas.height = 128;
   const cellCtx = cellCanvas.getContext('2d');
-  
+
   const scaleX = img.naturalWidth / 360;
   const scaleY = img.naturalHeight / 360;
-  
+
   const cellW_preview = config.gridW / 8;
   const cellH_preview = config.gridH / 8;
-  
+
   const srcX = (config.gridX + col * cellW_preview) * scaleX;
   const srcY = (config.gridY + row * cellH_preview) * scaleY;
   const srcW = cellW_preview * scaleX;
   const srcH = cellH_preview * scaleY;
-  
+
   cellCtx.fillStyle = '#ffffff';
   cellCtx.fillRect(0, 0, 128, 128);
-  
+
   cellCtx.drawImage(img, srcX, srcY, srcW, srcH, 12, 12, 104, 104);
-  
+
   // Clear the guide label at the top-left of the cell to prevent it from being traced as ink
   cellCtx.fillStyle = '#ffffff';
   cellCtx.fillRect(12, 12, 32, 24);
-  
+
   return cellCanvas;
-}
-
-// Connected Component Vector Tracer
-function traceCanvasContours(canvas) {
-  const ctx = canvas.getContext('2d');
-  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const width = imageData.width;
-  const height = imageData.height;
-  const pixels = imageData.data;
-  
-  const binary = new Uint8Array(width * height);
-  for (let i = 0; i < width * height; i++) {
-    const r = pixels[i * 4];
-    const g = pixels[i * 4 + 1];
-    const b = pixels[i * 4 + 2];
-    const a = pixels[i * 4 + 3];
-    
-    // Trigger outline on dark drawings
-    if (a > 50 && (r + g + b) / 3 < 160) {
-      binary[i] = 1;
-    } else {
-      binary[i] = 0;
-    }
-  }
-  
-  const visited = new Uint8Array(width * height);
-  const contours = [];
-  
-  const dx = [-1, 0, 1, 1, 1, 0, -1, -1];
-  const dy = [-1, -1, -1, 0, 1, 1, 1, 0];
-  
-  for (let y = 1; y < height - 1; y++) {
-    for (let x = 1; x < width - 1; x++) {
-      const idx = y * width + x;
-      if (binary[idx] === 1 && !visited[idx]) {
-        if (binary[idx - 1] === 0) {
-          const points = [];
-          let cx = x;
-          let cy = y;
-          let dir = 7; // left start
-          
-          const startX = x;
-          const startY = y;
-          
-          let limit = 4000;
-          while (limit-- > 0) {
-            points.push({ x: cx, y: cy });
-            visited[cy * width + cx] = 1;
-            
-            let found = false;
-            for (let i = 0; i < 8; i++) {
-              const checkDir = (dir + 1 + i) % 8;
-              const nx = cx + dx[checkDir];
-              const ny = cy + dy[checkDir];
-              
-              if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                if (binary[ny * width + nx] === 1) {
-                  cx = nx;
-                  cy = ny;
-                  dir = (checkDir + 4) % 8;
-                  found = true;
-                  break;
-                }
-              }
-            }
-            
-            if (!found || (cx === startX && cy === startY)) {
-              break;
-            }
-          }
-          
-          if (points.length >= 3) {
-            const smoothed = simplifyPath(points, 0.85);
-            contours.push(smoothed);
-          }
-        }
-      }
-    }
-  }
-  return contours;
-}
-
-/**
- * Checks if a canvas cell contains any significant ink (dark pixels).
- * This prevents empty glyphs from being added to the custom font.
- */
-function isCellBlank(canvas) {
-  const ctx = canvas.getContext('2d');
-  const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  
-  // Scans for any pixel that is both opaque enough and dark enough to count as handwriting
-  for (let i = 0; i < data.length; i += 4) {
-    const alpha = data[i + 3];
-    if (alpha > 50) {
-      const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
-      if (brightness < 160) {
-        return false; // Found ink
-      }
-    }
-  }
-  return true; // No ink found
-}
-
-// Ramer-Douglas-Peucker (RDP) Simplification Engine
-function simplifyPath(points, tolerance) {
-  if (points.length <= 2) return points;
-  
-  const sqTolerance = tolerance * tolerance;
-  
-  function getSqSegDist(p, p1, p2) {
-    let x = p1.x;
-    let y = p1.y;
-    let dx = p2.x - x;
-    let dy = p2.y - y;
-    
-    if (dx !== 0 || dy !== 0) {
-      let t = ((p.x - x) * dx + (p.y - y) * dy) / (dx * dx + dy * dy);
-      if (t > 1) {
-        x = p2.x;
-        y = p2.y;
-      } else if (t > 0) {
-        x += dx * t;
-        y += dy * t;
-      }
-    }
-    
-    dx = p.x - x;
-    dy = p.y - y;
-    return dx * dx + dy * dy;
-  }
-  
-  function simplifyDPStep(points, first, last, sqTolerance, simplified) {
-    let maxSqDist = sqTolerance;
-    let index = -1;
-    
-    for (let i = first + 1; i < last; i++) {
-      const sqDist = getSqSegDist(points[i], points[first], points[last]);
-      if (sqDist > maxSqDist) {
-        index = i;
-        maxSqDist = sqDist;
-      }
-    }
-    
-    if (maxSqDist > sqTolerance) {
-      if (index - first > 1) simplifyDPStep(points, first, index, sqTolerance, simplified);
-      simplified.push(points[index]);
-      if (last - index > 1) simplifyDPStep(points, index, last, sqTolerance, simplified);
-    }
-  }
-  
-  const simplified = [points[0]];
-  simplifyDPStep(points, 0, points.length - 1, sqTolerance, simplified);
-  simplified.push(points[points.length - 1]);
-  return simplified;
-}
-
-function loadImageToCanvas(dataUrl) {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 256;
-      canvas.height = 256;
-      const ctx = canvas.getContext('2d');
-      // Draw image centered and scaled to fit within 256Ã—256 while preserving aspect ratio
-      const scale = Math.min(256 / img.width, 256 / img.height);
-      const scaledW = img.width * scale;
-      const scaledH = img.height * scale;
-      const x = (256 - scaledW) / 2;
-      const y = (256 - scaledH) / 2;
-      ctx.drawImage(img, x, y, scaledW, scaledH);
-      resolve(canvas);
-    };
-    img.src = dataUrl;
-  });
-}
-
-function canvasToOpentypePath(canvas) {
-  const contours = traceCanvasContours(canvas);
-  const path = new window.opentype.Path();
-  
-  if (contours.length === 0) return path;
-  
-  // Find global bounding box of all contours
-  let globalMinX = Infinity, globalMaxX = -Infinity;
-  let globalMinY = Infinity, globalMaxY = -Infinity;
-  
-  contours.forEach(points => {
-    points.forEach(p => {
-      globalMinX = Math.min(globalMinX, p.x);
-      globalMaxX = Math.max(globalMaxX, p.x);
-      globalMinY = Math.min(globalMinY, p.y);
-      globalMaxY = Math.max(globalMaxY, p.y);
-    });
-  });
-  
-  // Calculate dimensions
-  const width = globalMaxX - globalMinX || 1;
-  const height = globalMaxY - globalMinY || 1;
-  
-  // Scale to fit within 600x700 units in the 1000 UPM box, maintaining aspect ratio
-  const scale = Math.min(600 / width, 700 / height);
-  
-  // Center the glyph
-  const scaledWidth = width * scale;
-  const scaledHeight = height * scale;
-  const offsetX = 100 + (600 - scaledWidth) / 2;
-  const offsetY = 100;
-  
-  contours.forEach(points => {
-    if (points.length < 3) return;
-    
-    // Transform first point
-    const x0 = ((points[0].x - globalMinX) * scale) + offsetX;
-    const y0 = 800 - ((points[0].y - globalMinY) * scale) - offsetY;
-    path.moveTo(x0, y0);
-    
-    // Transform remaining points
-    for (let i = 1; i < points.length; i++) {
-      const px = ((points[i].x - globalMinX) * scale) + offsetX;
-      const py = 800 - ((points[i].y - globalMinY) * scale) - offsetY;
-      path.lineTo(px, py);
-    }
-    path.closePath();
-  });
-  
-  return path;
 }
 
 // Opentype.js dynamically lazy-loaded CDN script
@@ -4690,63 +4050,63 @@ async function ensureOpentypeLoaded() {
 async function buildCustomFont() {
   const fontNameInput = document.getElementById('custom-font-name');
   const fontName = fontNameInput.value.replace(/[^a-zA-Z0-9]/g, '') || 'MyHandwriting';
-  
+
   const progressDiv = document.getElementById('font-build-progress');
   const statusText = document.getElementById('font-build-status-text');
-  
+
   progressDiv.classList.remove('hidden');
   statusText.textContent = 'Initializing Opentype.js...';
-  
+
   try {
     await ensureOpentypeLoaded();
-    
+
     const glyphsList = [];
-    
+
     // standard blank .notdef glyph
     const notdefGlyph = new window.opentype.Glyph({
       name: '.notdef',
       unicode: 0,
       advanceWidth: 650,
-      path: new window.opentype.Path()
+      path: new window.opentype.Path(),
     });
     glyphsList.push(notdefGlyph);
-    
+
     // standard space glyph
     const spaceGlyph = new window.opentype.Glyph({
       name: 'space',
       unicode: 32,
       advanceWidth: 400, // Reasonable space width for handwriting fonts
-      path: new window.opentype.Path()
+      path: new window.opentype.Path(),
     });
     glyphsList.push(spaceGlyph);
-    
+
     statusText.textContent = 'Analyzing raster paths and extracting contours...';
-    
+
     const isTemplateTab = !document.getElementById('panel-template').classList.contains('hidden');
-    
+
     for (let i = 0; i < ALL_TEMPLATE_CHARS.length; i++) {
       const char = ALL_TEMPLATE_CHARS[i];
       let cellCanvas = null;
-      
+
       let sheetName = 'letters';
       let charIdx = TEMPLATE_SHEETS.letters.indexOf(char);
       if (charIdx === -1) {
         sheetName = 'symbols';
         charIdx = TEMPLATE_SHEETS.symbols.indexOf(char);
       }
-      
+
       if (isTemplateTab) {
         const img = alignerImages[sheetName];
         if (img) {
           cellCanvas = cropTemplateCell(charIdx, sheetName);
         } else if (draftedGlyphs[char]) {
-          cellCanvas = await loadImageToCanvas(draftedGlyphs[char]);
+          cellCanvas = await window.FontCompilation.loadImageToCanvas(draftedGlyphs[char]);
         } else {
           continue; // Skip if neither is present
         }
       } else {
         if (draftedGlyphs[char]) {
-          cellCanvas = await loadImageToCanvas(draftedGlyphs[char]);
+          cellCanvas = await window.FontCompilation.loadImageToCanvas(draftedGlyphs[char]);
         } else {
           const img = alignerImages[sheetName];
           if (img) {
@@ -4756,81 +4116,83 @@ async function buildCustomFont() {
           }
         }
       }
-      
+
       // Phase 9.8 â€” Check if cell is blank before processing
-      if (isCellBlank(cellCanvas)) {
+      if (window.FontCompilation.isCellBlank(cellCanvas)) {
         continue;
       }
 
-      const path = canvasToOpentypePath(cellCanvas);
-      
+      const path = window.FontCompilation.canvasToOpentypePath(cellCanvas);
+
       // Skip cells with no ink â€” let the browser fall back to a system font
       // for these instead of baking in an invisible glyph.
       if (!path.commands || path.commands.length === 0) {
         continue;
       }
-      
+
       // Calculate advance width based on glyph's visual width
       // Find bounding box of glyph pixels in the canvas
       const ctx = cellCanvas.getContext('2d');
       const imageData = ctx.getImageData(0, 0, cellCanvas.width, cellCanvas.height);
       const pixels = imageData.data;
-      
-      let minX = cellCanvas.width, maxX = 0;
+
+      let minX = cellCanvas.width,
+        maxX = 0;
       for (let y = 0; y < cellCanvas.height; y++) {
         for (let x = 0; x < cellCanvas.width; x++) {
           const idx = (y * cellCanvas.width + x) * 4;
           const alpha = pixels[idx + 3];
           const brightness = (pixels[idx] + pixels[idx + 1] + pixels[idx + 2]) / 3;
-          
-          if (alpha > 50 && brightness < 160) { // Standard ink threshold
+
+          if (alpha > 50 && brightness < 160) {
+            // Standard ink threshold
             if (x < minX) minX = x;
             if (x > maxX) maxX = x;
           }
         }
       }
-      
+
       // Scale the width to match the 1000 UPM coordinate system
       const scale = 800 / Math.max(cellCanvas.width, cellCanvas.height);
       const glyphWidth = (maxX - minX) * scale;
       const advanceWidth = Math.max(Math.round(glyphWidth + 100), 250); // Add padding
-      
+
       const glyph = new window.opentype.Glyph({
         name: char,
         unicode: char.charCodeAt(0),
         advanceWidth: advanceWidth,
-        path: path
+        path: path,
       });
       glyphsList.push(glyph);
     }
-    
+
     if (glyphsList.length <= 2) {
       alert('Please draft at least one character in sketchpad or upload a filled template grid before creating.');
       progressDiv.classList.add('hidden');
       return;
     }
-    
+
     statusText.textContent = 'Generating TrueType Font binary...';
-    
+
     const font = new window.opentype.Font({
       familyName: fontName,
       styleName: 'Regular',
       unitsPerEm: 1000,
       ascender: 800,
       descender: -200,
-      glyphs: glyphsList
+      glyphs: glyphsList,
     });
-    
+
     const fontBuffer = font.toArrayBuffer();
     const blob = new Blob([fontBuffer], { type: 'font/ttf' });
     const fontUrl = URL.createObjectURL(blob);
-    
+
     statusText.textContent = 'Registering dynamic font-face inside DOM...';
-    
+
     const fontFace = new FontFace(fontName, `url(${fontUrl})`);
     await fontFace.load();
     document.fonts.add(fontFace);
-    
+
     // Append option to selector
     const fontSelect = document.getElementById('font-select');
     const opt = document.createElement('option');
@@ -4838,29 +4200,27 @@ async function buildCustomFont() {
     opt.textContent = `${fontName} (created)`;
     opt.style.fontFamily = fontName;
     fontSelect.appendChild(opt);
-    
+
     // Set active
     fontSelect.value = fontName;
     fontSelect.style.fontFamily = fontName;
     S.font = fontName;
-    
+
     autosave();
     debounceRender();
-    
+
     statusText.textContent = 'Success!';
     setTimeout(() => {
       progressDiv.classList.add('hidden');
       closeHandFontedModal();
       alert(`ðŸŽ‰ Congratulation! "${fontName}" has been successfully created and applied to your handwritten notes!`);
     }, 1000);
-    
   } catch (err) {
     console.error(err);
     alert('An error occurred during font building: ' + err.message);
     progressDiv.classList.add('hidden');
   }
 }
-
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    PHASE 16 - LAYER MANAGER UI
@@ -4880,18 +4240,18 @@ function updateLayerUI(pageIdx = 0) {
     const layer = layers[i];
     const el = document.createElement('div');
     el.className = 'layer-item' + (layer.locked ? ' locked' : '');
-    
+
     // Drag handle
     const drag = document.createElement('div');
     drag.className = 'layer-drag';
     drag.textContent = 'â‰¡';
-    drag.title = "Drag to reorder";
-    
+    drag.title = 'Drag to reorder';
+
     // Visibility toggle
     const vis = document.createElement('div');
     vis.className = 'layer-vis';
     vis.textContent = layer.visible ? 'ðŸ‘ï¸' : 'ðŸš«';
-    vis.title = "Toggle visibility";
+    vis.title = 'Toggle visibility';
     vis.onclick = () => {
       window.layerCompositor.setLayerProperty(pageIdx, layer.id, 'visible', !layer.visible);
       requestPageRender(pageIdx);
@@ -4905,7 +4265,7 @@ function updateLayerUI(pageIdx = 0) {
     name.title = layer.name;
     name.onclick = () => {
       if (layer.locked) return;
-      const newName = prompt("Rename layer:", layer.name);
+      const newName = prompt('Rename layer:', layer.name);
       if (newName) {
         window.layerCompositor.setLayerProperty(pageIdx, layer.id, 'name', newName);
         updateLayerUI(pageIdx);
@@ -4916,9 +4276,11 @@ function updateLayerUI(pageIdx = 0) {
     const op = document.createElement('input');
     op.type = 'range';
     op.className = 'layer-opacity';
-    op.min = 0; op.max = 1; op.step = 0.05;
+    op.min = 0;
+    op.max = 1;
+    op.step = 0.05;
     op.value = layer.opacity;
-    op.title = "Opacity";
+    op.title = 'Opacity';
     op.oninput = (e) => {
       window.layerCompositor.setLayerProperty(pageIdx, layer.id, 'opacity', parseFloat(e.target.value));
       requestPageRender(pageIdx);
@@ -4927,12 +4289,15 @@ function updateLayerUI(pageIdx = 0) {
     // Blend mode
     const blend = document.createElement('select');
     blend.className = 'layer-blend';
-    blend.title = "Blend Mode";
+    blend.title = 'Blend Mode';
     const modes = window.layerCompositor.BLEND_MODES;
-    modes.forEach(m => {
+    modes.forEach((m) => {
       const opt = document.createElement('option');
       opt.value = m;
-      opt.textContent = m.split('-').map(w=>w[0].toUpperCase() + w.slice(1)).join(' ');
+      opt.textContent = m
+        .split('-')
+        .map((w) => w[0].toUpperCase() + w.slice(1))
+        .join(' ');
       if (m === layer.blendMode) opt.selected = true;
       blend.appendChild(opt);
     });
@@ -4945,7 +4310,7 @@ function updateLayerUI(pageIdx = 0) {
     const del = document.createElement('div');
     del.className = 'layer-delete';
     del.textContent = 'âœ–';
-    del.title = "Delete layer";
+    del.title = 'Delete layer';
     del.onclick = () => {
       if (window.layerCompositor.deleteLayer(pageIdx, layer.id)) {
         requestPageRender(pageIdx);
@@ -4966,12 +4331,12 @@ function updateLayerUI(pageIdx = 0) {
 
 function addNewLayer() {
   if (!window.layerCompositor) return;
-  window.layerCompositor.createLayer(currentLayerPage, "New Layer");
+  window.layerCompositor.createLayer(currentLayerPage, 'New Layer');
   updateLayerUI(currentLayerPage);
 }
 
 function flattenAllLayers() {
-  if (!window.layerCompositor || !confirm("Are you sure you want to flatten all layers on this page?")) return;
+  if (!window.layerCompositor || !confirm('Are you sure you want to flatten all layers on this page?')) return;
   const pageIdx = S.currentPage;
   const canvas = pages[pageIdx];
   if (!canvas) return;
@@ -4979,7 +4344,7 @@ function flattenAllLayers() {
   // Flatten: draw all layers onto the main canvas, then remove layers
   const layers = window.layerCompositor.getLayers(pageIdx);
   if (layers && layers.length > 1) {
-    layers.forEach(layer => {
+    layers.forEach((layer) => {
       if (layer.canvas) ctx.drawImage(layer.canvas, 0, 0);
     });
     window.layerCompositor.clearPage(pageIdx);

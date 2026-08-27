@@ -13,16 +13,20 @@ function layoutCycle(nodes, radius, center) {
     ...node,
     x: center.x + radius * Math.cos(i * angleStep - Math.PI / 2),
     y: center.y + radius * Math.sin(i * angleStep - Math.PI / 2),
-    shape: node.shape || 'circle'
+    shape: node.shape || 'circle',
   }));
 }
 
 function layoutFlowchart(nodes, edges, startX, startY, width) {
   const inDegree = {};
-  nodes.forEach(n => { inDegree[n.id] = 0; });
-  edges.forEach(e => { inDegree[e.to] = (inDegree[e.to] || 0) + 1; });
+  nodes.forEach((n) => {
+    inDegree[n.id] = 0;
+  });
+  edges.forEach((e) => {
+    inDegree[e.to] = (inDegree[e.to] || 0) + 1;
+  });
 
-  const queue = nodes.filter(n => inDegree[n.id] === 0).map(n => n.id);
+  const queue = nodes.filter((n) => inDegree[n.id] === 0).map((n) => n.id);
   const visited = new Set();
   let currentLayer = queue;
   let layerIdx = 0;
@@ -31,19 +35,21 @@ function layoutFlowchart(nodes, edges, startX, startY, width) {
   while (currentLayer.length > 0) {
     layerMap[layerIdx] = currentLayer;
     const nextLayer = [];
-    currentLayer.forEach(id => {
+    currentLayer.forEach((id) => {
       visited.add(id);
-      edges.filter(e => e.from === id).forEach(e => {
-        if (!visited.has(e.to)) {
-          nextLayer.push(e.to);
-        }
-      });
+      edges
+        .filter((e) => e.from === id)
+        .forEach((e) => {
+          if (!visited.has(e.to)) {
+            nextLayer.push(e.to);
+          }
+        });
     });
     currentLayer = [...new Set(nextLayer)];
     layerIdx++;
   }
 
-  const remaining = nodes.filter(n => !visited.has(n.id)).map(n => n.id);
+  const remaining = nodes.filter((n) => !visited.has(n.id)).map((n) => n.id);
   if (remaining.length > 0) layerMap.push(remaining);
 
   const verticalGap = 100;
@@ -52,7 +58,7 @@ function layoutFlowchart(nodes, edges, startX, startY, width) {
     const layerWidth = layerIds.length * 150;
     const xBase = startX + (width - layerWidth) / 2 + 75;
     layerIds.forEach((id, i) => {
-      const node = nodes.find(n => n.id === id);
+      const node = nodes.find((n) => n.id === id);
       if (!node) return;
       results.push({ ...node, x: xBase + i * 150, y: startY + lIdx * verticalGap, shape: node.shape || 'box' });
     });
@@ -63,14 +69,16 @@ function layoutFlowchart(nodes, edges, startX, startY, width) {
 function layoutHierarchy(nodes, edges, startX, startY, width, height) {
   const childMap = {};
   const parentMap = {};
-  nodes.forEach(n => { childMap[n.id] = []; });
-  edges.forEach(e => {
+  nodes.forEach((n) => {
+    childMap[n.id] = [];
+  });
+  edges.forEach((e) => {
     childMap[e.from] = childMap[e.from] || [];
     childMap[e.from].push(e.to);
     parentMap[e.to] = e.from;
   });
 
-  const roots = nodes.filter(n => !parentMap[n.id]);
+  const roots = nodes.filter((n) => !parentMap[n.id]);
   if (roots.length === 0 && nodes.length > 0) roots.push(nodes[0]);
 
   const results = [];
@@ -80,7 +88,7 @@ function layoutHierarchy(nodes, edges, startX, startY, width, height) {
   function layoutNode(nodeId, level, left, right) {
     if (visited.has(nodeId)) return;
     visited.add(nodeId);
-    const node = nodes.find(n => n.id === nodeId);
+    const node = nodes.find((n) => n.id === nodeId);
     if (!node) return;
     const x = (left + right) / 2;
     const y = startY + level * levelGap + levelGap / 2;
@@ -97,7 +105,7 @@ function layoutHierarchy(nodes, edges, startX, startY, width, height) {
     layoutNode(r.id, 0, startX + i * segW, startX + (i + 1) * segW);
   });
 
-  nodes.forEach(n => {
+  nodes.forEach((n) => {
     if (!visited.has(n.id)) {
       results.push({ ...n, x: startX + width / 2, y: startY + height / 2, w: 100, h: 40, shape: n.shape || 'box' });
     }
@@ -115,33 +123,39 @@ function getDiagramImage(content, debounceRender) {
   diagramCache[content] = entry;
 
   if (typeof mermaid !== 'undefined') {
-    mermaid.render(id, content).then(({ svg }) => {
-      const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(svg, 'image/svg+xml');
-      const svgEl = doc.querySelector('svg');
-      if (!svgEl) { entry.error = true; return; }
-      const viewbox = svgEl.getAttribute('viewBox');
-      if (viewbox) {
-        const parts = viewbox.split(' ');
-        entry.width = parseFloat(parts[2]);
-        entry.height = parseFloat(parts[3]);
-      } else {
-        entry.width = parseFloat(svgEl.getAttribute('width')) || 400;
-        entry.height = parseFloat(svgEl.getAttribute('height')) || 300;
-      }
-      entry.img.onload = () => {
-        URL.revokeObjectURL(url);
+    mermaid
+      .render(id, content)
+      .then(({ svg }) => {
+        const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(svg, 'image/svg+xml');
+        const svgEl = doc.querySelector('svg');
+        if (!svgEl) {
+          entry.error = true;
+          return;
+        }
+        const viewbox = svgEl.getAttribute('viewBox');
+        if (viewbox) {
+          const parts = viewbox.split(' ');
+          entry.width = parseFloat(parts[2]);
+          entry.height = parseFloat(parts[3]);
+        } else {
+          entry.width = parseFloat(svgEl.getAttribute('width')) || 400;
+          entry.height = parseFloat(svgEl.getAttribute('height')) || 300;
+        }
+        entry.img.onload = () => {
+          URL.revokeObjectURL(url);
+          entry.ready = true;
+          if (debounceRender) debounceRender();
+        };
+        entry.img.src = url;
+      })
+      .catch((err) => {
+        console.error('Mermaid render failed', err);
+        entry.error = true;
         entry.ready = true;
-        if (debounceRender) debounceRender();
-      };
-      entry.img.src = url;
-    }).catch(err => {
-      console.error('Mermaid render failed', err);
-      entry.error = true;
-      entry.ready = true;
-    });
+      });
   }
 
   return entry;
@@ -174,7 +188,7 @@ function positionDiagramNodes(data, activeZoneX, y, activeZoneWidth, dHeight) {
       x: cx,
       y: y + i * layerH + layerH / 2,
       w: Math.max(80, 200 - i * 40),
-      h: layerH * 0.7
+      h: layerH * 0.7,
     }));
   }
   return layoutCycle(data.nodes, r, { x: cx, y: cy });
@@ -182,10 +196,26 @@ function positionDiagramNodes(data, activeZoneX, y, activeZoneWidth, dHeight) {
 
 // Export for Node.js/test environments
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { layoutCycle, layoutFlowchart, layoutHierarchy, getDiagramImage, parseDiagramJSON, positionDiagramNodes, diagramCache };
+  module.exports = {
+    layoutCycle,
+    layoutFlowchart,
+    layoutHierarchy,
+    getDiagramImage,
+    parseDiagramJSON,
+    positionDiagramNodes,
+    diagramCache,
+  };
 }
 
 // Export for browser
 if (typeof window !== 'undefined') {
-  window.DiagramEngine = { layoutCycle, layoutFlowchart, layoutHierarchy, getDiagramImage, parseDiagramJSON, positionDiagramNodes, diagramCache };
+  window.DiagramEngine = {
+    layoutCycle,
+    layoutFlowchart,
+    layoutHierarchy,
+    getDiagramImage,
+    parseDiagramJSON,
+    positionDiagramNodes,
+    diagramCache,
+  };
 }

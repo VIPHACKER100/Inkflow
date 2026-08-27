@@ -85,7 +85,27 @@ The visible DOM elements the user interacts with directly. These include the sid
 A centralized global configuration object `S` acts as the single source of truth. Changes to any UI control update `S`, which triggers re-rendering. A debounced autosave module serializes the state to `localStorage` after a 1000ms idle delay. Custom handwriting glyph data is stored in **IndexedDB** (`InkflowDB` → `draftedGlyphs` store) to bypass the 5MB `localStorage` quota limit.
 
 ### 3. Core Execution Engines
-The rendering pipeline that transforms state data into visual canvas output. The key innovation in v1.2.0 is the **unified `layoutText()` engine**, which performs all word-wrap, page-break, and character queue computation in a single pass, ensuring that both static rendering (`renderText`) and animation playback (`buildCharQueue`) produce identical results from the same layout logic. The **diagram engine** (`diagram-engine.js`) is a standalone module that handles cycle, flowchart, hierarchy, pipeline, pyramid, and Mermaid diagram rendering via rough.js, exported as `window.DiagramEngine` for browser use and `module.exports` for Node tests.
+The rendering pipeline that transforms state data into visual canvas output. As of v1.5.0, the codebase is split into 16 JS modules:
+
+| Module | Lines | Purpose |
+|--------|------:|---------|
+| `index.js` | 3,765 | Core: UI, state, AI, animation, boot |
+| `markdown-parser.js` | 405 | Markdown tokenization for AI output |
+| `paper-renderer.js` | 341 | 10 paper styles, smudge effects |
+| `collaborative-engine.js` | 300 | WebSocket real-time collaboration |
+| `cursive-connector.js` | 260 | Cursive exit/entry points, Bezier strokes |
+| `layer-compositor.js` | 248 | Multi-layer canvas compositing |
+| `template-manager.js` | 242 | Cornell/Two-Column/Meeting layouts |
+| `font-compilation.js` | 198 | Contour tracing, RDP, OpenType compilation |
+| `diagram-engine.js` | 169 | 6 diagram types, Mermaid rendering |
+| `stroke-prediction-engine.js` | 160 | Stroke completion prediction |
+| `audio-recorder.js` | 158 | Audio recording, waveform |
+| `contextual-jitter-engine.js` | 149 | Per-character randomized transforms |
+| `script-detector.js` | 119 | Unicode script detection |
+| `export-renderers.js` | 107 | Queue item rendering on canvas |
+| `text-layout.js` | 40 | sanitizeText, parseBlocks, getGraphemes |
+
+The **unified `layoutText()` engine** performs all word-wrap, page-break, and character queue computation in a single pass, ensuring layout parity between static rendering and animation. All modules expose globals via `window.*` for browser use.
 
 ### 4. Integration & Export Services
 External integrations for AI text generation (OpenRouter + Anthropic, with SSE streaming), native canvas image exports (Blob URL-based PNG/JPG/SVG), multi-page PDF compilation (jsPDF), clipboard copy (Clipboard API), and native OS print dialog access.

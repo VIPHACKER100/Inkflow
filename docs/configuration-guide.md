@@ -39,6 +39,7 @@ Complete reference for all user-configurable controls in Inkflow.
 | **Standard (Flowing)** | Default single-column layout where text flows naturally and wraps. | Standard text |
 | **Two-Column Grid** | Splits the page into two equal-width columns. Text fills the left column first, then the right column, before breaking to the next page. | Standard text |
 | **Cornell Study Notes** | Divides the page into three areas: "Cues / Questions" (left column), "Main Notes" (right column), and "Summary" (bottom footer). | Prefix a line with `? ` or `cue:` to place it in the Cues column.<br>Prefix a line with `== ` or `summary:` to place it in the bottom Summary area.<br>All other lines automatically flow into the Main Notes area. |
+| **Meeting Notes** | Structured layout for meeting minutes with agenda, notes, and action items. | Standard text |
 
 ---
 
@@ -84,8 +85,12 @@ The viewport auto-scrolls to keep the pen cursor visible during animation.
 | **AI Provider** | OpenRouter (100+ models) or Anthropic (direct) |
 | **Model** | Selected from provider's model list (auto-fetched for OpenRouter) |
 | **API Key** | Your OpenRouter or Anthropic API key (stored in browser only) |
-| **Summarize** | Converts text to bullet-point notes |
-| **Fix Grammar** | Corrects spelling and phrasing |
+| **Record Lecture** | Records audio and transcribes to text |
+| **Doubt Solver** | Answers questions about your notes |
+| **Generate Diagram** | Creates visual diagrams from text descriptions |
+| **Smart Arrange** | Restructures notes for better readability |
+| **Summarize Notes** | Converts text to bullet-point notes |
+| **Improve Grammar** | Corrects spelling and phrasing |
 | **Lecture → Notes** | Transforms transcripts to study notes |
 | **Generate Assignment** | Creates essay-style assignments on a given topic |
 

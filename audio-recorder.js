@@ -41,7 +41,7 @@ class AudioRecorder {
             interimTranscript += event.results[i][0].transcript;
           }
         }
-        
+
         if (finalTranscript) {
           this.transcription += finalTranscript;
           this.textarea.value = this.transcription + interimTranscript;
@@ -50,7 +50,7 @@ class AudioRecorder {
         }
         this.textarea.dispatchEvent(new Event('input', { bubbles: true }));
       };
-      
+
       this.recognition.onerror = (event) => {
         console.error('Speech recognition error', event.error);
       };
@@ -72,7 +72,7 @@ class AudioRecorder {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       this.mediaRecorder = new MediaRecorder(stream);
       this.audioChunks = [];
-      
+
       this.mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           this.audioChunks.push(event.data);
@@ -86,16 +86,17 @@ class AudioRecorder {
 
       this.mediaRecorder.start(1000); // chunk every second
       this.isRecording = true;
-      
+
       // Reset transcription
       this.transcription = '';
       if (this.recognition) {
-        try { this.recognition.start(); } catch(e) {}
+        try {
+          this.recognition.start();
+        } catch (e) {}
       }
 
       this.updateUIStart();
       this.startTimer();
-
     } catch (err) {
       console.error('Error starting audio recording:', err);
       alert('Could not access microphone. Please check permissions.');
@@ -105,13 +106,15 @@ class AudioRecorder {
   stopRecording() {
     if (this.mediaRecorder && this.isRecording) {
       this.mediaRecorder.stop();
-      this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+      this.mediaRecorder.stream.getTracks().forEach((track) => track.stop());
       this.isRecording = false;
-      
+
       if (this.recognition) {
-        try { this.recognition.stop(); } catch(e) {}
+        try {
+          this.recognition.stop();
+        } catch (e) {}
       }
-      
+
       this.stopTimer();
       this.updateUIStop();
     }
@@ -171,9 +174,9 @@ class AudioRecorder {
 // Initialize globally
 let audioRecorderInstance = null;
 
-window.toggleAudioRecording = function() {
+window.toggleAudioRecording = function () {
   if (!audioRecorderInstance) {
     audioRecorderInstance = new AudioRecorder();
   }
   audioRecorderInstance.toggleRecording();
-}
+};

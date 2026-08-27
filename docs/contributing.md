@@ -40,12 +40,25 @@ Inkflow is a **single-page, zero-dependency-install** application. Contributions
 ## File Structure
 
 ```
-index.html          # Structure and CDN imports only
-index.css           # All styles — design tokens, components, layouts
-index.js            # All logic — engines, state, UI handlers
-diagram-engine.js   # Diagram layout algorithms, Mermaid rendering
-cursive-connector.js # Cursive mode exit/entry points, Bezier connections
-docs/               # Documentation (markdown)
+index.html              # Structure and CDN imports
+index.css               # All styles — design tokens, components, layouts
+index.js                # Core: UI, state, AI, animation (3,765 lines)
+font-compilation.js     # Contour tracing, RDP, OpenType (198 lines)
+paper-renderer.js       # 10 paper styles, smudge effects (341 lines)
+text-layout.js          # sanitizeText, parseBlocks, getGraphemes (40 lines)
+export-renderers.js     # Queue item rendering on canvas (107 lines)
+diagram-engine.js       # 6 diagram types, Mermaid rendering (169 lines)
+cursive-connector.js    # Cursive exit/entry points, Bezier (260 lines)
+template-manager.js     # Cornell/Two-Column/Meeting layouts (242 lines)
+markdown-parser.js      # Markdown tokenization (405 lines)
+collaborative-engine.js # WebSocket collaboration (300 lines)
+contextual-jitter-engine.js # Per-character transforms (149 lines)
+stroke-prediction-engine.js # Stroke prediction (160 lines)
+layer-compositor.js     # Multi-layer canvas (248 lines)
+audio-recorder.js       # Audio recording (158 lines)
+script-detector.js      # Unicode detection (119 lines)
+server.js               # Node.js proxy (162 lines)
+docs/                   # Documentation (19 markdown files)
 ```
 
 Do NOT split JS/CSS into additional files without discussion. The single-file architecture is intentional.

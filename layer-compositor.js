@@ -25,7 +25,7 @@ class LayerCompositor {
 
     // Supported blend modes (canvas globalCompositeOperation values)
     this.BLEND_MODES = [
-      'source-over',   // normal
+      'source-over', // normal
       'multiply',
       'screen',
       'overlay',
@@ -130,7 +130,7 @@ class LayerCompositor {
    */
   getContentLayerId(pageIdx) {
     const stack = this.getStack(pageIdx);
-    const contentLayer = stack.layers.find(l => l.name === 'Content');
+    const contentLayer = stack.layers.find((l) => l.name === 'Content');
     return contentLayer ? contentLayer.id : null;
   }
 
@@ -162,7 +162,7 @@ class LayerCompositor {
    */
   clearPage(pageIdx) {
     const stack = this.getStack(pageIdx);
-    stack.layers.forEach(layer => {
+    stack.layers.forEach((layer) => {
       const ctx = layer.canvas.getContext('2d');
       ctx.clearRect(0, 0, this.width, this.height);
     });
@@ -174,7 +174,7 @@ class LayerCompositor {
   resize(width, height) {
     this.width = width;
     this.height = height;
-    this.pageStacks.forEach(stack => {
+    this.pageStacks.forEach((stack) => {
       stack.resize(width, height);
     });
   }
@@ -184,7 +184,7 @@ class LayerCompositor {
    */
   exportLayerStack(pageIdx) {
     const stack = this.getStack(pageIdx);
-    return stack.layers.map(l => ({
+    return stack.layers.map((l) => ({
       id: l.id,
       name: l.name,
       visible: l.visible,
@@ -202,7 +202,6 @@ class LayerCompositor {
     return [...stack.layers];
   }
 }
-
 
 // ── LayerStack ──────────────────────────────────────────────────
 
@@ -235,7 +234,7 @@ class LayerStack {
   }
 
   removeLayer(layerId) {
-    const idx = this.layers.findIndex(l => l.id === layerId);
+    const idx = this.layers.findIndex((l) => l.id === layerId);
     if (idx === -1) return false;
     const layer = this.layers[idx];
     if (layer.locked) {
@@ -247,11 +246,11 @@ class LayerStack {
   }
 
   getLayer(layerId) {
-    return this.layers.find(l => l.id === layerId) || null;
+    return this.layers.find((l) => l.id === layerId) || null;
   }
 
   reorder(layerId, newIndex) {
-    const oldIdx = this.layers.findIndex(l => l.id === layerId);
+    const oldIdx = this.layers.findIndex((l) => l.id === layerId);
     if (oldIdx === -1) return false;
 
     const clamped = Math.max(0, Math.min(newIndex, this.layers.length - 1));
@@ -263,7 +262,7 @@ class LayerStack {
   resize(width, height) {
     this.width = width;
     this.height = height;
-    this.layers.forEach(layer => {
+    this.layers.forEach((layer) => {
       // Preserve content by copying first
       const tmpCanvas = document.createElement('canvas');
       tmpCanvas.width = layer.canvas.width;
@@ -276,7 +275,6 @@ class LayerStack {
     });
   }
 }
-
 
 // ── Global singleton ────────────────────────────────────────────
 

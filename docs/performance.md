@@ -118,12 +118,25 @@ AI responses use Server-Sent Events streaming, rendering text incrementally rath
 
 ## Test Coverage
 
-As of v1.4.0, Inkflow includes two test suites:
-- `diagram-engine.test.js` — 23 tests covering layout algorithms, Mermaid rendering, node positioning
-- `cursive-connector.test.js` — 27 tests covering exit/entry points, connection rendering, edge cases
+As of v1.5.0, Inkflow includes 9 test suites (2,332 lines):
 
-Run tests via Node.js:
+| Test File | Runner | Lines | Tests |
+|-----------|--------|------:|-------|
+| `markdown-parser.test.js` | Vitest | 472 | 45 |
+| `solution-streaming.test.js` | Vitest | 467 | AI streaming |
+| `contextual-jitter-engine.test.js` | Vitest | 466 | Per-character transforms |
+| `smudge-effects.test.js` | Vitest | 266 | 6 |
+| `doubt-solver.test.js` | Vitest | 201 | AI doubt solver |
+| `collaborative-engine.test.js` | Vitest | 171 | 13 |
+| `diagram-engine.test.js` | Node | 113 | 23 |
+| `cursive-connector.test.js` | Node | 109 | 27 |
+| `stroke-prediction-engine.test.js` | Vitest | 67 | 1 |
+
+Run all tests:
 ```bash
-node cursive-connector.test.js
-node diagram-engine.test.js
+npm test                          # Vitest (7 suites, 128 tests)
+node cursive-connector.test.js    # Standalone (27 tests)
+node diagram-engine.test.js       # Standalone (23 tests)
 ```
+
+**Current pass rate: 178/178 (100%)**

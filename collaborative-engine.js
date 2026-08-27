@@ -1,7 +1,7 @@
 /**
  * collaborative-engine.js
  * Task 13: Real-Time Collaborative Writing
- * 
+ *
  * Implements Operational Transformation (OT) and WebSocket management
  * for multi-user collaborative editing in InkFlow.
  *
@@ -48,9 +48,7 @@ function transformOp(op1, op2) {
     if (op1.position < op2.position) return op1;
     if (op1.position > op2.position) return { ...op1, position: op1.position + op2.char.length };
     // Same position: break tie with userId to ensure all clients agree on ordering.
-    return (op1.userId > op2.userId)
-      ? { ...op1, position: op1.position + op2.char.length }
-      : op1;
+    return op1.userId > op2.userId ? { ...op1, position: op1.position + op2.char.length } : op1;
   }
 
   if (op1.type === 'INSERT' && op2.type === 'DELETE') {
@@ -97,13 +95,13 @@ class CollaborativeEngine {
     this.color = null;
 
     // OT state
-    this.serverRevision = 0;    // Last revision acknowledged from server
-    this.pendingOps = [];        // Ops sent to server but not yet ACKed
-    this.localText = "";         // Our local view of the document text
-    this.users = new Map();      // userId -> { color, cursor }
+    this.serverRevision = 0; // Last revision acknowledged from server
+    this.pendingOps = []; // Ops sent to server but not yet ACKed
+    this.localText = ''; // Our local view of the document text
+    this.users = new Map(); // userId -> { color, cursor }
 
     // Track the last value of the textarea to compute deltas
-    this._lastValue = "";
+    this._lastValue = '';
     this._suppressEvents = false;
 
     this._onInputBound = this._onInput.bind(this);
@@ -121,8 +119,7 @@ class CollaborativeEngine {
     this.onStatusChange('Connecting…', false);
     this.ws = new WebSocket(url);
 
-    this.ws.onopen = () => {
-    };
+    this.ws.onopen = () => {};
 
     this.ws.onmessage = (event) => {
       try {
@@ -240,12 +237,14 @@ class CollaborativeEngine {
 
     this.pendingOps.push(op);
 
-    this.ws.send(JSON.stringify({
-      type: 'OPERATION',
-      operation: outgoing,
-      revision: this.serverRevision,
-      userId: this.userId
-    }));
+    this.ws.send(
+      JSON.stringify({
+        type: 'OPERATION',
+        operation: outgoing,
+        revision: this.serverRevision,
+        userId: this.userId,
+      })
+    );
   }
 
   // ── Private: Server Message Handling ──────────────────────────────────────
@@ -284,7 +283,7 @@ class CollaborativeEngine {
       }
 
       case 'OPERATION': {
-        let serverOp = msg.operation;
+        const serverOp = msg.operation;
         this.serverRevision = msg.revision;
 
         // Transform server op against any still-pending local ops (that the server hasn't seen yet)

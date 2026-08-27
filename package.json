@@ -7,7 +7,14 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "server": "node server.js"
+    "server": "node server.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint index.js font-compilation.js paper-renderer.js text-layout.js export-renderers.js diagram-engine.js cursive-connector.js template-manager.js markdown-parser.js collaborative-engine.js contextual-jitter-engine.js stroke-prediction-engine.js layer-compositor.js audio-recorder.js script-detector.js server.js",
+    "lint:fix": "eslint --fix index.js font-compilation.js paper-renderer.js text-layout.js export-renderers.js diagram-engine.js cursive-connector.js template-manager.js markdown-parser.js collaborative-engine.js contextual-jitter-engine.js stroke-prediction-engine.js layer-compositor.js audio-recorder.js script-detector.js server.js",
+    "format": "prettier --write index.js font-compilation.js paper-renderer.js text-layout.js export-renderers.js diagram-engine.js cursive-connector.js template-manager.js markdown-parser.js collaborative-engine.js contextual-jitter-engine.js stroke-prediction-engine.js layer-compositor.js audio-recorder.js script-detector.js server.js",
+    "format:check": "prettier --check index.js font-compilation.js paper-renderer.js text-layout.js export-renderers.js diagram-engine.js cursive-connector.js template-manager.js markdown-parser.js collaborative-engine.js contextual-jitter-engine.js stroke-prediction-engine.js layer-compositor.js audio-recorder.js script-detector.js server.js"
   },
   "repository": {
     "type": "git",
@@ -25,6 +32,10 @@
     "ws": "^8.21.0"
   },
   "devDependencies": {
-    "vite": "^6.3.5"
+    "eslint": "^10.9.1",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.6",
+    "vite": "^6.3.5",
+    "vitest": "^4.1.11"
   }
 }

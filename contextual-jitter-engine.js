@@ -1,18 +1,18 @@
 /**
  * CONTEXTUAL PER-CHARACTER JITTER ENGINE
- * 
+ *
  * Implements position-aware character variation with:
  * - Line position context (start, end, mid-word)
  * - Progressive baseline fatigue accumulation
  * - Hand-cramping simulation
  * - Fatigue reset at line breaks
- * 
+ *
  * Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8
  */
 
 /**
  * CharacterVariationContext
- * 
+ *
  * Tracks position metadata for characters during rendering.
  * Used to apply contextual variation scaling based on position within a line.
  */
@@ -22,13 +22,13 @@ class CharacterVariationContext {
   }
 
   reset() {
-    this.lineCharCount = 0;        // Total characters in current line
-    this.lineCharIndex = 0;        // Current character position in line
-    this.charCountInLine = 0;      // Total characters accumulated on current line
-    this.isLineStart = false;      // Character is at the beginning of line
-    this.isLineEnd = false;        // Character is at the end of line
-    this.isInWord = false;         // Character is in middle of a word
-    this.fatigueAccumulation = 0;  // Accumulated baseline fatigue in pixels
+    this.lineCharCount = 0; // Total characters in current line
+    this.lineCharIndex = 0; // Current character position in line
+    this.charCountInLine = 0; // Total characters accumulated on current line
+    this.isLineStart = false; // Character is at the beginning of line
+    this.isLineEnd = false; // Character is at the end of line
+    this.isInWord = false; // Character is in middle of a word
+    this.fatigueAccumulation = 0; // Accumulated baseline fatigue in pixels
     this.charsProcessedThisLine = 0; // Counter for fatigue calculation
   }
 
@@ -95,22 +95,22 @@ class CharacterVariationContext {
       pressureScale,
       slantScale,
       spacingScale,
-      fatigueOffset: this.fatigueAccumulation  // For baseline drift
+      fatigueOffset: this.fatigueAccumulation, // For baseline drift
     };
   }
 }
 
 /**
  * Enhanced character variation function with position context
- * 
+ *
  * Generates randomized per-character variation parameters with position-aware scaling.
- * 
+ *
  * @param {number} rotMax - Maximum rotation in degrees
  * @param {number} pressure - Base pressure (0-1)
  * @param {number} fontSize - Font size in pixels
  * @param {CharacterVariationContext} context - Position context (optional)
  * @returns {object} Variation parameters with position-aware scaling applied
- * 
+ *
  * Requirements: 1.1-1.8
  */
 function getCharVariationWithContext(rotMax, pressure, fontSize, context) {
@@ -124,7 +124,7 @@ function getCharVariationWithContext(rotMax, pressure, fontSize, context) {
     scaleX: rand(0.98, 1.02),
     baselineOff: rand(-0.4, 0.4) * k,
     spacingExtra: rand(-0.4, 0.6) * k,
-    pressureMod: 1 - (Math.random() * pressure * 1.4),
+    pressureMod: 1 - Math.random() * pressure * 1.4,
     opacity: rand(0.92, 1.0),
   };
 
@@ -165,6 +165,6 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     CharacterVariationContext,
     getCharVariation,
-    getCharVariationWithContext
+    getCharVariationWithContext,
   };
 }

@@ -3,6 +3,8 @@
  * Requirements: 2.1, 2.6, 2.7
  */
 
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+
 if (typeof global.window === 'undefined') {
   global.window = global;
 }
@@ -101,8 +103,8 @@ describe('Smudge Effects Toggle - UI & State Management', () => {
     mockCheckbox = {
       id: 'smudge-effects-toggle',
       checked: false,
-      addEventListener: jest.fn(),
-      dispatchEvent: jest.fn()
+      addEventListener: vi.fn(),
+      dispatchEvent: vi.fn()
     };
 
     // Mock global state
@@ -113,11 +115,11 @@ describe('Smudge Effects Toggle - UI & State Management', () => {
     // Mock localStorage
     localStorageMock = {
       data: {},
-      getItem: jest.fn((key) => localStorageMock.data[key] || null),
-      setItem: jest.fn((key, value) => {
+      getItem: vi.fn((key) => localStorageMock.data[key] || null),
+      setItem: vi.fn((key, value) => {
         localStorageMock.data[key] = value;
       }),
-      clear: jest.fn(() => {
+      clear: vi.fn(() => {
         localStorageMock.data = {};
       })
     };
@@ -130,7 +132,7 @@ describe('Smudge Effects Toggle - UI & State Management', () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   /**
@@ -226,8 +228,8 @@ describe('Smudge Effects Toggle - UI & State Management', () => {
     const ctx = mockCanvas.getContext('2d');
     
     // Spy on canvas drawing methods
-    const saveSpy = jest.spyOn(ctx, 'save');
-    const fillSpy = jest.spyOn(ctx, 'fill');
+    const saveSpy = vi.spyOn(ctx, 'save');
+    const fillSpy = vi.spyOn(ctx, 'fill');
     
     // Test with smudge effects disabled
     S.smudgeEffects = false;

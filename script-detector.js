@@ -2,7 +2,7 @@
  * SCRIPT DETECTOR ENGINE
  *
  * Implements script detection and font switching for multi-language mixing (Hinglish Support).
- * 
+ *
  * Requirements: 8.1, 8.2, 8.3, 8.6, 8.7
  */
 
@@ -12,7 +12,9 @@ class ScriptDetector {
    * Also checks extended Indic ranges for broader support
    */
   static isIndicScript(text) {
-    return /[\u0900-\u097F\uA8E0-\uA8FF\u1CD0-\u1CFF\u0980-\u09FF\u0A00-\u0A7F\u0A80-\u0AFF\u0B00-\u0B7F\u0B80-\u0BFF\u0C00-\u0C7F\u0C80-\u0CFF\u0D00-\u0D7F\u0D80-\u0DFF]/.test(text);
+    return /[\u0900-\u097F\uA8E0-\uA8FF\u1CD0-\u1CFF\u0980-\u09FF\u0A00-\u0A7F\u0A80-\u0AFF\u0B00-\u0B7F\u0B80-\u0BFF\u0C00-\u0C7F\u0C80-\u0CFF\u0D00-\u0D7F\u0D80-\u0DFF]/.test(
+      text
+    );
   }
 
   /**
@@ -37,8 +39,14 @@ class FontSwitcher {
   constructor() {
     // Fonts known to include Devanagari glyphs
     this.DEVANAGARI_FONTS = new Set([
-      'Kalam', 'Amita', 'Noto Sans Devanagari', 'Noto Serif Devanagari',
-      'Hind', 'Tiro Devanagari Hindi', 'Baloo 2', 'Martel'
+      'Kalam',
+      'Amita',
+      'Noto Sans Devanagari',
+      'Noto Serif Devanagari',
+      'Hind',
+      'Tiro Devanagari Hindi',
+      'Baloo 2',
+      'Martel',
     ]);
   }
 
@@ -86,22 +94,22 @@ class FontSwitcher {
     for (let i = 0; i < graphemes.length; i++) {
       const ch = graphemes[i];
       let scriptClass = ScriptDetector.classifyChar(ch);
-      
+
       if (scriptClass === 'neutral') {
         scriptClass = this.resolveNeutralScript(graphemes, i, fallback);
       }
-      
+
       if (activeScript === null) {
         activeScript = scriptClass;
         buffer = ch;
         continue;
       }
-      
+
       if (scriptClass === activeScript) {
         buffer += ch;
         continue;
       }
-      
+
       // Transition point found
       runs.push({ text: buffer, isIndic: activeScript === 'indic' });
       activeScript = scriptClass;

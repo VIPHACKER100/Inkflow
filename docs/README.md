@@ -2,7 +2,7 @@
 
 Welcome to the **Inkflow** documentation hub. This folder contains all technical, design, and operational documentation for the project.
 
-**Current Version**: 1.4.0 — Diagram System, Cursive Mode, Transparent Export, Dated Paper
+**Current Version**: 1.5.0 — Modular Architecture, 4 Extracted Modules, 16 JS Files
 
 ---
 
@@ -51,7 +51,8 @@ Welcome to the **Inkflow** documentation hub. This folder contains all technical
 ## 🔗 Quick Links
 
 - **Live App**: Open `index.html` in any modern browser
-- **Source Code**: `index.html` · `index.css` · `index.js` · `diagram-engine.js` · `cursive-connector.js`
+- **Source Code**: `index.js` (3,765 lines) + 15 modules (3,152 lines) = 6,917 total JS lines
+- **Modules**: `font-compilation.js` · `paper-renderer.js` · `text-layout.js` · `export-renderers.js` · `diagram-engine.js` · `cursive-connector.js` · `template-manager.js` · `markdown-parser.js` · `collaborative-engine.js` · `contextual-jitter-engine.js` · `stroke-prediction-engine.js` · `layer-compositor.js` · `audio-recorder.js` · `script-detector.js` · `server.js`
 - **Creator**: Aryan Ahirwar (VIPHACKER.100)
 
 ---

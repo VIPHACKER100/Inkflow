@@ -130,4 +130,6 @@ console.log(`\n${'='.repeat(50)}`);
 console.log(`Results: ${passed} passed, ${failed} failed`);
 console.log(`${'='.repeat(50)}\n`);
 
-process.exit(failed > 0 ? 1 : 0);
+if (typeof process !== 'undefined' && process.exit && typeof vitest === 'undefined') {
+  process.exit(failed > 0 ? 1 : 0);
+}

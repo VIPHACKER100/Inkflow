@@ -1,6 +1,6 @@
 /**
  * MarkdownParser — Parse markdown structure before stripping symbols
- * 
+ *
  * Provides structured data format with:
  * - Text segments with associated Text_Type metadata (heading, body, bullet, emphasis)
  * - Original character positions for coordinate mapping
@@ -15,7 +15,7 @@ class MarkdownParser {
       HEADING: 'heading',
       BODY: 'body',
       BULLET: 'bullet',
-      EMPHASIS: 'emphasis'
+      EMPHASIS: 'emphasis',
     };
   }
 
@@ -42,10 +42,10 @@ class MarkdownParser {
       if (headingMatch) {
         const level = headingMatch[1].length;
         const content = headingMatch[2];
-        
+
         // Extract emphasis from heading content and preserve structure
         const headingSegments = this._parseEmphasisSegments(content, lineStartPos + headingMatch[1].length + 1);
-        
+
         // If no emphasis found, treat whole heading as one segment
         if (headingSegments.length === 0 || (headingSegments.length === 1 && headingSegments[0].type === null)) {
           segments.push({
@@ -55,18 +55,18 @@ class MarkdownParser {
             startPos: lineStartPos + headingMatch[1].length + 1,
             endPos: lineStartPos + line.length,
             originalStartPos: lineStartPos,
-            originalEndPos: lineStartPos + line.length
+            originalEndPos: lineStartPos + line.length,
           });
         } else {
           // Add heading segments with emphasis information
-          headingSegments.forEach(seg => {
+          headingSegments.forEach((seg) => {
             if (seg.type === this.TEXT_TYPES.EMPHASIS) {
               segments.push({
                 ...seg,
                 type: this.TEXT_TYPES.EMPHASIS,
                 level: level,
                 originalStartPos: lineStartPos,
-                originalEndPos: lineStartPos + line.length
+                originalEndPos: lineStartPos + line.length,
               });
             } else if (seg.text && seg.text.trim().length > 0) {
               segments.push({
@@ -74,7 +74,7 @@ class MarkdownParser {
                 type: this.TEXT_TYPES.HEADING,
                 level: level,
                 originalStartPos: lineStartPos,
-                originalEndPos: lineStartPos + line.length
+                originalEndPos: lineStartPos + line.length,
               });
             }
           });
@@ -84,10 +84,10 @@ class MarkdownParser {
         const bulletMatch = line.match(/^([-*])\s+(.*)$/);
         if (bulletMatch) {
           const content = bulletMatch[2];
-          
+
           // Extract emphasis from bullet content
           const bulletSegments = this._parseEmphasisSegments(content, lineStartPos + bulletMatch[1].length + 1);
-          
+
           if (bulletSegments.length === 0 || (bulletSegments.length === 1 && bulletSegments[0].type === null)) {
             segments.push({
               text: content,
@@ -95,23 +95,23 @@ class MarkdownParser {
               startPos: lineStartPos + bulletMatch[1].length + 1,
               endPos: lineStartPos + line.length,
               originalStartPos: lineStartPos,
-              originalEndPos: lineStartPos + line.length
+              originalEndPos: lineStartPos + line.length,
             });
           } else {
-            bulletSegments.forEach(seg => {
+            bulletSegments.forEach((seg) => {
               if (seg.type === this.TEXT_TYPES.EMPHASIS) {
                 segments.push({
                   ...seg,
                   type: this.TEXT_TYPES.EMPHASIS,
                   originalStartPos: lineStartPos,
-                  originalEndPos: lineStartPos + line.length
+                  originalEndPos: lineStartPos + line.length,
                 });
               } else if (seg.text && seg.text.trim().length > 0) {
                 segments.push({
                   ...seg,
                   type: this.TEXT_TYPES.BULLET,
                   originalStartPos: lineStartPos,
-                  originalEndPos: lineStartPos + line.length
+                  originalEndPos: lineStartPos + line.length,
                 });
               }
             });
@@ -120,7 +120,7 @@ class MarkdownParser {
           // Parse body text (may contain emphasis)
           if (line.trim().length > 0) {
             const bodySegments = this._parseEmphasisSegments(line, lineStartPos);
-            
+
             if (bodySegments.length === 0 || (bodySegments.length === 1 && bodySegments[0].type === null)) {
               segments.push({
                 text: line,
@@ -128,23 +128,23 @@ class MarkdownParser {
                 startPos: lineStartPos,
                 endPos: lineStartPos + line.length,
                 originalStartPos: lineStartPos,
-                originalEndPos: lineStartPos + line.length
+                originalEndPos: lineStartPos + line.length,
               });
             } else {
-              bodySegments.forEach(seg => {
+              bodySegments.forEach((seg) => {
                 if (seg.type === this.TEXT_TYPES.EMPHASIS) {
                   segments.push({
                     ...seg,
                     type: this.TEXT_TYPES.EMPHASIS,
                     originalStartPos: lineStartPos,
-                    originalEndPos: lineStartPos + line.length
+                    originalEndPos: lineStartPos + line.length,
                   });
                 } else if (seg.text && seg.text.trim().length > 0) {
                   segments.push({
                     ...seg,
                     type: this.TEXT_TYPES.BODY,
                     originalStartPos: lineStartPos,
-                    originalEndPos: lineStartPos + line.length
+                    originalEndPos: lineStartPos + line.length,
                   });
                 }
               });
@@ -169,19 +169,19 @@ class MarkdownParser {
    */
   _parseEmphasisSegments(text, basePos = 0) {
     const segments = [];
-    
+
     // Pattern matches *text*, _text_, **text**, __text__ with content inside
     // First try double markers, then single markers to avoid confusion
     const patterns = [
       { regex: /\*\*(.+?)\*\*/g, type: 'bold', marker: '**' },
       { regex: /__(.+?)__/g, type: 'bold', marker: '__' },
       { regex: /\*(.+?)\*/g, type: 'italic', marker: '*' },
-      { regex: /_(.+?)_/g, type: 'italic', marker: '_' }
+      { regex: /_(.+?)_/g, type: 'italic', marker: '_' },
     ];
-    
+
     let lastIndex = 0;
-    let matches = [];
-    
+    const matches = [];
+
     // Find all emphasis matches across all patterns
     for (const { regex, type, marker } of patterns) {
       let match;
@@ -192,26 +192,27 @@ class MarkdownParser {
           text: match[1],
           type: type,
           marker: marker,
-          fullMatch: match[0]
+          fullMatch: match[0],
         });
       }
     }
-    
+
     // Sort by index to process in order
     matches.sort((a, b) => a.index - b.index);
-    
+
     // Remove overlapping matches (keep first occurrence)
     const nonOverlapping = [];
     for (const m of matches) {
-      const overlaps = nonOverlapping.some(existing => 
-        (m.index >= existing.index && m.index < existing.endIndex) ||
-        (m.endIndex > existing.index && m.endIndex <= existing.endIndex)
+      const overlaps = nonOverlapping.some(
+        (existing) =>
+          (m.index >= existing.index && m.index < existing.endIndex) ||
+          (m.endIndex > existing.index && m.endIndex <= existing.endIndex)
       );
       if (!overlaps) {
         nonOverlapping.push(m);
       }
     }
-    
+
     lastIndex = 0;
     for (const m of nonOverlapping) {
       // Add text before this emphasis if any
@@ -219,10 +220,10 @@ class MarkdownParser {
         const beforeText = text.substring(lastIndex, m.index);
         segments.push({
           text: beforeText,
-          type: null,  // No emphasis
+          type: null, // No emphasis
           startPos: basePos + lastIndex,
           endPos: basePos + m.index,
-          isEmphasis: false
+          isEmphasis: false,
         });
       }
 
@@ -235,7 +236,7 @@ class MarkdownParser {
         endPos: basePos + m.endIndex - m.marker.length,
         originalStartPos: basePos + m.index,
         originalEndPos: basePos + m.endIndex,
-        isEmphasis: true
+        isEmphasis: true,
       });
 
       lastIndex = m.endIndex;
@@ -249,7 +250,7 @@ class MarkdownParser {
         type: null,
         startPos: basePos + lastIndex,
         endPos: basePos + text.length,
-        isEmphasis: false
+        isEmphasis: false,
       });
     }
 
@@ -302,39 +303,45 @@ class MarkdownParser {
     if (lineSegments.length === 0) return '';
 
     // Get the type from the first meaningful segment
-    const firstTypedSegment = lineSegments.find(s => s.type !== null);
-    
+    const firstTypedSegment = lineSegments.find((s) => s.type !== null);
+
     let result = '';
-    
+
     if (firstTypedSegment && firstTypedSegment.type === this.TEXT_TYPES.HEADING) {
       const level = firstTypedSegment.level || 1;
       const marker = '#'.repeat(level);
-      const content = lineSegments.map(seg => {
-        if (seg.type === this.TEXT_TYPES.EMPHASIS) {
-          const m = seg.emphasisType === 'bold' ? '**' : '*';
-          return `${m}${seg.text}${m}`;
-        }
-        return seg.text;
-      }).join('');
+      const content = lineSegments
+        .map((seg) => {
+          if (seg.type === this.TEXT_TYPES.EMPHASIS) {
+            const m = seg.emphasisType === 'bold' ? '**' : '*';
+            return `${m}${seg.text}${m}`;
+          }
+          return seg.text;
+        })
+        .join('');
       result = `${marker} ${content}`;
     } else if (firstTypedSegment && firstTypedSegment.type === this.TEXT_TYPES.BULLET) {
-      const content = lineSegments.map(seg => {
-        if (seg.type === this.TEXT_TYPES.EMPHASIS) {
-          const m = seg.emphasisType === 'bold' ? '**' : '*';
-          return `${m}${seg.text}${m}`;
-        }
-        return seg.text;
-      }).join('');
+      const content = lineSegments
+        .map((seg) => {
+          if (seg.type === this.TEXT_TYPES.EMPHASIS) {
+            const m = seg.emphasisType === 'bold' ? '**' : '*';
+            return `${m}${seg.text}${m}`;
+          }
+          return seg.text;
+        })
+        .join('');
       result = `- ${content}`;
     } else {
       // Body text (may contain emphasis)
-      result = lineSegments.map(seg => {
-        if (seg.type === this.TEXT_TYPES.EMPHASIS) {
-          const m = seg.emphasisType === 'bold' ? '**' : '*';
-          return `${m}${seg.text}${m}`;
-        }
-        return seg.text;
-      }).join('');
+      result = lineSegments
+        .map((seg) => {
+          if (seg.type === this.TEXT_TYPES.EMPHASIS) {
+            const m = seg.emphasisType === 'bold' ? '**' : '*';
+            return `${m}${seg.text}${m}`;
+          }
+          return seg.text;
+        })
+        .join('');
     }
 
     return result;
@@ -381,7 +388,7 @@ class MarkdownParser {
       return '';
     }
 
-    return segments.map(seg => seg.text).join('');
+    return segments.map((seg) => seg.text).join('');
   }
 
   /**
@@ -412,7 +419,7 @@ class MarkdownParser {
           endPos: segment.endPos,
           originalStartPos: segment.originalStartPos,
           originalEndPos: segment.originalEndPos,
-          segments: [segment]
+          segments: [segment],
         };
       } else {
         // Append to current line

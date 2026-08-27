@@ -54,9 +54,22 @@ npx -y http-server -p 8000
 inkflow/
 ├── index.html              # Main HTML structure and CDN imports
 ├── index.css               # Complete stylesheet with design tokens
-├── index.js                # All application logic and engines
-├── diagram-engine.js       # Diagram layout algorithms, Mermaid rendering, rough.js shapes
+├── index.js                # Application core (UI, state, AI, animation)
+├── font-compilation.js     # Contour tracing, RDP simplification, OpenType compilation
+├── paper-renderer.js       # 10 paper styles, smudge effects, layout decorations
+├── text-layout.js          # sanitizeText, parseBlocks, getGraphemes
+├── export-renderers.js     # Queue item rendering, cursive connections on canvas
+├── diagram-engine.js       # Diagram layout algorithms, Mermaid rendering
 ├── cursive-connector.js    # Cursive mode exit/entry points, Bezier connections
+├── template-manager.js     # Cornell/Two-Column layout templates
+├── markdown-parser.js      # Markdown tokenization for AI output
+├── collaborative-engine.js # WebSocket real-time collaboration
+├── contextual-jitter-engine.js # Per-character randomized transforms
+├── stroke-prediction-engine.js # Stroke completion prediction
+├── layer-compositor.js     # Multi-layer canvas compositing
+├── audio-recorder.js       # Audio recording, waveform visualization
+├── script-detector.js      # Unicode script detection
+├── server.js               # Node.js proxy server (optional)
 ├── LICENSE                 # Project license
 └── docs/                   # Documentation (you are here)
     ├── README.md           # Documentation index
