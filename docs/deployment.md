@@ -1,6 +1,10 @@
+<p align="center">
+  <img src="../inkflow_logo.jpeg" alt="Inkflow Logo" width="80" style="border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+</p>
+
 # 🌐 Deployment Guide
 
-Inkflow is a fully static, client-side web application. There is no build step, no server, and no backend — deployment is just serving four files.
+Inkflow is a fully static, client-side web application. There is no build step, no server, and no backend — deployment is just serving the static app files.
 
 ---
 

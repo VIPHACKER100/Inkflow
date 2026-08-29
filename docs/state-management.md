@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="../inkflow_logo.jpeg" alt="Inkflow Logo" width="80" style="border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+</p>
+
 # 💾 State Management & Hydration
 
 This document describes Inkflow's global state schema, the hydration/persistence lifecycle, the debounced autosave mechanism, and the dual persistence stores (`localStorage` + IndexedDB).
@@ -53,19 +57,19 @@ Inkflow uses two browser storage backends:
 
 ```mermaid
 sequenceDiagram
-    participant Boot as App Boot (initApp)
-    participant DB as IndexedDB (InkflowDB)
-    participant LS as localStorage
-    participant State as Global State S
-    participant UI as DOM Controls
-    participant Canvas as Canvas Renderer
-    participant Editors as Page Editors
+    participant Boot as "App Boot (initApp)"
+    participant DB as "IndexedDB (InkflowDB)"
+    participant LS as "localStorage"
+    participant State as "Global State S"
+    participant UI as "DOM Controls"
+    participant Canvas as "Canvas Renderer"
+    participant Editors as "Page Editors"
 
-    Boot->>DB: Open 'InkflowDB' → load all draftedGlyphs
+    Boot->>DB: Open 'InkflowDB' -> load all draftedGlyphs
     DB->>State: Hydrate custom glyphs dict
     Boot->>LS: Read 'inkflow-state'
     alt State exists
-        LS->>State: Parse JSON → Hydrate settings in S
+        LS->>State: Parse JSON -> Hydrate settings in S
         State->>UI: Sync sliders, dropdowns, textareas, selects
         alt Legacy glyphs found in localStorage
             State->>DB: Migrate legacy glyphs to IndexedDB
@@ -74,20 +78,20 @@ sequenceDiagram
     else No saved state
         Boot->>State: Initialize with defaults
     end
-    State->>DB: pruneBlankGlyphs() — drop entries with no visible ink
+    State->>DB: pruneBlankGlyphs() - drop entries with no visible ink
     State->>Canvas: renderText(S.text)
     Canvas->>Editors: Sync pageTexts to editor overlays
 
     Boot->>DB: Load notebooks store
     DB->>State: Create 'welcome-note' if empty; select active notebook
-    State->>Canvas: loadNotebook(activeId) → renderText(content)
+    State->>Canvas: loadNotebook(activeId) -> renderText(content)
 
     loop On User Input (textarea, page editor, voice, AI)
         UI->>State: Update S property
         State->>Canvas: debounceRender() (280ms)
         Canvas->>Editors: Sync pageTexts
-        State->>LS: autosave() → JSON.stringify settings (1000ms)
-        State->>DB: autosave() → update active notebook record
+        State->>LS: autosave() -> JSON.stringify settings (1000ms)
+        State->>DB: autosave() -> update active notebook record
     end
 
     loop On HandFonted Sketch

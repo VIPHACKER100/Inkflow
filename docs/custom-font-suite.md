@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="../inkflow_logo.jpeg" alt="Inkflow Logo" width="80" style="border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+</p>
+
 # 🔤 Custom Font Suite (HandFonted Studio)
 
 This document describes the HandFonted Custom Font Suite — the template grid generator, raster-to-vector tracing pipeline, RDP curve simplification, and OpenType font compiler.
@@ -18,14 +22,14 @@ The HandFonted Custom Font Suite operates completely inside the browser sandbox 
 
 ```mermaid
 flowchart TD
-    A[Sketch on Canvas OR Upload Handwriting Scan] -->|Sketchpad strokes / aligned crop| B[Slice into 8x8 grid cells]
-    B -->|Crop grid cell to temp canvas + clear label| C[Isolate characters & threshold ink]
-    C -->|Blank-cell guard isCellBlank| D[Moore-Neighbor Contour Tracing]
-    D -->|Coordinate path arrays| E[Ramer-Douglas-Peucker Simplification]
-    E -->|tolerance 0.85| F[Smoothed Vector Paths]
-    F -->|Scale to 1000 UPM em box| G[OpenType Glyph Compiler]
-    G -->|opentype.js lazy-loaded| H[Compile TrueType Font File]
-    H -->|Generate Blob URL| I[CSS FontFace dynamic registration]
+    A["Sketch on Canvas OR Upload Handwriting Scan"] -->|"Sketchpad strokes / aligned crop"| B["Slice into 8x8 grid cells"]
+    B -->|"Crop grid cell to temp canvas + clear label"| C["Isolate characters & threshold ink"]
+    C -->|"Blank-cell guard isCellBlank"| D["Moore-Neighbor Contour Tracing"]
+    D -->|"Coordinate path arrays"| E["Ramer-Douglas-Peucker Simplification"]
+    E -->|"tolerance 0.85"| F["Smoothed Vector Paths"]
+    F -->|"Scale to 1000 UPM em box"| G["OpenType Glyph Compiler"]
+    G -->|"opentype.js lazy-loaded"| H["Compile TrueType Font File"]
+    H -->|"Generate Blob URL"| I["CSS FontFace dynamic registration"]
 ```
 
 ---

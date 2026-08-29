@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="../inkflow_logo.jpeg" alt="Inkflow Logo" width="80" style="border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+</p>
+
 # 📤 Export Pipelines
 
 This document describes Inkflow's multi-format export system — 2×-upscaled PNG/JPG image export, SVG vector wrapper, lossless multi-page PDF, clipboard copy, and native print support.
@@ -8,14 +12,14 @@ This document describes Inkflow's multi-format export system — 2×-upscaled PN
 
 ```mermaid
 graph LR
-    A[Rendered A4 Canvas Pages] --> UP[_upscaleCanvas 2x]
-    UP --> B{Export Selection}
-    B -->|canvas.toBlob PNG/JPG| C[High-Res Images]
-    B -->|SVG wrapping PNG embed| D[SVG Vector Files]
-    B -->|jsPDF A4 scaling| E[Multi-page PDF]
-    B -->|Clipboard API| F[Copy to Clipboard]
-    B -->|Browser print| G[Direct Print]
-    C --> H[Blob URL → triggerDownload]
+    A["Rendered A4 Canvas Pages"] --> UP["_upscaleCanvas 2x"]
+    UP --> B{"Export Selection"}
+    B -->|"canvas.toBlob PNG/JPG"| C["High-Res Images"]
+    B -->|"SVG wrapping PNG embed"| D["SVG Vector Files"]
+    B -->|"jsPDF A4 scaling"| E["Multi-page PDF"]
+    B -->|"Clipboard API"| F["Copy to Clipboard"]
+    B -->|"Browser print"| G["Direct Print"]
+    C --> H["Blob URL -> triggerDownload"]
     D --> H
 ```
 

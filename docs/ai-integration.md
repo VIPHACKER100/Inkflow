@@ -1,12 +1,16 @@
+<p align="center">
+  <img src="../inkflow_logo.jpeg" alt="Inkflow Logo" width="80" style="border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+</p>
+
 # 🤖 AI Integration
 
-This document describes Inkflow's multi-provider AI integration with SSE streaming support.
+This document describes Inkflow's multi-provider AI integration (OpenRouter, Anthropic, and local Ollama) with SSE streaming support.
 
 ---
 
 ## Connection Details
 
-Inkflow supports two primary AI backends. Users select their provider and model from the UI dropdowns.
+Inkflow supports three AI backends (OpenRouter, Anthropic Claude, and local private Ollama). Users select their provider and model from the UI dropdowns.
 
 ### 🌐 OpenRouter (Primary)
 - **URL**: `https://openrouter.ai/api/v1/chat/completions`

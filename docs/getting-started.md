@@ -1,6 +1,10 @@
+<p align="center">
+  <img src="../inkflow_logo.jpeg" alt="Inkflow Logo" width="80" style="border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+</p>
+
 # 🚀 Getting Started with Inkflow
 
-Welcome to **Inkflow v1.5.0** — a single-file Progressive Web App (PWA) that turns plain text into beautiful, handwritten-style notes with built-in AI (OpenRouter, Anthropic, and local Ollama).
+Welcome to **Inkflow v1.6.1** — a single-file Progressive Web App (PWA) that turns plain text into beautiful, handwritten-style notes with built-in AI (OpenRouter, Anthropic, and local Ollama).
 
 ---
 

@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="../inkflow_logo.jpeg" alt="Inkflow Logo" width="90" style="border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+</p>
+
 # 📖 Inkflow Documentation
 
 Welcome to the **Inkflow** documentation hub. This folder contains all technical, design, and operational documentation for the project.

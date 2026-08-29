@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="../inkflow_logo.jpeg" alt="Inkflow Logo" width="80" style="border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+</p>
+
 # 🖱️ UX Interactions & User Flows
 
 This document maps the user-facing interactions in Inkflow to the functions and flows behind them.

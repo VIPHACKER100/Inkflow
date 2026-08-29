@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="../inkflow_logo.jpeg" alt="Inkflow Logo" width="80" style="border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+</p>
+
 # 📋 Changelog
 
 All notable changes to Inkflow are documented in this file.
@@ -7,6 +11,7 @@ All notable changes to Inkflow are documented in this file.
 ## [1.6.1] — 2026-08-29
 
 ### 🐛 Fixed
+- **Clean Notes Ruled Grid Line Alignment**: Fixed line drift in `layoutTextCleanStandard` by locking all block transitions, word wraps, and heading heights to the exact notebook paper grid line height (`fontSize × lineHeight`), ensuring text lines never cross or drift away from the blue ruled notebook lines.
 - **Clean Handwriting & Glyph Connection Fix**: Removed synthetic Bézier curve ligature drawing post-pass that generated unwanted drooping ink drop artifacts and sagging loops underneath cursive characters (e.g. *Caveat*, *Kalam*, *Nanum Pen Script*). Relying on native font vector outlines and OpenType cursive joins for crisp, realistic handwriting without artifacts.
 - **Service Worker Cache Eviction**: Upgraded `CACHE_VERSION` to `inkflow-v1.5.2` in `sw.js` and added cache-busting query parameter `?v=1.5.2` to `index.js` in `index.html` to ensure immediate asset updates.
 

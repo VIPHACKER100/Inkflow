@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="../inkflow_logo.jpeg" alt="Inkflow Logo" width="80" style="border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+</p>
+
 # 🏛️ System Architecture
 
 This document outlines the **high-level system architecture**, **component layers**, and **data flow** of the Inkflow Handwritten Notes Generator.
@@ -16,71 +20,71 @@ The application's structural components are divided into four primary layers:
 
 ```mermaid
 graph TD
-    subgraph UI_Layer [User Interface Layer]
-        A[Control Console / Sidebar]
-        B[Floating Top Toolbar]
-        C[Canvas Viewport + Page Editors]
-        D[Floating Pagination Controls]
-        T[Modals: HandFonted Studio, Flashcards]
+    subgraph UI_Layer ["User Interface Layer"]
+        A["Control Console / Sidebar"]
+        B["Floating Top Toolbar"]
+        C["Canvas Viewport + Page Editors"]
+        D["Floating Pagination Controls"]
+        T["Modals: HandFonted Studio, Flashcards"]
     end
 
-    subgraph State_Layer [State Management Layer]
-        E[Global State Object S]
-        F[Debounced Autosave Module]
-        G[LocalStorage Interface]
-        R[IndexedDB: draftedGlyphs store]
-        N[IndexedDB: notebooks store]
+    subgraph State_Layer ["State Management Layer"]
+        E["Global State Object S"]
+        F["Debounced Autosave Module"]
+        G["LocalStorage Interface"]
+        R["IndexedDB: draftedGlyphs store"]
+        N["IndexedDB: notebooks store"]
     end
 
-    subgraph Engine_Layer [Core Execution Engines]
-        H[Paper Renderer]
-        I[Glyph Variation Engine]
-        J[layoutText — Unified Layout Engine]
-        K[Writing Queue & Animation Engine]
-        L[Page Editor Sync Layer]
-        U[Rich Syntax Parser — stickies / callouts / highlights / flashcards]
-        V[Clean Structured Layout Engine]
+    subgraph Engine_Layer ["Core Execution Engines"]
+        H["Paper Renderer"]
+        I["Glyph Variation Engine"]
+        J["layoutText — Unified Layout Engine"]
+        K["Writing Queue & Animation Engine"]
+        L["Page Editor Sync Layer"]
+        U["Rich Syntax Parser (stickies/callouts/highlights)"]
+        V["Clean Structured Layout Engine"]
     end
 
-    subgraph External_Layer [Integration & Export Services]
-        M[OpenRouter / Anthropic Claude API — SSE Streaming]
-        O[jsPDF Multi-Page Document Compiler]
-        P[Clipboard API — Copy as PNG]
-        Q[OS Print Spooler]
-        W[Web Speech API — Voice to Notes]
-        X[Blob URL Export — PNG / JPG / SVG / TTF]
+    subgraph External_Layer ["Integration & Export Services"]
+        M["OpenRouter / Anthropic Claude API (SSE Streaming)"]
+        O["jsPDF Multi-Page Document Compiler"]
+        P["Clipboard API — Copy as PNG"]
+        Q["OS Print Spooler"]
+        W["Web Speech API — Voice to Notes"]
+        X["Blob URL Export — PNG / JPG / SVG / TTF"]
     end
 
-    A -->|User Input Events| E
-    B -->|Action Controls| E
-    E -->|State Synchronization| F
-    F -->|Serialized Save| G
-    G -->|State Hydration| E
-    R -->|Glyph Data Hydration| E
-    N -->|Notebook Hydration / Persistence| E
+    A -->|"User Input Events"| E
+    B -->|"Action Controls"| E
+    E -->|"State Synchronization"| F
+    F -->|"Serialized Save"| G
+    G -->|"State Hydration"| E
+    R -->|"Glyph Data Hydration"| E
+    N -->|"Notebook Hydration / Persistence"| E
 
-    E -->|Render Triggers| H
-    E -->|Transform Configs| I
-    E -->|Spacing / Size Controls| J
-    E -->|Speed & Mode Controls| K
-    E -->|Syntax Array Feeds| U
-    U -->|Parsed Stickies/Callouts/Highlights| J
+    E -->|"Render Triggers"| H
+    E -->|"Transform Configs"| I
+    E -->|"Spacing / Size Controls"| J
+    E -->|"Speed & Mode Controls"| K
+    E -->|"Syntax Array Feeds"| U
+    U -->|"Parsed Stickies/Callouts/Highlights"| J
 
-    H -->|Paint Canvas Backgrounds| C
-    I -->|Matrix Transforms| C
-    J -->|Char Queue + Page Texts| K
-    J -->|Char Queue| L
-    K -->|RAF Loop & Vector Pen Positioning| C
-    L -->|Editor innerText Sync| C
+    H -->|"Paint Canvas Backgrounds"| C
+    I -->|"Matrix Transforms"| C
+    J -->|"Char Queue + Page Texts"| K
+    J -->|"Char Queue"| L
+    K -->|"RAF Loop & Vector Pen Positioning"| C
+    L -->|"Editor innerText Sync"| C
 
-    A -->|AI Action Requests + SSE stream| M
-    M -->|Incremental Text Chunks| E
-    A -->|Voice Transcripts| W
-    W -->|Appended Text| E
-    C -->|canvas.toBlob() 2x upscaled| X
-    C -->|Lossless PNG → jsPDF| O
-    C -->|canvas.toBlob() PNG| P
-    C -->|Print Style Overrides| Q
+    A -->|"AI Action Requests + SSE stream"| M
+    M -->|"Incremental Text Chunks"| E
+    A -->|"Voice Transcripts"| W
+    W -->|"Appended Text"| E
+    C -->|"canvas.toBlob() 2x upscaled"| X
+    C -->|"Lossless PNG -> jsPDF"| O
+    C -->|"canvas.toBlob() PNG"| P
+    C -->|"Print Style Overrides"| Q
 ```
 
 ---
@@ -105,19 +109,19 @@ External integrations for AI text generation (OpenRouter + Anthropic, SSE stream
 
 ```mermaid
 graph LR
-    INPUT[Text Input / AI Chunk / Voice Transcript] --> SANITIZE[sanitizeText]
-    SANITIZE --> RICH[parseRichSyntax — strip stickies/callouts/highlights/flashcards]
-    RICH --> LAYOUT[layoutText]
+    INPUT["Text Input / AI Chunk / Voice Transcript"] --> SANITIZE["sanitizeText"]
+    SANITIZE --> RICH["parseRichSyntax (stickies / callouts / highlights)"]
+    RICH --> LAYOUT["layoutText"]
     LAYOUT --> QUEUE["queue[] — char positions & variations"]
     LAYOUT --> PAGETEXTS["pageTexts[] — text per page"]
-    LAYOUT --> PAGECOUNT[pageCount]
+    LAYOUT --> PAGECOUNT["pageCount"]
 
-    QUEUE --> STATIC[renderText — static canvas draw]
-    QUEUE --> ANIM[startAnimation — RAF loop]
-    QUEUE --> STICKY[paintStickyNotes]
-    QUEUE --> CALLOUT[paintCallouts]
-    PAGETEXTS --> EDITORS[Page Editor innerText sync]
-    PAGECOUNT --> PAGES[createPage — canvas allocation]
+    QUEUE --> STATIC["renderText — static canvas draw"]
+    QUEUE --> ANIM["startAnimation — RAF loop"]
+    QUEUE --> STICKY["paintStickyNotes"]
+    QUEUE --> CALLOUT["paintCallouts"]
+    PAGETEXTS --> EDITORS["Page Editor innerText sync"]
+    PAGECOUNT --> PAGES["createPage — canvas allocation"]
 ```
 
 ---

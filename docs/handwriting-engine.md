@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="../inkflow_logo.jpeg" alt="Inkflow Logo" width="80" style="border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+</p>
+
 # ✒️ Handwriting Synthesis Engine
 
 This document details Inkflow's core handwriting rendering algorithm — the unified layout engine, per-character transformation loop, glyph variation system, ink bleed simulation, Indic script support, rich study syntax, and word-wrap calculations.
@@ -170,21 +174,21 @@ if (wordIsIndic) {
 
 ```mermaid
 flowchart TD
-    A[Start parsing word list] --> B[Split text into word arrays]
-    B --> C[Isolate word and split explicit newlines]
-    C --> D[Detect Indic script — containsDevanagari]
-    D --> E[Build font stack — getFontStack]
-    E --> F[Measure word width on offscreen context]
-    F --> G{x + wordWidth > PageWidth - Margin?}
-    G -->|Yes| H[Reset x to Margin, Advance y by LineHeight, reset lineCharIndex]
-    G -->|No| I[Keep current coordinates]
-    H --> J{y + LineHeight > PageHeight - Margin?}
-    I --> K[Render individual characters / Indic word block]
-    J -->|Yes| L[Increment pageIdx, reset y to second line of new page]
-    J -->|No| K
+    A["Start parsing word list"] --> B["Split text into word arrays"]
+    B --> C["Isolate word and split explicit newlines"]
+    C --> D["Detect Indic script (containsDevanagari)"]
+    D --> E["Build font stack (getFontStack)"]
+    E --> F["Measure word width on offscreen context"]
+    F --> G{"x + wordWidth > PageWidth - Margin?"}
+    G -->|"Yes"| H["Reset x to Margin, Advance y by LineHeight, reset lineCharIndex"]
+    G -->|"No"| I["Keep current coordinates"]
+    H --> J{"y + LineHeight > PageHeight - Margin?"}
+    I --> K["Render individual characters / Indic word block"]
+    J -->|"Yes"| L["Increment pageIdx, reset y to second line of new page"]
+    J -->|"No"| K
     L --> K
-    K --> M[Advance x coordinate by character width + spacing]
-    M --> N[Next Word]
+    K --> M["Advance x coordinate by character width + spacing"]
+    M --> N["Next Word"]
 ```
 
 ### Synthesis Algorithm Summary

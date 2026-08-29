@@ -2005,8 +2005,12 @@ function layoutTextCleanStandard(cleanText, S, PAGE_W, PAGE_H, ctx) {
   let stickyCounter = 0;
   let calloutCounter = 0;
 
-  // Skipped top line: start at margin + 2 * lineH (matching ruled grid lines)
-  let y = margin + (S.fontSize * S.lineHeight) * 2;
+  // Grid line height of notebook ruled paper
+  const gridLineH = S.fontSize * S.lineHeight;
+
+  // Skipped top line: start at margin + 2 * gridLineH (matching ruled grid lines)
+  let y = margin + gridLineH * 2;
+  const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
 
   for (let bi = 0; bi < blocks.length; bi++) {
     const block = blocks[bi];
@@ -2015,51 +2019,14 @@ function layoutTextCleanStandard(cleanText, S, PAGE_W, PAGE_H, ctx) {
     let blockFontSize = S.fontSize;
     let isBold = false;
     if (block.type === 'heading') {
-      blockFontSize = Math.round(S.fontSize * 1.35);
+      blockFontSize = Math.round(S.fontSize * 1.25);
       isBold = true;
     } else if (block.type === 'subheading') {
-      blockFontSize = Math.round(S.fontSize * 1.15);
+      blockFontSize = Math.round(S.fontSize * 1.12);
       isBold = true;
     } else if (block.type === 'question') {
       blockFontSize = Math.round(S.fontSize * 1.05);
       isBold = true;
-    }
-
-    const lineH = blockFontSize * S.lineHeight;
-    const alignOffset = getAlignmentOffset(S.textAlignment, blockFontSize, S.lineHeight);
-
-    // Spacings
-    let topSp = 10;
-    let botSp = 10;
-    if (block.type === 'heading') {
-      topSp = 24;
-      botSp = 8;
-    } else if (block.type === 'subheading') {
-      topSp = 18;
-      botSp = 6;
-    } else if (block.type === 'question') {
-      topSp = 16;
-      botSp = 8;
-    } else if (block.type === 'bullet') {
-      topSp = 4;
-      botSp = 4;
-    } else if (block.type === 'paragraph') {
-      topSp = 12;
-      botSp = 8;
-    }
-
-    // Apply top spacing (unless we are at the top of a page)
-    const isPageTop = Math.abs(y - (margin + (S.fontSize * S.lineHeight) * 2)) < 1 || Math.abs(y - (margin + (blockFontSize * S.lineHeight) * 2)) < 1;
-    if (!isPageTop) {
-      y += topSp;
-    }
-
-    // Page break check before starting the block
-    if (y + lineH > PAGE_H - margin) {
-      pageTexts.push(currentPageText);
-      currentPageText = '';
-      pageIdx++;
-      y = margin + (blockFontSize * S.lineHeight) * 2;
     }
 
     // Set left and right boundaries
@@ -2131,13 +2098,13 @@ function layoutTextCleanStandard(cleanText, S, PAGE_W, PAGE_H, ctx) {
       // Word wrap check
       if (x + wordWidth > rightMargin && x > leftBoundary) {
         x = leftBoundary;
-        y += lineH;
+        y += gridLineH;
         // Check page break
-        if (y + lineH > PAGE_H - margin) {
+        if (y + gridLineH > PAGE_H - margin) {
           pageTexts.push(currentPageText);
           currentPageText = '';
           pageIdx++;
-          y = margin + (blockFontSize * S.lineHeight) * 2;
+          y = margin + gridLineH * 2;
         }
       }
 
@@ -2152,12 +2119,12 @@ function layoutTextCleanStandard(cleanText, S, PAGE_W, PAGE_H, ctx) {
         // Char-level wrap check
         if (x + charWidth > rightMargin && x > leftBoundary) {
           x = leftBoundary;
-          y += lineH;
-          if (y + lineH > PAGE_H - margin) {
+          y += gridLineH;
+          if (y + gridLineH > PAGE_H - margin) {
             pageTexts.push(currentPageText);
             currentPageText = '';
             pageIdx++;
-            y = margin + (blockFontSize * S.lineHeight) * 2;
+            y = margin + gridLineH * 2;
           }
         }
 
@@ -2211,9 +2178,17 @@ function layoutTextCleanStandard(cleanText, S, PAGE_W, PAGE_H, ctx) {
       }
     }
 
-    // Apply line height + bottom spacing after the block
-    y += lineH + botSp;
+    // Advance to next ruled grid line for next block
+    y += gridLineH;
     currentPageText += '\n';
+
+    // Check page break after finishing block
+    if (y + gridLineH > PAGE_H - margin && bi < blocks.length - 1) {
+      pageTexts.push(currentPageText);
+      currentPageText = '';
+      pageIdx++;
+      y = margin + gridLineH * 2;
+    }
   }
 
   pageTexts.push(currentPageText);
