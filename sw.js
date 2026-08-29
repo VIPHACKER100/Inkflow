@@ -3,7 +3,7 @@
    v1.5.0 | Cache-First for assets, Network-First for shell
 ═══════════════════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'inkflow-v1.5.0';
+const CACHE_VERSION = 'inkflow-v1.5.2';
 const SHELL_CACHE   = `${CACHE_VERSION}-shell`;
 const ASSET_CACHE   = `${CACHE_VERSION}-assets`;
 

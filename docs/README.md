@@ -2,7 +2,7 @@
 
 Welcome to the **Inkflow** documentation hub. This folder contains all technical, design, and operational documentation for the project.
 
-**Current Version**: 1.6.0 — HandFonted Studio TTF Font Exporter, Upgraded Rich Syntax AI Prompts, PWA Offline Service Worker, Local Ollama AI Provider, Cursive Ligatures, WCAG 2.1 Focus Trapping, API Key Storage Persistence
+**Current Version**: 1.6.1 — Clean Handwriting Rendering, HandFonted Studio TTF Font Exporter, Upgraded Rich Syntax AI Prompts, PWA Offline Service Worker, Local Ollama AI Provider, WCAG 2.1 Focus Trapping, API Key Storage Persistence
 
 ---
 

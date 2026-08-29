@@ -68,7 +68,7 @@ Generates randomized per-character variation parameters.
 Returns the vertical baseline shift for `top` (Upper: `-(lineH * 0.62)`), `middle` (Middle: `-(lineH * 0.32)`), and `bottom` (Lower: `0`) text alignments relative to notebook line baselines.
 
 ### `drawCursiveConnector(ctx, item1, item2, S)`
-Renders quadratic Bezier stroke curves connecting the exit anchor point of `item1` to the entry anchor point of `item2` for cursive fonts (`Caveat`, `Homemade Apple`, `Kalam`, etc.).
+*(Deprecated / No-op)* Preserved for backwards compatibility. Synthetic Bézier ligature drawing is disabled to prevent baseline artifacts in favor of native font vector connections.
 
 ### `getCachedGlyphImage(char, src)`
 Returns a fully-decoded `<img>` for a drafted glyph (cached), or `null` while decoding; triggers `debounceRender()` when ready.

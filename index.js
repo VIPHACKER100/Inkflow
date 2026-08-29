@@ -2419,41 +2419,9 @@ const CURSIVE_FONTS = new Set([
 ]);
 
 function drawCursiveConnector(ctx, item1, item2, S) {
-  if (!item1 || !item2) return;
-  if (item1.pageIdx !== item2.pageIdx) return;
-  if (Math.abs(item1.y - item2.y) > (item1.fontSize || S.fontSize) * 0.4) return;
-  if (item2.x <= item1.x) return;
-  const dx = item2.x - item1.x;
-  const fs = item1.fontSize || S.fontSize;
-  if (dx > fs * 1.5) return;
-
-  const opacity = ((item1.v?.opacity || 1) + (item2.v?.opacity || 1)) / 2;
-  const strokeWidth = Math.max(0.6, fs * 0.04 * (((item1.v?.pressureMod || 1) + (item2.v?.pressureMod || 1)) / 2));
-
-  ctx.save();
-  ctx.globalAlpha = opacity * 0.75;
-  ctx.strokeStyle = S.inkColor;
-  ctx.lineWidth = strokeWidth;
-  ctx.lineCap = 'round';
-
-  if (S.paperStyle !== 'clean' && S.bleed > 0.05) {
-    ctx.shadowColor = S.shadowColor || S.inkColor;
-    ctx.shadowBlur = S.bleed * 0.8;
-  }
-
-  const startX = item1.x + fs * 0.25;
-  const startY = item1.y + fs * 0.05;
-  const endX = item2.x - fs * 0.2;
-  const endY = item2.y + fs * 0.08;
-
-  const cp1x = startX + (endX - startX) * 0.5;
-  const cp1y = Math.max(startY, endY) + fs * 0.1;
-
-  ctx.beginPath();
-  ctx.moveTo(startX, startY);
-  ctx.quadraticCurveTo(cp1x, cp1y, endX, endY);
-  ctx.stroke();
-  ctx.restore();
+  // Disabled: Google Fonts (e.g. Caveat, Kalam) naturally handle glyph cursive joins.
+  // Artificial canvas bezier strokes between characters create unwanted ink drop/sagging arc artifacts.
+  return;
 }
 
 // Cache of decoded <img> elements for drafted glyphs, keyed by character.
@@ -2573,19 +2541,7 @@ function renderText(text) {
     ctx.restore();
   });
 
-  // ── POST-PASS: Cursive Ligature Connectors ──
-  if (CURSIVE_FONTS.has(S.font)) {
-    for (let i = 0; i < queue.length - 1; i++) {
-      const item1 = queue[i];
-      const item2 = queue[i + 1];
-      if (item1.pageIdx === item2.pageIdx) {
-        const canvas = pages[item1.pageIdx];
-        if (canvas) {
-          drawCursiveConnector(canvas.getContext('2d'), item1, item2, S);
-        }
-      }
-    }
-  }
+
 
   // ── POST-PASS: Draw Sticky Notes ──
   paintStickyNotes(queue);
