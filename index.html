@@ -22,6 +22,10 @@
   <!-- Font Awesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#6C63FF" />
+
   <!-- Mermaid for diagram support -->
   <script defer src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
 
@@ -33,9 +37,6 @@
 
   <!-- Custom Stylesheet -->
   <link rel="stylesheet" href="index.css" />
-
-  <!-- Diagram Engine (layout algorithms + mermaid rendering) -->
-  <script src="diagram-engine.js"></script>
 </head>
 
 <body>
@@ -50,6 +51,8 @@
     <div class="toolbar-group">
       <button class="btn sm" id="btn-animate" title="Watch notes write themselves">✍ Animate</button>
       <button class="btn sm" id="btn-clear" title="Clear all pages">✕ Clear</button>
+      <button class="btn sm" onclick="toggleStudyMode()" title="Study Mode: Flashcards & Quiz">📖 Study</button>
+      <button class="btn sm" onclick="startVoiceRecording()" id="btn-voice" title="Voice to Notes">🎤 Voice</button>
     </div>
 
     <div class="toolbar-spacer"></div>
@@ -391,6 +394,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
           <select id="ai-provider" onchange="onProviderChange()" title="AI Provider">
             <option value="openrouter" selected>🌐 OpenRouter</option>
             <option value="anthropic">🔑 Anthropic (Direct)</option>
+            <option value="ollama">🏠 Ollama (Local)</option>
           </select>
 
           <!-- Model selector -->
@@ -400,6 +404,9 @@ Try pasting a paragraph of lecture notes!"></textarea>
           <!-- API Key input -->
           <div class="sb-label sb-label-sm" id="api-key-label">OpenRouter API Key</div>
           <input type="password" id="api-key" placeholder="sk-or-v1-…" autocomplete="off" title="OpenRouter API Key" />
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted);margin-top:4px;">
+            <input type="checkbox" id="remember-api-key" /> Remember API key on this device
+          </label>
           <div id="ai-status"></div>
 
           <div class="sb-divider"></div>
@@ -454,6 +461,18 @@ Try pasting a paragraph of lecture notes!"></textarea>
         </div>
       </div>
 
+
+      <!-- ── NOTEBOOKS SECTION ── -->
+      <div class="sb-section" id="sec-notebooks">
+        <button class="sb-section-header" onclick="toggleSection('sec-notebooks')" aria-expanded="false" aria-controls="sec-notebooks">
+          📓 &nbsp;Notebooks
+          <span class="sb-arrow">▾</span>
+        </button>
+        <div class="sb-body" style="display:none;">
+          <button class="btn sm primary" onclick="NotebooksUI.saveCurrentNotebook()" style="width:100%;margin-bottom:8px;">💾 Save Current</button>
+          <div id="notebooks-list"></div>
+        </div>
+      </div>
 
       <!-- ── ANIMATION SECTION ── -->
       <div class="sb-section" id="sec-anim">
@@ -639,6 +658,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
         <button class="btn primary" id="btn-build-font" onclick="buildCustomFont()">
           🚀 Generate & Apply Font
         </button>
+        <button class="btn sm" onclick="exportCustomFontTTF()" style="margin-left:8px;">📥 Export .ttf</button>
       </div>
 
       <div id="font-build-progress" class="hidden">
@@ -673,6 +693,36 @@ Try pasting a paragraph of lecture notes!"></textarea>
       </div>
     </div>
   </div>
+
+  <!-- Flashcards Modal -->
+  <div id="flashcards-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>🃏 Flashcards</h3>
+        <button class="modal-close" onclick="closeFlashcardsModal()">✕</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;align-items:center;gap:16px;min-height:260px;">
+        <div id="flashcard-counter" style="font-size:13px;color:var(--text-muted);">1 / 1</div>
+        <div id="flashcard-card" onclick="flipFlashcard()" style="width:100%;max-width:440px;min-height:180px;perspective:800px;cursor:pointer;">
+          <div id="flashcard-inner" style="position:relative;width:100%;min-height:180px;transition:transform 0.5s;transform-style:preserve-3d;">
+            <div id="flashcard-front" class="flashcard-face flashcard-front" style="position:absolute;width:100%;min-height:180px;display:flex;align-items:center;justify-content:center;padding:24px;font-size:18px;background:var(--card-bg);border:2px solid var(--accent);border-radius:12px;text-align:center;"></div>
+            <div id="flashcard-back" class="flashcard-face flashcard-back" style="position:absolute;width:100%;min-height:180px;display:flex;align-items:center;justify-content:center;padding:24px;font-size:18px;background:var(--accent);color:#fff;border-radius:12px;text-align:center;transform:rotateY(180deg);"></div>
+          </div>
+        </div>
+        <div id="flashcard-hint" style="font-size:12px;color:var(--text-muted);">Click card to flip</div>
+        <div style="display:flex;gap:12px;">
+          <button class="btn" onclick="prevFlashcard()">← Prev</button>
+          <button class="btn primary" onclick="nextFlashcard()">Next →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Voice Recording Toast -->
+  <div id="voice-toast" class="hidden" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;padding:10px 24px;border-radius:20px;font-size:14px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.2);">🎤 Listening… click again to stop</div>
+
+  <!-- Diagram Engine (layout algorithms + mermaid rendering) -->
+  <script src="diagram-engine.js"></script>
 
   <!-- Contextual Jitter Engine for advanced character variation -->
   <script src="contextual-jitter-engine.js"></script>
@@ -717,8 +767,18 @@ Try pasting a paragraph of lecture notes!"></textarea>
   <!-- AI Assistant (callClaude, aiAction, GrammarCorrector) -->
   <script src="ai-assistant.js"></script>
 
+  <!-- Notebooks (IndexedDB CRUD + sidebar UI) -->
+  <script src="notebooks.js"></script>
+
   <!-- Custom Script -->
   <script src="index.js"></script>
+
+  <!-- Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  </script>
 </body>
 
 </html>

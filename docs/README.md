@@ -2,7 +2,7 @@
 
 Welcome to the **Inkflow** documentation hub. This folder contains all technical, design, and operational documentation for the project.
 
-**Current Version**: 1.5.0 — Modular Architecture, 4 Extracted Modules, 16 JS Files
+**Current Version**: 1.6.0 — Modular Architecture, Rich Syntax, PWA, 20 JS Files
 
 ---
 
@@ -24,6 +24,7 @@ Welcome to the **Inkflow** documentation hub. This folder contains all technical
 | Document | Description |
 | :--- | :--- |
 | [AI Integration](./ai-integration.md) | OpenRouter + Anthropic multi-provider, SSE streaming, dynamic models |
+| [AI Assistant Module](./ai-assistant.md) | Provider routing, Ollama local AI, grammar correction, key persistence |
 | [Custom Font Suite](./custom-font-suite.md) | HandFonted Studio: tracing, RDP smoothing, OpenType compilation |
 
 ### 🎨 Design & UX
@@ -32,6 +33,14 @@ Welcome to the **Inkflow** documentation hub. This folder contains all technical
 | :--- | :--- |
 | [UI Design System](./ui-design-system.md) | CSS custom properties, theme tokens, layout grid structure |
 | [UX Interactions](./ux-interactions.md) | Responsive layout, inline editing, collapsible panels, debounced rendering |
+
+### 📱 New in v1.6.0
+
+| Document | Description |
+| :--- | :--- |
+| [Study Mode & Flashcards](./study-mode.md) | Flashcard review, voice-to-notes, theme packs, rich syntax |
+| [Notebooks System](./notebooks.md) | IndexedDB CRUD for persistent multi-document management |
+| [PWA — Progressive Web App](./pwa.md) | Service worker, manifest, offline caching strategy |
 
 ### 📘 Guides & References
 
@@ -51,8 +60,8 @@ Welcome to the **Inkflow** documentation hub. This folder contains all technical
 ## 🔗 Quick Links
 
 - **Live App**: Open `index.html` in any modern browser
-- **Source Code**: `index.js` (3,765 lines) + 15 modules (3,152 lines) = 6,917 total JS lines
-- **Modules**: `font-compilation.js` · `paper-renderer.js` · `text-layout.js` · `export-renderers.js` · `diagram-engine.js` · `cursive-connector.js` · `template-manager.js` · `markdown-parser.js` · `collaborative-engine.js` · `contextual-jitter-engine.js` · `stroke-prediction-engine.js` · `layer-compositor.js` · `audio-recorder.js` · `script-detector.js` · `server.js`
+- **Source Code**: `index.js` (~4,280 lines) + 19 modules (~4,800 lines) = ~9,080 total JS lines
+- **Modules**: `font-compilation.js` · `paper-renderer.js` · `text-layout.js` · `export-renderers.js` · `diagram-engine.js` · `cursive-connector.js` · `template-manager.js` · `markdown-parser.js` · `collaborative-engine.js` · `contextual-jitter-engine.js` · `stroke-prediction-engine.js` · `layer-compositor.js` · `audio-recorder.js` · `script-detector.js` · `ai-assistant.js` · `notebooks.js` · `server.js` · `sw.js`
 - **Creator**: Aryan Ahirwar (VIPHACKER.100)
 
 ---

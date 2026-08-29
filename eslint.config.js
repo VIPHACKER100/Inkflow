@@ -143,7 +143,6 @@ module.exports = [
         getCharVariationWithContext: 'readonly',
         renderCursiveConnections: 'readonly',
         CollaborativeEngine: 'readonly',
-        drawStudioCanvas: 'readonly',
         screen: 'readonly',
         PAGE_W: 'readonly',
         PAGE_H: 'readonly',

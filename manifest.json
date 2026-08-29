@@ -1,0 +1,19 @@
+{
+  "name": "Inkflow — AI Handwritten Notes",
+  "short_name": "Inkflow",
+  "description": "Generate beautiful AI-powered handwritten notes in your browser",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f3ea",
+  "theme_color": "#6C63FF",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%236C63FF'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white'>✍</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["productivity", "education"],
+  "lang": "en"
+}

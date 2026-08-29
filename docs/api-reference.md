@@ -118,6 +118,18 @@ Sends a streaming request to OpenRouter or Anthropic API.
 Dispatches an AI workflow (summarize, fix grammar, lecture→notes, generate assignment).
 - **Parameters**: `action` (String — `summarize|grammar|lecture|assignment`)
 
+### `callOllama(prompt, systemPrompt, onChunk)`
+Sends a streaming request to a local Ollama instance.
+- **Parameters**: `prompt` (String), `systemPrompt` (String), `onChunk` (Function)
+- **Returns**: Promise resolving to the full AI response text
+- **Endpoint**: `http://localhost:11434/api/chat` (streaming)
+
+### `AI_SYSTEM_BASE_PROMPT`
+System prompt constant for rich-syntax-aware AI output (headers, bullets, sticky notes, callouts, Q:/A: flashcards).
+
+### `initApiKeyPersistence()`
+Initializes API key save/restore from localStorage. Listens for provider changes and checkbox state.
+
 ### `fetchOpenRouterModels()`
 Asynchronously fetches the complete model catalog from OpenRouter API and updates the dropdown.
 
@@ -125,6 +137,58 @@ Asynchronously fetches the complete model catalog from OpenRouter API and update
 Updates the model dropdown and API key label when the AI provider selection changes.
 
 ---
+
+## Study Mode & Flashcards
+
+### `toggleStudyMode()`
+Activates or deactivates study mode. Loads flashcards from Q:/A: patterns in text. Opens flashcards modal if cards found.
+
+### `openFlashcardsModal()` / `closeFlashcardsModal()`
+Opens/closes the flashcards modal with 3D flip animation.
+
+### `flipFlashcard()` / `nextFlashcard()` / `prevFlashcard()`
+Flashcard navigation — flip to reveal answer, next/previous card.
+
+### `loadFlashcardsFromText()`
+Extracts Q:/A: pairs from `S.text` using `parseRichSyntax()` regex.
+
+## Voice to Notes
+
+### `startVoiceRecording()`
+Uses Web Speech API for real-time speech-to-text. Toggles on/off. Supports English (en-US).
+
+## Theme Packs
+
+### `applyThemePack(packId)`
+Applies a named color preset (default, forest, sunset, ocean, lavender, charcoal) by setting CSS custom properties and updating state.
+
+## Notebooks (notebooks.js)
+
+### `NotebooksDB.saveNotebook(id, data)`
+Saves a notebook record to IndexedDB with title, text, state, and timestamps.
+
+### `NotebooksDB.loadNotebook(id)`
+Loads a single notebook by ID from IndexedDB.
+
+### `NotebooksDB.listNotebooks()`
+Returns all notebooks sorted by `updatedAt` descending.
+
+### `NotebooksDB.deleteNotebook(id)`
+Deletes a notebook from IndexedDB.
+
+### `NotebooksDB.duplicateNotebook(id, newTitle)`
+Clones a notebook with a new ID and optional new title.
+
+### `NotebooksUI.saveCurrentNotebook()`
+Prompts for a title and saves the current editor state as a new notebook.
+
+### `NotebooksUI.renderNotebooksSidebar()`
+Renders the notebook list in the sidebar section.
+
+## PWA
+
+### `sw.js`
+Service worker with cache-first strategy for static assets and network-first for API calls. Precaches all JS modules on install.
 
 ## State Management
 

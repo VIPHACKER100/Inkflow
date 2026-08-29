@@ -67,8 +67,12 @@ inkflow/
 ├── contextual-jitter-engine.js # Per-character randomized transforms
 ├── stroke-prediction-engine.js # Stroke completion prediction
 ├── layer-compositor.js     # Multi-layer canvas compositing
+├── ai-assistant.js         # AI provider routing, Ollama, key persistence
 ├── audio-recorder.js       # Audio recording, waveform visualization
 ├── script-detector.js      # Unicode script detection
+├── notebooks.js            # IndexedDB notebook CRUD + sidebar UI
+├── sw.js                   # Service worker for PWA offline support
+├── manifest.json           # PWA manifest
 ├── server.js               # Node.js proxy server (optional)
 ├── LICENSE                 # Project license
 └── docs/                   # Documentation (you are here)
@@ -105,6 +109,7 @@ inkflow/
 | jsPDF | 2.5.1 | Multi-page PDF generation |
 | opentype.js | 1.3.4 | Custom font compilation (lazy-loaded) |
 | pdf.js | 3.4.120 | PDF text extraction for file upload (lazy-loaded) |
+| Rough.js | 4.6.6 | Hand-drawn diagram shapes |
 
 All dependencies are loaded via CDN — no `npm install` required. `html2canvas` is no longer required as of v1.2.0.
 
@@ -133,3 +138,24 @@ All dependencies are loaded via CDN — no `npm install` required. `html2canvas`
 1. Click "✨ Create Your Own Font" in the sidebar
 2. Use the Live Sketchpad to draw characters, or upload a scanned template
 3. Click "Build Font" to compile and activate your handwriting
+
+### Optional: Study Mode
+1. Add Q:/A: pairs to your text (e.g. `Q: What is X?` / `A: It is Y.`)
+2. Click the 📖 Study button in the toolbar to activate study mode
+3. Use the flashcards modal to review — click to flip, arrow keys to navigate
+
+### Optional: Voice Input
+1. Click the 🎤 Voice button in the toolbar (Chrome required)
+2. Speak naturally — transcription appears in real-time
+3. Click again to stop recording
+
+### Optional: Notebooks
+1. Expand the 📓 Notebooks section in the sidebar
+2. Click "Save Current" to store your notes in IndexedDB
+3. Click any notebook to open it, or ✕ to delete
+
+### Optional: Ollama (Local AI)
+1. Install Ollama from [ollama.ai](https://ollama.ai)
+2. Run `ollama serve` in your terminal
+3. Select "🏠 Ollama (Local)" from the AI provider dropdown
+4. Choose a model and generate notes without an API key

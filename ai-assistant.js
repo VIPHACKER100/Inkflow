@@ -13,6 +13,7 @@
 
   async function callClaude(prompt, systemPrompt, onChunk) {
     const provider = document.getElementById('ai-provider')?.value;
+    if (provider === 'ollama') return callOllama(prompt, systemPrompt, onChunk);
     const model = document.getElementById('ai-model')?.value;
     const key = document.getElementById('api-key')?.value?.trim();
 
@@ -331,7 +332,108 @@ Constraints:
     if (modal) modal.classList.add('hidden');
   }
 
+  /* ── Ollama Local AI ────────────────────────────────────────────────────── */
+
+  const AI_SYSTEM_BASE_PROMPT = `You are Inkflow's AI assistant for handwritten notes. Output using Inkflow's native rich study syntax:
+- # H1 headers for main topics
+- ## H2 subheaders for subtopics
+- - Bullet lists for key points
+- ==highlighted text== for important terms
+- [sticky:yellow]margin notes[sticky] for supplementary info
+- [callout:info]important callouts[callout] for key takeaways
+- Q: Question format for study review
+- A: Answer format for study review
+Keep responses concise and structured for handwritten note-taking.`;
+
+  async function callOllama(prompt, systemPrompt, onChunk) {
+    setAiStatus('✦ Generating via Ollama (local)…');
+    try {
+      const res = await fetch('http://localhost:11434/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: document.getElementById('ai-model')?.value || 'llama3.2',
+          messages: [
+            { role: 'system', content: systemPrompt || AI_SYSTEM_BASE_PROMPT },
+            { role: 'user', content: prompt },
+          ],
+          stream: true,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setAiStatus('✗ Ollama Error: ' + (err.error || res.status));
+        return null;
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let textContent = '';
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+        for (const line of lines) {
+          const cleaned = line.trim();
+          if (!cleaned) continue;
+          try {
+            const data = JSON.parse(cleaned);
+            if (data.message?.content) {
+              textContent += data.message.content;
+              if (onChunk) onChunk(textContent);
+            }
+          } catch (err) { /* incomplete chunk */ }
+        }
+      }
+      setAiStatus('✓ Done — Ollama');
+      setTimeout(() => setAiStatus(''), 3000);
+      return textContent;
+    } catch (e) {
+      setAiStatus('✗ Ollama not running. Start with: ollama serve');
+      return null;
+    }
+  }
+
+  /* ── API Key Persistence ────────────────────────────────────────────────── */
+
+  function initApiKeyPersistence() {
+    const keyInput = document.getElementById('api-key');
+    const rememberCheck = document.getElementById('remember-api-key');
+    const providerSelect = document.getElementById('ai-provider');
+    if (!keyInput) return;
+    const loadKey = () => {
+      const provider = providerSelect?.value || 'openrouter';
+      const saved = localStorage.getItem('inkflow-api-key-' + provider);
+      if (saved) {
+        keyInput.value = saved;
+        if (rememberCheck) rememberCheck.checked = true;
+      }
+    };
+    loadKey();
+    providerSelect?.addEventListener('change', loadKey);
+    keyInput.addEventListener('input', () => {
+      if (rememberCheck?.checked) {
+        const provider = providerSelect?.value || 'openrouter';
+        localStorage.setItem('inkflow-api-key-' + provider, keyInput.value);
+      }
+    });
+    rememberCheck?.addEventListener('change', () => {
+      const provider = providerSelect?.value || 'openrouter';
+      if (rememberCheck.checked) {
+        localStorage.setItem('inkflow-api-key-' + provider, keyInput.value);
+      } else {
+        localStorage.removeItem('inkflow-api-key-' + provider);
+      }
+    });
+  }
+
   /* ── Export ─────────────────────────────────────────────────────────────── */
 
-  window.AIAssistant = { callClaude, setAiStatus, aiAction, GrammarCorrector, acceptGrammarCorrection };
+  window.AIAssistant = {
+    callClaude, callOllama, setAiStatus, aiAction,
+    GrammarCorrector, acceptGrammarCorrection,
+    AI_SYSTEM_BASE_PROMPT, initApiKeyPersistence,
+  };
 })();

@@ -138,3 +138,9 @@ class FontSwitcher {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { ScriptDetector, FontSwitcher };
 }
+
+// ponytail: backward-compat alias — docs reference containsDevanagari()
+function containsDevanagari(text) {
+  return ScriptDetector.isIndicScript(text);
+}
+window.containsDevanagari = containsDevanagari;

@@ -78,3 +78,19 @@ mkdir vendor
 - **No build step**: Deploy the source files directly
 - **No external database**: All general settings persist in browser `localStorage`, and custom handwriting glyphs persist in `IndexedDB`
 - **CORS**: AI features require the `anthropic-dangerous-direct-browser-access` header
+
+## PWA Deployment
+
+Inkflow includes a service worker (`sw.js`) and web app manifest (`manifest.json`) for progressive web app support.
+
+### Features
+- **Offline support**: All static assets (JS, CSS, HTML) are precached on first load
+- **Installable**: Users can "Add to Home Screen" on mobile or "Install" on desktop
+- **Network-first for APIs**: AI requests always go to the network (no stale cache)
+
+### Requirements
+- Must be served over HTTPS (or localhost) for service worker registration
+- The `manifest.json` must be accessible at the root path
+
+### Verification
+After deployment, open DevTools → Application → Service Workers to confirm registration.

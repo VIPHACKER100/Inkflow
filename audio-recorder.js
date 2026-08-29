@@ -124,8 +124,8 @@ class AudioRecorder {
     if (this.transcription.trim().length > 0) {
       this.textarea.value = this.transcription;
       this.textarea.dispatchEvent(new Event('input', { bubbles: true }));
-      if (typeof window.aiAction === 'function') {
-        window.aiAction('lecture');
+      if (typeof window.AIAssistant?.aiAction === 'function') {
+        window.AIAssistant.aiAction('lecture');
       }
     }
   }

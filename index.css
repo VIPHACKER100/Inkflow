@@ -2349,3 +2349,18 @@ html.dark .drop-zone {
 .grammar-textarea-readonly { height: 300px; background: var(--bg-alt); }
 .modal-footer-flex { display: flex; justify-content: flex-end; gap: 10px; }
 #char-progress-fill { width: 0%; } /* Default fallback if style removed */
+
+/* ── Study Mode ──────────────────────────────────────────────────────────── */
+body.study-mode .page-editor { border: 2px solid var(--accent) !important; }
+body.study-mode .page { box-shadow: 0 0 0 2px var(--accent); }
+
+/* ── Flashcards ──────────────────────────────────────────────────────────── */
+.flashcard-face { box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+#flashcard-inner { cursor: pointer; }
+.btn.active { background: var(--accent) !important; color: #fff !important; }
+
+/* ── Notebooks ───────────────────────────────────────────────────────────── */
+.notebook-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; border: 1px solid var(--btn-border); margin-bottom: 4px; }
+.notebook-item:hover { background: var(--btn-hover); }
+.notebook-title { flex: 1; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.notebook-date { font-size: 11px; color: var(--text-muted); }

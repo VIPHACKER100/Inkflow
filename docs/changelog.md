@@ -4,6 +4,46 @@ All notable changes to Inkflow are documented in this file.
 
 ---
 
+## [1.6.0] — 2026-08-30
+
+### ✨ Added
+- **Rich Syntax System**: `parseRichSyntax()` extracts `[sticky:color]...[sticky]`, `[callout:type]...[callout]`, `==highlighted==` markers, and `Q:/A:` flashcard pairs from raw text. `paintStickyNotes()` and `paintCallouts()` render margin annotations on canvas.
+- **Ollama Local AI**: New `callOllama()` function for local LLM inference via `localhost:11434`. Added `ollama` provider to AI dropdown with 7 pre-configured models (Llama 3.2, Mistral, Phi-4, Gemma 2, Qwen 2.5, DeepSeek R1, CodeLlama). No API key required.
+- **AI System Prompt**: New `AI_SYSTEM_BASE_PROMPT` constant for rich-syntax-aware AI output formatting.
+- **API Key Persistence**: New `initApiKeyPersistence()` saves/restores API keys per-provider in localStorage with "Remember key" checkbox.
+- **Study Mode**: `toggleStudyMode()` activates study-focused view with flashcard extraction from Q:/A: patterns.
+- **Flashcards Modal**: Interactive flip-card modal with prev/next navigation, counter, and 3D CSS flip animation.
+- **Voice to Notes**: `startVoiceRecording()` uses Web Speech API (Chrome) for real-time speech-to-text transcription directly into the note editor.
+- **Theme Packs**: 6 color presets (Default, Forest, Sunset, Ocean, Lavender, Charcoal) via `applyThemePack()`.
+- **Notebooks System**: Full IndexedDB CRUD via `notebooks.js` — `saveNotebook`, `loadNotebook`, `listNotebooks`, `deleteNotebook`, `duplicateNotebook`. Sidebar UI with save/open/delete controls.
+- **PWA Support**: `sw.js` service worker with cache-first static assets and network-first API calls. `manifest.json` for installable progressive web app.
+- **TTF Font Export**: `exportCustomFontTTF()` in `font-compilation.js` downloads compiled handwriting font as `.ttf` file. Export button added to HandFonted Studio.
+- **`drawRoundedRect`**: Rounded rectangle helper in `paper-renderer.js` for sticky notes and callout boxes.
+- **`drawWrappedText`**: Word-wrapped text rendering with max-lines truncation in `paper-renderer.js`.
+- **`splitRawTextIntoPages`**: Splits raw text by clean page boundaries for multi-page export fidelity in `text-layout.js`.
+- **`parseStructuredContent`**: Parses headings, bullets, questions, and paragraphs from text in `text-layout.js`.
+- **`containsDevanagari`**: Backward-compatible alias for `ScriptDetector.isIndicScript()` in `script-detector.js`.
+- **`_upscaleCanvas`**: 2× canvas upscaler for high-DPI export in `export-renderers.js`.
+- **`redrawPageCanvas`**: Full page re-render helper (background + smudge + queue) in `index.js`.
+- **Modal Accessibility**: ESC key closes modals, Tab focus trap on all `.modal-overlay` elements, focus save/restore.
+- **`glyphImageCache` LRU**: Converted from unbounded `{}` to `Map` with 500-entry cap.
+- **`diagramCache` LRU**: Converted from unbounded `{}` to `Map` with 100-entry cap in `diagram-engine.js`.
+
+### 🛠️ Fixed
+- **PDF Text Extraction**: Added `hasEOL` handling to preserve paragraph structure in `content.items`.
+- **Shape Rendering Dedup**: Extracted shared `drawShapeOrEdge()` function, replacing ~220L of duplicated code in `renderSpecificPage` and `startAnimation`. Adds diamond fallback and edge labels to animation path.
+- **Dead Code Removed**: Removed `drawStudioCanvas` reference (undefined function), IntersectionObserver force-render block (made observer redundant), redundant `arguments[1]` check in `renderSpecificPage`.
+- **Test Theater Removed**: `doubt-solver.test.js` and `solution-streaming.test.js` excluded from vitest — they tested mock data, not real code.
+- **`diagram-engine.js` Moved**: Moved from `<head>` to bottom of `<body>` in `index.html` (was render-blocking).
+- **`audio-recorder.js` Bug Fix**: `window.aiAction()` → `window.AIAssistant.aiAction()`.
+
+### ♻️ Changed
+- **Version Bumped**: `package.json` updated from 1.5.2 to 1.6.0.
+- **27+ New Functions**: Across `paper-renderer.js`, `text-layout.js`, `script-detector.js`, `export-renderers.js`, `font-compilation.js`, `ai-assistant.js`, `index.js`, `notebooks.js`.
+- **130 Vitest Tests Pass**: All existing tests plus new test theater exclusions.
+
+---
+
 ## [1.5.1] — 2026-08-29
 
 ### 🛠️ Fixed

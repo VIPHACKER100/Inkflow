@@ -147,5 +147,16 @@
     });
   }
 
-  window.ExportRenderers = { renderQueueItems, renderCursiveConnectionsOn };
+  function _upscaleCanvas(src, scale) {
+    const c = document.createElement('canvas');
+    c.width = src.width * scale;
+    c.height = src.height * scale;
+    const ctx = c.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(src, 0, 0, c.width, c.height);
+    return c;
+  }
+
+  window.ExportRenderers = { renderQueueItems, renderCursiveConnectionsOn, _upscaleCanvas };
 })();

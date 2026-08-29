@@ -89,7 +89,7 @@ The rendering pipeline that transforms state data into visual canvas output. As 
 
 | Module | Lines | Purpose |
 |--------|------:|---------|
-| `index.js` | 3,765 | Core: UI, state, AI, animation, boot |
+| `index.js` | ~4,280 | Core: UI, state, AI, animation, study mode, themes, boot |
 | `markdown-parser.js` | 405 | Markdown tokenization for AI output |
 | `paper-renderer.js` | 341 | 10 paper styles, smudge effects |
 | `collaborative-engine.js` | 300 | WebSocket real-time collaboration |
@@ -103,7 +103,10 @@ The rendering pipeline that transforms state data into visual canvas output. As 
 | `contextual-jitter-engine.js` | 149 | Per-character randomized transforms |
 | `script-detector.js` | 119 | Unicode script detection |
 | `export-renderers.js` | 107 | Queue item rendering on canvas |
-| `text-layout.js` | 40 | sanitizeText, parseBlocks, getGraphemes |
+| `text-layout.js` | ~120 | sanitizeText, parseBlocks, getGraphemes, splitRawTextIntoPages, parseStructuredContent, parseRichSyntax |
+| `ai-assistant.js` | ~430 | callClaude, callOllama, aiAction, GrammarCorrector, initApiKeyPersistence |
+| `notebooks.js` | ~150 | IndexedDB CRUD, notebook sidebar UI |
+| `sw.js` | ~60 | Service worker for PWA offline caching |
 
 The **unified `layoutText()` engine** performs all word-wrap, page-break, and character queue computation in a single pass, ensuring layout parity between static rendering and animation. All modules expose globals via `window.*` for browser use.
 

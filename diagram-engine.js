@@ -5,7 +5,9 @@
  * Extracted from index.js for modularity.
  */
 
-const diagramCache = {};
+// ponytail: LRU cache — evicts oldest entry when exceeding 100
+const diagramCache = new Map();
+const DIAGRAM_CACHE_MAX = 100;
 
 function layoutCycle(nodes, radius, center) {
   const angleStep = (2 * Math.PI) / nodes.length;
@@ -114,13 +116,19 @@ function layoutHierarchy(nodes, edges, startX, startY, width, height) {
 }
 
 function getDiagramImage(content, debounceRender) {
-  if (diagramCache[content]) {
-    return diagramCache[content].ready ? diagramCache[content] : { ready: false };
+  if (diagramCache.has(content)) {
+    const cached = diagramCache.get(content);
+    return cached.ready ? cached : { ready: false };
+  }
+
+  if (diagramCache.size >= DIAGRAM_CACHE_MAX) {
+    const oldest = diagramCache.keys().next().value;
+    diagramCache.delete(oldest);
   }
 
   const id = 'mermaid-' + Math.random().toString(36).substr(2, 9);
   const entry = { ready: false, img: new Image(), width: 0, height: 0, content };
-  diagramCache[content] = entry;
+  diagramCache.set(content, entry);
 
   if (typeof mermaid !== 'undefined') {
     mermaid

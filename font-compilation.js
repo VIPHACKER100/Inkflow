@@ -226,12 +226,52 @@
     return path;
   }
 
+  async function exportCustomFontTTF(glyphs, fontName) {
+    if (!window.opentype) {
+      throw new Error('opentype.js is required for TTF export');
+    }
+    const glyphsList = [];
+    const notdefGlyph = new window.opentype.Glyph({ name: '.notdef', unicode: 0, advanceWidth: 650, path: new window.opentype.Path() });
+    glyphsList.push(notdefGlyph);
+    const spaceGlyph = new window.opentype.Glyph({ name: 'space', unicode: 32, advanceWidth: 400, path: new window.opentype.Path() });
+    glyphsList.push(spaceGlyph);
+
+    const charMap = {};
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789,.?!@#$%^&*()-_+=/:\';"'.split('').forEach((ch, i) => { charMap[ch] = i + 33; });
+
+    for (const [char, dataUrl] of Object.entries(glyphs)) {
+      if (!dataUrl || !charMap[char]) continue;
+      const canvas = await loadImageToCanvas(dataUrl);
+      if (isCellBlank(canvas)) continue;
+      const path = canvasToOpentypePath(canvas);
+      if (!path.commands || path.commands.length === 0) continue;
+      glyphsList.push(new window.opentype.Glyph({
+        name: char,
+        unicode: charMap[char],
+        advanceWidth: 650,
+        path,
+      }));
+    }
+
+    const font = new window.opentype.Font({
+      familyName: fontName,
+      styleName: 'Regular',
+      unitsPerEm: 1000,
+      ascender: 800,
+      descender: -200,
+      glyphs: glyphsList,
+    });
+
+    font.download(fontName + '.ttf');
+  }
+
   const FontCompilation = {
     traceCanvasContours,
     isCellBlank,
     simplifyPath,
     loadImageToCanvas,
     canvasToOpentypePath,
+    exportCustomFontTTF,
   };
 
   if (typeof window !== 'undefined') {

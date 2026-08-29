@@ -30,6 +30,16 @@ Inkflow supports two primary AI backends. Users select their provider and model 
   anthropic-dangerous-direct-browser-access: true
   ```
 
+### 🏠 Ollama (Local)
+- **URL**: `http://localhost:11434/api/chat`
+- **Models**: Llama 3.2, Mistral, Phi-4, Gemma 2, Qwen 2.5, DeepSeek R1, CodeLlama
+- **Required Headers**:
+  ```http
+  Content-Type: application/json
+  ```
+- **No API key required** — runs entirely on local hardware.
+- **Setup**: Install Ollama from [ollama.ai](https://ollama.ai), then run `ollama serve` in terminal.
+
 ---
 
 ## SSE Streaming (v1.2.0)
@@ -85,6 +95,17 @@ body paragraphs, and conclusion. Plain text only. No markdown.
 System: Restructure this text to make it more organized and readable.
 Keep all the original information but use better spacing, indentation, 
 and bullet points. Plain text only. No markdown.
+```
+
+### 6. Rich Syntax Formatting (Ollama)
+```
+System: You are Inkflow's AI assistant for handwritten notes. Output using Inkflow's native rich study syntax:
+- # H1 headers for main topics
+- ==highlighted text== for important terms
+- [sticky:yellow]margin notes[sticky] for supplementary info
+- Q: Question format for study review
+- A: Answer format for study review
+Keep responses concise and structured for handwritten note-taking.
 ```
 
 ---

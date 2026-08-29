@@ -155,6 +155,109 @@ function drawArrowhead(ctx, rc, x, y, angle, size, color, roughness) {
   rc.line(p1.x, p1.y, p3.x, p3.y, { stroke: color, roughness: roughness });
 }
 
+// ponytail: shared shape/edge renderer — deduplicates renderSpecificPage and startAnimation
+function drawShapeOrEdge(ctx, canvas, item, options, rcCache) {
+  let rc = rcCache ? rcCache.get(item.pageIdx) : null;
+  if (!rc && typeof rough !== 'undefined') {
+    rc = rough.canvas(canvas);
+    if (rcCache) rcCache.set(item.pageIdx, rc);
+  }
+
+  if (item.type === 'shape') {
+    if (rc) {
+      if (item.shape === 'circle') {
+        rc.circle(item.x, item.y, Math.max(item.w, item.h), options);
+      } else if (item.shape === 'diamond') {
+        const halfW = item.w / 2, halfH = item.h / 2;
+        rc.polygon(
+          [[item.x, item.y - halfH], [item.x + halfW, item.y], [item.x, item.y + halfH], [item.x - halfW, item.y]],
+          options
+        );
+      } else if (item.shape === 'pill' || item.shape === 'rounded') {
+        rc.roundRect(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h, 12, options);
+      } else if (item.shape === 'hexagon') {
+        const hw = item.w / 2, hh = item.h / 2, inset = hw * 0.3;
+        rc.polygon(
+          [
+            [item.x - hw + inset, item.y - hh], [item.x + hw - inset, item.y - hh],
+            [item.x + hw, item.y], [item.x + hw - inset, item.y + hh],
+            [item.x - hw + inset, item.y + hh], [item.x - hw, item.y],
+          ],
+          options
+        );
+      } else {
+        rc.rectangle(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h, options);
+      }
+    } else {
+      ctx.strokeStyle = S.inkColor;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      if (item.shape === 'circle') {
+        ctx.arc(item.x, item.y, Math.max(item.w, item.h) / 2, 0, Math.PI * 2);
+      } else if (item.shape === 'diamond') {
+        const halfW = item.w / 2, halfH = item.h / 2;
+        ctx.moveTo(item.x, item.y - halfH);
+        ctx.lineTo(item.x + halfW, item.y);
+        ctx.lineTo(item.x, item.y + halfH);
+        ctx.lineTo(item.x - halfW, item.y);
+        ctx.closePath();
+      } else if (item.shape === 'pill' || item.shape === 'rounded') {
+        const rad = Math.min(12, item.h / 2);
+        ctx.roundRect(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h, rad);
+      } else if (item.shape === 'hexagon') {
+        const hw = item.w / 2, hh = item.h / 2, inset = hw * 0.3;
+        ctx.moveTo(item.x - hw + inset, item.y - hh);
+        ctx.lineTo(item.x + hw - inset, item.y - hh);
+        ctx.lineTo(item.x + hw, item.y);
+        ctx.lineTo(item.x + hw - inset, item.y + hh);
+        ctx.lineTo(item.x - hw + inset, item.y + hh);
+        ctx.lineTo(item.x - hw, item.y);
+        ctx.closePath();
+      } else {
+        ctx.rect(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h);
+      }
+      ctx.stroke();
+    }
+  } else if (item.type === 'edge') {
+    if (rc) {
+      rc.line(item.from.x, item.from.y, item.to.x, item.to.y, options);
+      const angle = Math.atan2(item.to.y - item.from.y, item.to.x - item.from.x);
+      drawArrowhead(ctx, rc, item.to.x, item.to.y, angle, 12, S.inkColor, options.roughness);
+    } else {
+      ctx.strokeStyle = S.inkColor;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(item.from.x, item.from.y);
+      ctx.lineTo(item.to.x, item.to.y);
+      ctx.stroke();
+      const angle = Math.atan2(item.to.y - item.from.y, item.to.x - item.from.x);
+      ctx.beginPath();
+      ctx.moveTo(item.to.x, item.to.y);
+      ctx.lineTo(item.to.x - 10 * Math.cos(angle - 0.5), item.to.y - 10 * Math.sin(angle - 0.5));
+      ctx.moveTo(item.to.x, item.to.y);
+      ctx.lineTo(item.to.x - 10 * Math.cos(angle + 0.5), item.to.y - 10 * Math.sin(angle + 0.5));
+      ctx.stroke();
+    }
+    if (item.label) {
+      const mx = (item.from.x + item.to.x) / 2;
+      const my = (item.from.y + item.to.y) / 2;
+      ctx.save();
+      ctx.font = `${Math.max(10, S.fontSize * 0.7)}px ${S.font}`;
+      ctx.fillStyle = S.inkColor;
+      ctx.globalAlpha = 0.85;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const tw = ctx.measureText(item.label).width;
+      const isDark = S.paperStyle === 'dark';
+      ctx.fillStyle = isDark ? 'rgba(26,26,46,0.85)' : 'rgba(247,243,234,0.85)';
+      ctx.fillRect(mx - tw / 2 - 3, my - S.fontSize * 0.4, tw + 6, S.fontSize * 0.9);
+      ctx.fillStyle = S.inkColor;
+      ctx.fillText(item.label, mx, my);
+      ctx.restore();
+    }
+  }
+}
+
 const TEMPLATE_SHEETS = {
   letters: [
     'A',
@@ -333,6 +436,11 @@ if (layoutSelect) {
     autosave();
     debounceRender();
   });
+}
+
+// Initialize notebooks sidebar on load
+if (window.NotebooksUI) {
+  setTimeout(() => window.NotebooksUI.renderNotebooksSidebar(), 500);
 }
 
 if (document.fonts) {
@@ -741,10 +849,86 @@ function clearText() {
   autosave();
 }
 
+function redrawPageCanvas(pageNum) {
+  const canvas = pages[pageNum - 1];
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  window.PaperRenderer.drawPaperBackground(ctx, S.paperStyle);
+  window.PaperRenderer.renderSmudgeEffects(ctx, pageNum - 1);
+  const queue = window.currentRenderQueue;
+  if (queue) {
+    const items = queue.filter((item) => item.pageIdx === pageNum - 1);
+    window.ExportRenderers.renderQueueItems(ctx, canvas, items);
+  }
+}
+
 // ponytail: aliases for extracted text-layout.js module
 const sanitizeText = (str) => window.TextLayout.sanitizeText(str);
 const parseBlocks = (text) => window.TextLayout.parseBlocks(text);
 const getGraphemes = (text) => window.TextLayout.getGraphemes(text);
+
+const STICKY_COLORS = { yellow: '#fff9c4', cyan: '#e0f7fa', pink: '#fce4ec', mint: '#e8f5e9' };
+const CALLOUT_STYLES = { warning: { bg: '#fff3e0', border: '#e65100', icon: '⚠' }, info: { bg: '#e3f2fd', border: '#1565c0', icon: 'ℹ' }, formula: { bg: '#f3e5f5', border: '#7b1fa2', icon: '∑' } };
+
+function paintStickyNotes(queue, targetPageIdx) {
+  if (typeof window._parsedStickies === 'undefined' || !window._parsedStickies.length) return;
+  window._parsedStickies.forEach((sticky) => {
+    const items = queue.filter((item) => item.pageIdx === (targetPageIdx != null ? targetPageIdx : item.pageIdx));
+    if (!items.length) return;
+    const canvas = pages[items[0].pageIdx];
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const bg = STICKY_COLORS[sticky.color] || STICKY_COLORS.yellow;
+    const margin = S.margin;
+    const stickyW = 120;
+    const stickyH = 80;
+    const sx = PAGE_W - margin - stickyW;
+    const sy = margin + 20;
+    ctx.save();
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle = bg;
+    ctx.shadowColor = 'rgba(0,0,0,0.1)';
+    ctx.shadowBlur = 4;
+    ctx.fillRect(sx, sy, stickyW, stickyH);
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+    ctx.font = `${Math.max(9, S.fontSize * 0.5)}px ${S.font}`;
+    ctx.fillStyle = '#333';
+    window.PaperRenderer.drawWrappedText(ctx, sticky.text, sx + 6, sy + 16, stickyW - 12, S.fontSize * 0.55, 5);
+    ctx.restore();
+  });
+}
+
+function paintCallouts(queue, targetPageIdx) {
+  if (typeof window._parsedCallouts === 'undefined' || !window._parsedCallouts.length) return;
+  window._parsedCallouts.forEach((callout) => {
+    const items = queue.filter((item) => item.pageIdx === (targetPageIdx != null ? targetPageIdx : item.pageIdx));
+    if (!items.length) return;
+    const canvas = pages[items[0].pageIdx];
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const style = CALLOUT_STYLES[callout.type] || CALLOUT_STYLES.info;
+    const margin = S.margin;
+    const boxW = margin - 20;
+    const boxH = 70;
+    const bx = 10;
+    const by = margin + 20;
+    ctx.save();
+    ctx.fillStyle = style.bg;
+    ctx.fillRect(bx, by, boxW, boxH);
+    ctx.strokeStyle = style.border;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(bx, by, boxW, boxH);
+    ctx.font = `bold ${Math.max(10, S.fontSize * 0.5)}px ${S.font}`;
+    ctx.fillStyle = style.border;
+    ctx.fillText(style.icon, bx + 6, by + 16);
+    ctx.font = `${Math.max(8, S.fontSize * 0.4)}px ${S.font}`;
+    ctx.fillStyle = '#333';
+    window.PaperRenderer.drawWrappedText(ctx, callout.text, bx + 22, by + 16, boxW - 28, S.fontSize * 0.45, 4);
+    ctx.restore();
+  });
+}
 
 // ponytail: diagramCache and getDiagramImage are in diagram-engine.js
 
@@ -1123,17 +1307,23 @@ function layoutTextTemplated(text) {
 // equivalent ready flag), so the drawImage() call always happens
 // synchronously inside the correct save()/translate()/restore() block for
 // that character instead of racing an async onload against ctx.restore().
-const glyphImageCache = {};
+// ponytail: LRU cache — evicts oldest entry when exceeding 500
+const glyphImageCache = new Map();
+const GLYPH_CACHE_MAX = 500;
 
 function getCachedGlyphImage(char, src) {
-  let entry = glyphImageCache[char];
+  let entry = glyphImageCache.get(char);
   if (entry && entry.src === src) {
     return entry.ready ? entry.img : null;
   }
   // New character, or its drafted artwork changed — (re)decode it.
+  if (glyphImageCache.size >= GLYPH_CACHE_MAX) {
+    const oldest = glyphImageCache.keys().next().value;
+    glyphImageCache.delete(oldest);
+  }
   const img = new Image();
   entry = { img, src, ready: false };
-  glyphImageCache[char] = entry;
+  glyphImageCache.set(char, entry);
   img.onload = () => {
     entry.ready = true;
     debounceRender(); // swap the system-font placeholder for the real stroke
@@ -1203,21 +1393,12 @@ function renderText(text) {
     wrapper.dataset.pageIdx = idx;
     window.pageObserver.observe(wrapper);
   });
-
-  // Immediately render all pages to avoid blank-until-scroll race condition
-  // Use requestAnimationFrame to allow DOM to settle first
-  requestAnimationFrame(() => {
-    pages.forEach((c, idx) => {
-      c.dataset.rendered = 'false'; // force re-render
-      window.renderSpecificPage(idx, true);
-    });
-  });
 }
 
 window.renderSpecificPage = function (pageIdx, forceRedraw) {
   const canvas = pages[pageIdx];
   if (!canvas) return;
-  if (canvas.dataset.rendered === 'true' && !forceRedraw && !arguments[1]) return;
+  if (canvas.dataset.rendered === 'true' && !forceRedraw) return;
   canvas.dataset.rendered = 'true';
 
   // Always draw directly to the main canvas for reliability
@@ -1282,127 +1463,12 @@ window.renderSpecificPage = function (pageIdx, forceRedraw) {
     }
 
     if (item.type === 'shape' || item.type === 'edge') {
-      let rc = window.currentRcCache.get(item.pageIdx);
-      if (!rc && typeof rough !== 'undefined') {
-        rc = rough.canvas(canvas);
-        window.currentRcCache.set(item.pageIdx, rc);
-      }
-
-      const options = {
+      drawShapeOrEdge(ctx, canvas, item, {
         roughness: S.pressure * 4,
         stroke: S.inkColor,
         strokeWidth: 1.2,
         bowing: S.rotationMax * 2,
-      };
-
-      if (item.type === 'shape') {
-        if (rc) {
-          if (item.shape === 'circle') {
-            rc.circle(item.x, item.y, Math.max(item.w, item.h), options);
-          } else if (item.shape === 'diamond') {
-            const halfW = item.w / 2;
-            const halfH = item.h / 2;
-            rc.polygon(
-              [
-                [item.x, item.y - halfH],
-                [item.x + halfW, item.y],
-                [item.x, item.y + halfH],
-                [item.x - halfW, item.y],
-              ],
-              options
-            );
-          } else if (item.shape === 'pill' || item.shape === 'rounded') {
-            rc.roundRect(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h, 12, options);
-          } else if (item.shape === 'hexagon') {
-            const hw = item.w / 2,
-              hh = item.h / 2;
-            const inset = hw * 0.3;
-            rc.polygon(
-              [
-                [item.x - hw + inset, item.y - hh],
-                [item.x + hw - inset, item.y - hh],
-                [item.x + hw, item.y],
-                [item.x + hw - inset, item.y + hh],
-                [item.x - hw + inset, item.y + hh],
-                [item.x - hw, item.y],
-              ],
-              options
-            );
-          } else {
-            rc.rectangle(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h, options);
-          }
-        } else {
-          ctx.strokeStyle = S.inkColor;
-          ctx.lineWidth = 1.2;
-          ctx.beginPath();
-          if (item.shape === 'circle') {
-            ctx.arc(item.x, item.y, Math.max(item.w, item.h) / 2, 0, Math.PI * 2);
-          } else if (item.shape === 'diamond') {
-            const halfW = item.w / 2;
-            const halfH = item.h / 2;
-            ctx.moveTo(item.x, item.y - halfH);
-            ctx.lineTo(item.x + halfW, item.y);
-            ctx.lineTo(item.x, item.y + halfH);
-            ctx.lineTo(item.x - halfW, item.y);
-            ctx.closePath();
-          } else if (item.shape === 'pill' || item.shape === 'rounded') {
-            const rad = Math.min(12, item.h / 2);
-            ctx.roundRect(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h, rad);
-          } else if (item.shape === 'hexagon') {
-            const hw = item.w / 2,
-              hh = item.h / 2;
-            const inset = hw * 0.3;
-            ctx.moveTo(item.x - hw + inset, item.y - hh);
-            ctx.lineTo(item.x + hw - inset, item.y - hh);
-            ctx.lineTo(item.x + hw, item.y);
-            ctx.lineTo(item.x + hw - inset, item.y + hh);
-            ctx.lineTo(item.x - hw + inset, item.y + hh);
-            ctx.lineTo(item.x - hw, item.y);
-            ctx.closePath();
-          } else {
-            ctx.rect(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h);
-          }
-          ctx.stroke();
-        }
-        // ponytail: labels rendered via diagram-label queue items with handwriting variation
-      } else if (item.type === 'edge') {
-        if (rc) {
-          rc.line(item.from.x, item.from.y, item.to.x, item.to.y, options);
-          const angle = Math.atan2(item.to.y - item.from.y, item.to.x - item.from.x);
-          drawArrowhead(ctx, rc, item.to.x, item.to.y, angle, 12, S.inkColor, options.roughness);
-        } else {
-          ctx.strokeStyle = S.inkColor;
-          ctx.lineWidth = 1.2;
-          ctx.beginPath();
-          ctx.moveTo(item.from.x, item.from.y);
-          ctx.lineTo(item.to.x, item.to.y);
-          ctx.stroke();
-          const angle = Math.atan2(item.to.y - item.from.y, item.to.x - item.from.x);
-          ctx.beginPath();
-          ctx.moveTo(item.to.x, item.to.y);
-          ctx.lineTo(item.to.x - 10 * Math.cos(angle - 0.5), item.to.y - 10 * Math.sin(angle - 0.5));
-          ctx.moveTo(item.to.x, item.to.y);
-          ctx.lineTo(item.to.x - 10 * Math.cos(angle + 0.5), item.to.y - 10 * Math.sin(angle + 0.5));
-          ctx.stroke();
-        }
-        if (item.label) {
-          const mx = (item.from.x + item.to.x) / 2;
-          const my = (item.from.y + item.to.y) / 2;
-          ctx.save();
-          ctx.font = `${Math.max(10, S.fontSize * 0.7)}px ${S.font}`;
-          ctx.fillStyle = S.inkColor;
-          ctx.globalAlpha = 0.85;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          const tw = ctx.measureText(item.label).width;
-          const isDark = S.paperStyle === 'dark';
-          ctx.fillStyle = isDark ? 'rgba(26,26,46,0.85)' : 'rgba(247,243,234,0.85)';
-          ctx.fillRect(mx - tw / 2 - 3, my - S.fontSize * 0.4, tw + 6, S.fontSize * 0.9);
-          ctx.fillStyle = S.inkColor;
-          ctx.fillText(item.label, mx, my);
-          ctx.restore();
-        }
-      }
+      }, window.currentRcCache);
       return;
     }
 
@@ -1714,87 +1780,12 @@ function startAnimation() {
       }
 
       if (item.type === 'shape' || item.type === 'edge') {
-        const rc = typeof rough !== 'undefined' ? rough.canvas(canvas) : null;
-        const options = {
+        drawShapeOrEdge(ctx, canvas, item, {
           roughness: S.pressure * 4,
           stroke: S.inkColor,
           strokeWidth: 1.2,
           bowing: S.rotationMax * 2,
-        };
-
-        if (item.type === 'shape') {
-          if (rc) {
-            if (item.shape === 'circle') {
-              rc.circle(item.x, item.y, Math.max(item.w, item.h), options);
-            } else if (item.shape === 'diamond') {
-              const halfW = item.w / 2,
-                halfH = item.h / 2;
-              rc.polygon(
-                [
-                  [item.x, item.y - halfH],
-                  [item.x + halfW, item.y],
-                  [item.x, item.y + halfH],
-                  [item.x - halfW, item.y],
-                ],
-                options
-              );
-            } else if (item.shape === 'pill' || item.shape === 'rounded') {
-              rc.roundRect(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h, 12, options);
-            } else if (item.shape === 'hexagon') {
-              const hw = item.w / 2,
-                hh = item.h / 2,
-                inset = hw * 0.3;
-              rc.polygon(
-                [
-                  [item.x - hw + inset, item.y - hh],
-                  [item.x + hw - inset, item.y - hh],
-                  [item.x + hw, item.y],
-                  [item.x + hw - inset, item.y + hh],
-                  [item.x - hw + inset, item.y + hh],
-                  [item.x - hw, item.y],
-                ],
-                options
-              );
-            } else {
-              rc.rectangle(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h, options);
-            }
-          } else {
-            ctx.strokeStyle = S.inkColor;
-            ctx.lineWidth = 1.2;
-            ctx.beginPath();
-            if (item.shape === 'circle') {
-              ctx.arc(item.x, item.y, Math.max(item.w, item.h) / 2, 0, Math.PI * 2);
-            } else if (item.shape === 'pill' || item.shape === 'rounded') {
-              ctx.roundRect(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h, 12);
-            } else if (item.shape === 'hexagon') {
-              const hw = item.w / 2,
-                hh = item.h / 2,
-                inset = hw * 0.3;
-              ctx.moveTo(item.x - hw + inset, item.y - hh);
-              ctx.lineTo(item.x + hw - inset, item.y - hh);
-              ctx.lineTo(item.x + hw, item.y);
-              ctx.lineTo(item.x + hw - inset, item.y + hh);
-              ctx.lineTo(item.x - hw + inset, item.y + hh);
-              ctx.lineTo(item.x - hw, item.y);
-              ctx.closePath();
-            } else {
-              ctx.rect(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h);
-            }
-            ctx.stroke();
-          }
-        } else if (item.type === 'edge') {
-          if (rc) {
-            rc.line(item.from.x, item.from.y, item.to.x, item.to.y, options);
-            const angle = Math.atan2(item.to.y - item.from.y, item.to.x - item.from.x);
-            drawArrowhead(ctx, rc, item.to.x, item.to.y, angle, 12, S.inkColor, options.roughness);
-          } else {
-            ctx.strokeStyle = S.inkColor;
-            ctx.beginPath();
-            ctx.moveTo(item.from.x, item.from.y);
-            ctx.lineTo(item.to.x, item.to.y);
-            ctx.stroke();
-          }
-        }
+        }, null);
         continue;
       }
 
@@ -1892,6 +1883,15 @@ const AI_MODELS = {
     { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus (Powerful)' },
     { id: 'claude-3-haiku-20240307', name: 'Claude 3 Haiku (Budget)' },
   ],
+  ollama: [
+    { id: 'llama3.2', name: '🦙 Llama 3.2' },
+    { id: 'mistral', name: '🔷 Mistral' },
+    { id: 'phi4', name: '🪟 Phi-4' },
+    { id: 'gemma2', name: '💎 Gemma 2' },
+    { id: 'qwen2.5', name: '🟠 Qwen 2.5' },
+    { id: 'deepseek-r1', name: '🌊 DeepSeek R1' },
+    { id: 'codellama', name: '🦙 CodeLlama' },
+  ],
 };
 
 let openRouterModelsLoaded = false;
@@ -1985,20 +1985,35 @@ function onProviderChange() {
   });
 
   // Update key label and placeholder
-  if (provider === 'openrouter') {
-    keyLabel.textContent = 'OpenRouter API Key';
-    keyInput.placeholder = 'sk-or-v1-…';
-    // Async fetch up-to-date models automatically from openrouter
-    fetchOpenRouterModels();
+  if (provider === 'ollama') {
+    keyLabel.textContent = 'No API key needed (local)';
+    keyInput.placeholder = 'Ollama runs locally — no key required';
+    keyInput.disabled = true;
+    keyInput.value = '';
+    keyLabel.style.display = 'none';
+    keyInput.style.display = 'none';
+    document.getElementById('remember-api-key')?.closest('label')?.style.setProperty('display', 'none');
   } else {
-    keyLabel.textContent = 'Anthropic API Key';
-    keyInput.placeholder = 'sk-ant-api…';
+    keyLabel.style.display = '';
+    keyInput.style.display = '';
+    keyInput.disabled = false;
+    document.getElementById('remember-api-key')?.closest('label')?.style.setProperty('display', '');
+    if (provider === 'openrouter') {
+      keyLabel.textContent = 'OpenRouter API Key';
+      keyInput.placeholder = 'sk-or-v1-…';
+      // Async fetch up-to-date models automatically from openrouter
+      fetchOpenRouterModels();
+    } else {
+      keyLabel.textContent = 'Anthropic API Key';
+      keyInput.placeholder = 'sk-ant-api…';
+    }
   }
 }
 
 // Initialize model dropdown and start auto-fetching on load
 onProviderChange();
 fetchOpenRouterModels();
+window.AIAssistant.initApiKeyPersistence();
 
 /* -- AI ASSISTANT � delegated to ai-assistant.js -------------------------- */
 const callClaude = (...a) => window.AIAssistant.callClaude(...a);
@@ -2373,7 +2388,7 @@ async function pruneBlankGlyphs() {
       }
       const btn = document.getElementById(`char-btn-${char}`);
       if (btn) btn.classList.remove('drafted');
-      delete glyphImageCache[char];
+      glyphImageCache.delete(char);
     }
   }
   if (pruned > 0) {
@@ -2552,9 +2567,6 @@ async function restoreState() {
       if (btn) btn.classList.add('drafted');
     }
   });
-
-  // Optionally redraw if studio is open
-  if (typeof drawStudioCanvas === 'function') drawStudioCanvas();
 }
 
 /* ───────────────────────────────────────────
@@ -2798,7 +2810,8 @@ function setupFileUpload() {
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
-      const pageText = content.items.map((item) => item.str).join(' ');
+      // ponytail: respect hasEOL to preserve paragraph structure
+      const pageText = content.items.map((item) => item.str + (item.hasEOL ? '\n' : '')).join('');
       fullText += pageText + '\n\n';
       if (onProgress) onProgress((i / pdf.numPages) * 100);
     }
@@ -2890,14 +2903,49 @@ function resetToDefaults() {
 // Modal Toggles
 function openHandFontedModal() {
   const modal = document.getElementById('handfonted-modal');
-  if (modal) modal.classList.remove('hidden');
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal._previousFocus = document.activeElement;
+    const firstFocusable = modal.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    if (firstFocusable) firstFocusable.focus();
+  }
   switchSheet('letters');
 }
 
 function closeHandFontedModal() {
   const modal = document.getElementById('handfonted-modal');
-  if (modal) modal.classList.add('hidden');
+  if (modal) {
+    modal.classList.add('hidden');
+    if (modal._previousFocus) modal._previousFocus.focus();
+  }
 }
+
+// ponytail: ESC key closes active modal, focus trap keeps Tab inside
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const modals = document.querySelectorAll('.modal-overlay:not(.hidden)');
+  modals.forEach((m) => {
+    m.classList.add('hidden');
+    if (m._previousFocus) m._previousFocus.focus();
+  });
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Tab') return;
+  const modal = document.querySelector('.modal-overlay:not(.hidden)');
+  if (!modal) return;
+  const focusable = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (e.shiftKey && document.activeElement === first) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && document.activeElement === last) {
+    e.preventDefault();
+    first.focus();
+  }
+});
 
 function switchSheet(sheet) {
   activeSheet = sheet;
@@ -3907,9 +3955,20 @@ async function buildCustomFont() {
   }
 }
 
+async function exportCustomFontTTF() {
+  const fontNameInput = document.getElementById('custom-font-name');
+  const fontName = fontNameInput?.value?.replace(/[^a-zA-Z0-9]/g, '') || 'MyHandwriting';
+  try {
+    await ensureOpentypeLoaded();
+    await window.FontCompilation.exportCustomFontTTF(draftedGlyphs, fontName);
+  } catch (e) {
+    alert('TTF export failed: ' + e.message);
+  }
+}
+
 /* ═════════════════════════════════════════
    PHASE 16 - LAYER MANAGER UI
-═════════════════════════════════════════ */
+════════════════════════════════════════ */
 let currentLayerPage = 0; // The page whose layers are being viewed/edited in the UI
 
 function updateLayerUI(pageIdx = 0) {
@@ -4040,4 +4099,178 @@ function flattenAllLayers() {
 function requestPageRender(pageIdx) {
   // Simple re-render wrapper
   window.renderSpecificPage(pageIdx, true);
+}
+
+/* ═════════════════════════════════════════
+   STUDY MODE + FLASHCARDS + VOICE + THEMES
+═══════════════════════════════════════ */
+
+let studyModeActive = false;
+let flashcards = [];
+let currentFlashcardIdx = 0;
+let flashcardFlipped = false;
+
+function toggleStudyMode() {
+  studyModeActive = !studyModeActive;
+  document.body.classList.toggle('study-mode', studyModeActive);
+  if (studyModeActive) {
+    loadFlashcardsFromText();
+    if (flashcards.length > 0) {
+      openFlashcardsModal();
+    } else {
+      alert('No flashcards found. Use Q: and A: format in your text:\n\nQ: What is photosynthesis?\nA: The process by which plants convert light to energy.');
+    }
+  } else {
+    closeFlashcardsModal();
+  }
+}
+
+function loadFlashcardsFromText() {
+  flashcards = [];
+  currentFlashcardIdx = 0;
+  flashcardFlipped = false;
+  const text = S.text || '';
+  const { flashcards: parsed } = window.TextLayout.parseRichSyntax(text);
+  if (parsed && parsed.length > 0) {
+    flashcards = parsed;
+  }
+  // Also extract from Q:/A: patterns if parseRichSyntax didn't catch them
+  if (flashcards.length === 0) {
+    const lines = text.split('\n');
+    let currentQ = null;
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (/^Q[:.]\s/.test(trimmed)) {
+        currentQ = trimmed.replace(/^Q[:.]\s*/, '');
+      } else if (/^A[:.]\s/.test(trimmed) && currentQ) {
+        flashcards.push({ question: currentQ, answer: trimmed.replace(/^A[:.]\s*/, '') });
+        currentQ = null;
+      }
+    }
+  }
+}
+
+function openFlashcardsModal() {
+  if (flashcards.length === 0) return;
+  document.getElementById('flashcards-modal').classList.remove('hidden');
+  currentFlashcardIdx = 0;
+  renderFlashcard();
+}
+
+function closeFlashcardsModal() {
+  document.getElementById('flashcards-modal').classList.add('hidden');
+}
+
+function renderFlashcard() {
+  if (flashcards.length === 0) return;
+  const fc = flashcards[currentFlashcardIdx];
+  document.getElementById('flashcard-counter').textContent = `${currentFlashcardIdx + 1} / ${flashcards.length}`;
+  document.getElementById('flashcard-front').textContent = fc.question;
+  document.getElementById('flashcard-back').textContent = fc.answer;
+  const inner = document.getElementById('flashcard-inner');
+  inner.style.transform = flashcardFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)';
+  document.getElementById('flashcard-hint').textContent = flashcardFlipped ? 'Click to see question' : 'Click to flip';
+}
+
+function flipFlashcard() {
+  flashcardFlipped = !flashcardFlipped;
+  renderFlashcard();
+}
+
+function nextFlashcard() {
+  if (flashcards.length === 0) return;
+  flashcardFlipped = false;
+  currentFlashcardIdx = (currentFlashcardIdx + 1) % flashcards.length;
+  renderFlashcard();
+}
+
+function prevFlashcard() {
+  if (flashcards.length === 0) return;
+  flashcardFlipped = false;
+  currentFlashcardIdx = (currentFlashcardIdx - 1 + flashcards.length) % flashcards.length;
+  renderFlashcard();
+}
+
+/* ── Voice to Notes ─────────────────────────────────────────────────────── */
+
+let voiceRecognition = null;
+let voiceRecording = false;
+
+function startVoiceRecording() {
+  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+    alert('Voice recognition not supported in this browser. Try Chrome.');
+    return;
+  }
+  if (voiceRecording && voiceRecognition) {
+    voiceRecognition.stop();
+    voiceRecording = false;
+    document.getElementById('voice-toast').classList.add('hidden');
+    document.getElementById('btn-voice').classList.remove('active');
+    return;
+  }
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  voiceRecognition = new SpeechRecognition();
+  voiceRecognition.continuous = true;
+  voiceRecognition.interimResults = true;
+  voiceRecognition.lang = 'en-US';
+  voiceRecognition.onresult = (event) => {
+    let finalTranscript = '';
+    let interimTranscript = '';
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      if (event.results[i].isFinal) {
+        finalTranscript += event.results[i][0].transcript;
+      } else {
+        interimTranscript += event.results[i][0].transcript;
+      }
+    }
+    if (finalTranscript) {
+      const textarea = document.getElementById('text-input');
+      if (textarea) {
+        const current = textarea.value;
+        const newText = current ? current + '\n' + finalTranscript : finalTranscript;
+        textarea.value = newText;
+        S.text = newText;
+        renderText(S.text);
+        autosave();
+      }
+    }
+  };
+  voiceRecognition.onerror = () => {
+    voiceRecording = false;
+    document.getElementById('voice-toast').classList.add('hidden');
+    document.getElementById('btn-voice').classList.remove('active');
+  };
+  voiceRecognition.onend = () => {
+    voiceRecording = false;
+    document.getElementById('voice-toast').classList.add('hidden');
+    document.getElementById('btn-voice').classList.remove('active');
+  };
+  voiceRecognition.start();
+  voiceRecording = true;
+  document.getElementById('voice-toast').classList.remove('hidden');
+  document.getElementById('btn-voice').classList.add('active');
+}
+
+/* ── Theme Packs ────────────────────────────────────────────────────────── */
+
+const THEME_PACKS = {
+  default: { name: 'Default', accent: '#6C63FF', paper: '#f7f3ea', ink: '#1c2340' },
+  forest: { name: 'Forest', accent: '#2e7d32', paper: '#f1f8e9', ink: '#1b5e20' },
+  sunset: { name: 'Sunset', accent: '#e65100', paper: '#fff3e0', ink: '#bf360c' },
+  ocean: { name: 'Ocean', accent: '#0277bd', paper: '#e1f5fe', ink: '#01579b' },
+  lavender: { name: 'Lavender', accent: '#7b1fa2', paper: '#f3e5f5', ink: '#4a148c' },
+  charcoal: { name: 'Charcoal', accent: '#546e7a', paper: '#eceff1', ink: '#263238' },
+};
+
+function applyThemePack(packId) {
+  const pack = THEME_PACKS[packId];
+  if (!pack) return;
+  document.documentElement.style.setProperty('--accent', pack.accent);
+  document.documentElement.style.setProperty('--paper-color', pack.paper);
+  document.documentElement.style.setProperty('--ink-color', pack.ink);
+  S.paperColor = pack.paper;
+  S.inkColor = pack.ink;
+  S.accentColor = pack.accent;
+  autosave();
+  debounceRender();
 }
