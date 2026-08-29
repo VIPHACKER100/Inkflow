@@ -157,8 +157,9 @@
 
   // Loads a data URL image into a 256x256 canvas, centered and aspect-ratio preserved
   function loadImageToCanvas(dataUrl) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const img = new Image();
+      img.onerror = () => reject(new Error('Failed to load image'));
       img.onload = () => {
         const canvas = document.createElement('canvas');
         canvas.width = 256;
@@ -225,12 +226,19 @@
     return path;
   }
 
-  // ponytail: exposed as browser globals, no ES module imports
-  window.FontCompilation = {
+  const FontCompilation = {
     traceCanvasContours,
     isCellBlank,
     simplifyPath,
     loadImageToCanvas,
     canvasToOpentypePath,
   };
+
+  if (typeof window !== 'undefined') {
+    window.FontCompilation = FontCompilation;
+  }
+
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = FontCompilation;
+  }
 })();

@@ -189,15 +189,17 @@ class TemplateManager {
     // Try to load custom template from localStorage if not found in built-ins
     if (!this.templates.has(id)) {
       try {
-        const custom = localStorage.getItem('inkflow_template_' + id);
-        if (custom) {
-          try {
-            return JSON.parse(custom);
-          } catch (e) {
-            console.error('Failed to parse custom template', id);
+        if (typeof localStorage !== 'undefined') {
+          const custom = localStorage.getItem('inkflow_template_' + id);
+          if (custom) {
+            try {
+              return JSON.parse(custom);
+            } catch {
+              console.error('Failed to parse custom template', id);
+            }
           }
         }
-      } catch (e) {
+      } catch {
         /* Safari private mode, storage full, etc. */
       }
       return this.templates.get('standard');
@@ -216,8 +218,10 @@ class TemplateManager {
       throw new Error('Cannot overwrite built-in templates. Provide a unique custom ID.');
     }
     try {
-      localStorage.setItem('inkflow_template_' + template.id, JSON.stringify(template));
-    } catch (e) {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('inkflow_template_' + template.id, JSON.stringify(template));
+      }
+    } catch {
       /* Safari private mode, storage full, etc. */
     }
     this.templates.set(template.id, template);
@@ -227,19 +231,23 @@ class TemplateManager {
     const list = Array.from(this.templates.values());
     // Also grab custom ones from local storage
     try {
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('inkflow_template_')) {
-          try {
-            const tpl = JSON.parse(localStorage.getItem(key));
-            if (!this.templates.has(tpl.id)) {
-              list.push(tpl);
-              this.templates.set(tpl.id, tpl);
+      if (typeof localStorage !== 'undefined') {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('inkflow_template_')) {
+            try {
+              const tpl = JSON.parse(localStorage.getItem(key));
+              if (tpl && tpl.id && !this.templates.has(tpl.id)) {
+                list.push(tpl);
+                this.templates.set(tpl.id, tpl);
+              }
+            } catch {
+              /* ignore corrupt items */
             }
-          } catch (e) {}
+          }
         }
       }
-    } catch (e) {
+    } catch {
       /* Safari private mode */
     }
     return list;
@@ -251,6 +259,9 @@ class TemplateManager {
     if (typeof val === 'string') {
       if (val.endsWith('%')) {
         return (parseFloat(val) / 100) * maxVal;
+      }
+      if (val.endsWith('px')) {
+        return parseFloat(val);
       }
       if (val.startsWith('calc(')) {
         // Simple eval: supports % and px, + and -
@@ -299,7 +310,7 @@ class TemplateManager {
     const template = this.getTemplate(templateId);
 
     // Resolve all zones to absolute pixel coordinates
-    const zones = template.zones.map((z) => this.resolveZone(z, pageWidth, pageHeight, margin));
+    const zones = (template.zones || []).map((z) => this.resolveZone(z, pageWidth, pageHeight, margin));
 
     // Resolve guides
     const innerW = pageWidth - margin * 2;
@@ -329,5 +340,13 @@ class TemplateManager {
   }
 }
 
-// Ensure global singleton
-window.templateManager = new TemplateManager();
+// Export for browser
+if (typeof window !== 'undefined') {
+  window.TemplateManager = TemplateManager;
+  window.templateManager = new TemplateManager();
+}
+
+// Export for Node.js / test environments
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { TemplateManager };
+}

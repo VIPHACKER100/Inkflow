@@ -4,6 +4,25 @@ All notable changes to Inkflow are documented in this file.
 
 ---
 
+## [1.5.1] — 2026-08-29
+
+### 🛠️ Fixed
+- **Critical: `renderCursiveConnections` undefined** — Cursive mode rendering crashed with `ReferenceError`. Fixed to call `renderCursiveConnectionsOn(ctx, pageItems)` from `export-renderers.js`.
+- **Critical: Server crash on malformed operations** — `server.js` crashed on `op.char.length` when `op.char` was undefined. Added type validation and position bounds checking.
+- **Critical: `autoFitFontSize` state corruption** — Binary search mutated `S.fontSize` with no `try/finally`. If `layoutText()` threw, font size was permanently corrupted. Added restore on error.
+- **High: `loadImageToCanvas` hangs forever** — Promise never rejected on invalid images. Added `img.onerror` handler.
+- **High: `curr.v.pressureMod` null deref** — Cursive rendering crashed on malformed queue items. Added optional chaining.
+- **High: DOM null dereferences** — 8+ `getElementById` calls accessed properties without null checks. Added `?.` optional chaining to all.
+- **Medium: `resolveDimension` ignores `"px"` strings** — Template manager treated `"20px"` as `0`. Added `px` branch.
+- **Medium: `resolveTemplate` crashes on missing zones** — Added fallback `(template.zones || [])`.
+- **Medium: `getAllTemplates` corrupts Map** — Malformed localStorage entries added `undefined` key. Added validation.
+- **Medium: Blob URL leaked on invalid SVG** — `diagram-engine.js` didn't revoke URL on early return.
+- **Medium: `drawPaperBackground` crashes on missing globals** — Added guard for `S`, `PAGE_W`, `PAGE_H`.
+- **Medium: WebSocket reconnection** — Added exponential backoff (3 attempts, max 8s delay) in `collaborative-engine.js`.
+- **Medium: Server error handler** — Added `ws.on('error')` to prevent noisy stderr logs.
+
+---
+
 ## [1.5.0] — 2026-08-28
 
 ### ✨ Added

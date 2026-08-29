@@ -7,7 +7,7 @@
   'use strict';
 
   function renderCursiveConnectionsOn(ctx, canvas, pageItems) {
-    if (!cursiveConnector) return;
+    if (typeof cursiveConnector === 'undefined' || !cursiveConnector) return;
     const charList = pageItems.filter((item) => !item.type && !item.isIndic);
     for (let i = 0; i < charList.length - 1; i++) {
       const curr = charList[i];
@@ -28,7 +28,7 @@
         { x: next.x, y: next.y },
         entryPoint,
         curr.inkColor || S.inkColor,
-        curr.v.pressureMod,
+        curr.v?.pressureMod ?? 1,
         S.fontSize
       );
     }
@@ -46,6 +46,7 @@
 
     pageItems.forEach((item) => {
       if (item.type === 'mermaid') {
+        if (typeof getDiagramImage === 'undefined') return;
         const diag = getDiagramImage(item.content);
         if (diag.ready && diag.img && !diag.error) {
           ctx.save();

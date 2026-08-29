@@ -1845,7 +1845,7 @@ html.dark .drop-zone {
 .dropdown-content {
   display: none;
   position: absolute;
-  bottom: 100%; /* Show above the button */
+  top: 100%;
   left: 0;
   background-color: var(--sidebar-bg);
   min-width: 160px;
@@ -1855,7 +1855,7 @@ html.dark .drop-zone {
   z-index: 1000;
   -webkit-backdrop-filter: blur(24px) saturate(1.4);
   backdrop-filter: blur(24px) saturate(1.4);
-  margin-bottom: 8px;
+  margin-top: 8px;
 }
 
 .dropdown-content a {

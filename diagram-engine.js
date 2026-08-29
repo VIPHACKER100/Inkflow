@@ -132,6 +132,7 @@ function getDiagramImage(content, debounceRender) {
         const doc = parser.parseFromString(svg, 'image/svg+xml');
         const svgEl = doc.querySelector('svg');
         if (!svgEl) {
+          URL.revokeObjectURL(url);
           entry.error = true;
           return;
         }

@@ -1,4 +1,4 @@
-﻿const S = {
+const S = {
   text: 'This is a sample note starting from the second line of the page. The first line has been skipped automatically as per your request.\n\n```diagram\n{\n  "type": "cycle",\n  "title": "Water Cycle",\n  "nodes": [\n    { "id": "n1", "label": "Evaporation" },\n    { "id": "n2", "label": "Condensation" },\n    { "id": "n3", "label": "Precipitation" },\n    { "id": "n4", "label": "Collection" }\n  ],\n  "edges": [\n    { "from": "n1", "to": "n2" },\n    { "from": "n2", "to": "n3" },\n    { "from": "n3", "to": "n4" },\n    { "from": "n4", "to": "n1" }\n  ]\n}\n```\n\nYou can continue writing your notes here, and the engine will handle the line spacing and page breaks while always skipping the top line of every new page.',
   font: 'Caveat',
   fontSize: 22,
@@ -127,7 +127,7 @@ if (typeof mermaid !== 'undefined') {
 }
 
 /**
- * PHASE 6.0 â€” STRUCTURED HAND-DRAWN DIAGRAMS (rough.js)
+ * PHASE 6.0 — STRUCTURED HAND-DRAWN DIAGRAMS (rough.js)
  */
 // ponytail: diagram layout functions imported from diagram-engine.js
 // diagram layout functions (layoutCycle, layoutFlowchart, etc.) are global from diagram-engine.js
@@ -268,15 +268,15 @@ if (typeof initLayerCompositor === 'function') {
   initLayerCompositor(PAGE_W, PAGE_H);
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   PHASE 1.4 / 2.6 â€” DARK MODE TOGGLE
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ───────────────────────────────────────────
+   PHASE 1.4 / 2.6 — DARK MODE TOGGLE
+─────────────────────────────────────────── */
 const darkToggle = document.getElementById('dark-toggle');
 const darkIcon = document.getElementById('dark-icon');
 let isDark = localStorage.getItem('inkflow-dark') === '1';
 applyDark();
 
-darkToggle.addEventListener('click', () => {
+darkToggle?.addEventListener('click', () => {
   isDark = !isDark;
   localStorage.setItem('inkflow-dark', isDark ? '1' : '0');
   applyDark();
@@ -284,19 +284,19 @@ darkToggle.addEventListener('click', () => {
 
 function applyDark() {
   document.documentElement.classList.toggle('dark', isDark);
-  darkIcon.textContent = isDark ? 'ðŸŒ™' : 'â˜€ï¸';
+  if (darkIcon) darkIcon.textContent = isDark ? '??' : '??';
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   PHASE 2.7 â€” HAMBURGER (MOBILE)
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-document.getElementById('hamburger').addEventListener('click', () => {
-  document.getElementById('sidebar').classList.toggle('open');
+/* ───────────────────────────────────────────
+   PHASE 2.7 — HAMBURGER (MOBILE)
+─────────────────────────────────────────── */
+document.getElementById('hamburger')?.addEventListener('click', () => {
+  document.getElementById('sidebar')?.classList.toggle('open');
 });
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   PHASE 2.3 â€” SIDEBAR SECTION TOGGLE
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ───────────────────────────────────────────
+   PHASE 2.3 — SIDEBAR SECTION TOGGLE
+─────────────────────────────────────────── */
 function toggleSection(id) {
   const section = document.getElementById(id);
   section.classList.toggle('collapsed');
@@ -304,11 +304,11 @@ function toggleSection(id) {
   if (btn) btn.setAttribute('aria-expanded', !section.classList.contains('collapsed'));
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   PHASE 3.1/3.2 â€” FONT SELECTOR + PREVIEW
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ───────────────────────────────────────────
+   PHASE 3.1/3.2 — FONT SELECTOR + PREVIEW
+─────────────────────────────────────────── */
 const fontSelect = document.getElementById('font-select');
-fontSelect.addEventListener('change', () => {
+fontSelect?.addEventListener('change', () => {
   S.font = fontSelect.value;
   fontSelect.style.fontFamily = S.font;
   if (document.fonts) {
@@ -324,7 +324,7 @@ fontSelect.addEventListener('change', () => {
     debounceRender();
   }
 });
-fontSelect.style.fontFamily = S.font;
+if (fontSelect) fontSelect.style.fontFamily = S.font;
 
 const layoutSelect = document.getElementById('layout-select');
 if (layoutSelect) {
@@ -341,7 +341,7 @@ if (document.fonts) {
   });
 }
 
-/* Phase 3.3 â€” Custom font upload */
+/* Phase 3.3 — Custom font upload */
 document.getElementById('font-upload').addEventListener('change', async function () {
   const file = this.files[0];
   if (!file) return;
@@ -359,7 +359,7 @@ document.getElementById('font-upload').addEventListener('change', async function
     fontSelect.value = name;
     fontSelect.style.fontFamily = name;
     S.font = name;
-    /* Phase 3.4 â€” Store font name in localStorage */
+    /* Phase 3.4 — Store font name in localStorage */
     const stored = JSON.parse(localStorage.getItem('inkflow-fonts') || '[]');
     if (!stored.includes(name)) stored.push(name);
     localStorage.setItem('inkflow-fonts', JSON.stringify(stored));
@@ -369,33 +369,34 @@ document.getElementById('font-upload').addEventListener('change', async function
   }
 });
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   PHASE 3.5 â€” AUTO-FIT FONT SIZE
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ───────────────────────────────────────────
+   PHASE 3.5 — AUTO-FIT FONT SIZE
+─────────────────────────────────────────── */
 function autoFitFontSize() {
   const text = S.text.trim();
   if (!text) return;
 
+  const originalFontSize = S.fontSize;
   let min = 14;
   let max = 52;
   let bestSize = min;
 
-  // Binary search for a font size that fits text within 1 or 2 pages optimally
-  // but let's target fitting the current text precisely into the first page if it's short,
-  // or just generally reducing it if it overflows.
+  try {
+    for (let i = 0; i < 6; i++) {
+      const mid = Math.floor((min + max) / 2);
+      S.fontSize = mid;
+      const { pageCount } = layoutText(text);
 
-  for (let i = 0; i < 6; i++) {
-    // 6 iterations is enough for 14-52 range
-    const mid = Math.floor((min + max) / 2);
-    S.fontSize = mid;
-    const { pageCount } = layoutText(text);
-
-    if (pageCount > 1) {
-      max = mid;
-    } else {
-      bestSize = mid;
-      min = mid;
+      if (pageCount > 1) {
+        max = mid;
+      } else {
+        bestSize = mid;
+        min = mid;
+      }
     }
+  } catch (e) {
+    S.fontSize = originalFontSize;
+    return;
   }
 
   S.fontSize = bestSize;
@@ -410,15 +411,15 @@ function autoFitFontSize() {
   autosave();
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   PHASE 5.1â€“5.6 â€” SLIDER CONTROLS
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ───────────────────────────────────────────
+   PHASE 5.1–5.6 — SLIDER CONTROLS
+─────────────────────────────────────────── */
 function bindSlider(id, valId, key, parse = parseFloat, suffix = '') {
   const el = document.getElementById(id);
   const disp = document.getElementById(valId);
-  el.addEventListener('input', () => {
+  el?.addEventListener('input', () => {
     S[key] = parse(el.value);
-    disp.textContent = parse(el.value) + suffix;
+    if (disp) disp.textContent = parse(el.value) + suffix;
     debounceRender();
   });
 }
@@ -432,9 +433,9 @@ bindSlider('bleed-slider', 'bleed-val', 'bleed', parseFloat);
 bindSlider('pressure-slider', 'pressure-val', 'pressure', parseFloat);
 bindSlider('speed-slider', 'spd-val', 'animSpeed', parseInt);
 
-/* Phase 5.6 â€” Ink color picker */
+/* Phase 5.6 — Ink color picker */
 const inkColorInput = document.getElementById('ink-color');
-inkColorInput.addEventListener('input', () => {
+inkColorInput?.addEventListener('input', () => {
   S.inkColor = inkColorInput.value;
   document.getElementById('ink-color-label').textContent = S.inkColor;
   debounceRender();
@@ -443,7 +444,7 @@ inkColorInput.addEventListener('input', () => {
 function setInkPreset(hex, name) {
   S.inkColor = hex;
   inkColorInput.value = hex;
-  document.getElementById('ink-color-label').textContent = hex + ' â€” ' + name;
+  document.getElementById('ink-color-label').textContent = hex + ' — ' + name;
   syncMarkdownPenControls();
   debounceRender();
 }
@@ -532,14 +533,14 @@ Object.keys(markdownPenInputMap).forEach((type) => {
   el.addEventListener('change', autosave);
 });
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   PHASE 2.2 â€” SMUDGE EFFECTS TOGGLE
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   PHASE 3.1 â€” CURSIVE MODE TOGGLE
+/* ───────────────────────────────────────────
+   PHASE 2.2 — SMUDGE EFFECTS TOGGLE
+─────────────────────────────────────────── */
+/* ───────────────────────────────────────────
+   PHASE 3.1 — CURSIVE MODE TOGGLE
    Enables connected letter strokes (ligatures and connection curves)
    Requirements: 3.1, 3.4, 3.7
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+─────────────────────────────────────────── */
 function onCursiveModeToggle() {
   const cursiveModeToggle = document.getElementById('cursive-mode-toggle');
   if (cursiveModeToggle) {
@@ -563,9 +564,9 @@ if (cursiveModeToggle) {
   cursiveModeToggle.addEventListener('change', onCursiveModeToggle);
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   PHASE 5.7 â€” PAPER STYLE BUTTONS
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ───────────────────────────────────────────
+   PHASE 5.7 — PAPER STYLE BUTTONS
+─────────────────────────────────────────── */
 function setPaper(btn) {
   document.querySelectorAll('.paper-btn').forEach((b) => b.classList.remove('active'));
   btn.classList.add('active');
@@ -573,9 +574,9 @@ function setPaper(btn) {
   debounceRender();
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+/* ───────────────────────────────────────────
    TEXT VERTICAL ALIGNMENT CONTROL
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+─────────────────────────────────────────── */
 function setTextAlignment(alignment) {
   S.textAlignment = alignment;
 
@@ -593,9 +594,9 @@ function setTextAlignment(alignment) {
   debounceRender();
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   PHASE 4.1 â€” CREATE CANVAS PAGE
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ───────────────────────────────────────────
+   PHASE 4.1 — CREATE CANVAS PAGE
+─────────────────────────────────────────── */
 function createPage(pageNum) {
   const wrapper = document.createElement('div');
   wrapper.className = 'page-wrapper';
@@ -651,7 +652,7 @@ function createPage(pageNum) {
   marginText.id = 'margin-' + pageNum;
   marginText.contentEditable = 'true';
   marginText.setAttribute('aria-label', 'Margin notes for Page ' + pageNum);
-  marginText.setAttribute('placeholder', 'ðŸ“');
+  marginText.setAttribute('placeholder', '📝');
   marginText.style.fontFamily = S.font;
 
   // Update font when typing
@@ -940,7 +941,7 @@ function layoutTextTemplated(text) {
         words.forEach((word) => {
           let lx = n.x - ctx.measureText(word).width / 2;
           const chars = getGraphemes(word);
-          chars.forEach((ch, ci) => {
+          chars.forEach((ch, _ci) => {
             const v = getCharVariation(S.rotationMax * 0.5, S.pressure, S.fontSize);
             const cw = ctx.measureText(ch).width + v.spacingExtra;
             queue.push({
@@ -1129,7 +1130,7 @@ function getCachedGlyphImage(char, src) {
   if (entry && entry.src === src) {
     return entry.ready ? entry.img : null;
   }
-  // New character, or its drafted artwork changed â€” (re)decode it.
+  // New character, or its drafted artwork changed — (re)decode it.
   const img = new Image();
   entry = { img, src, ready: false };
   glyphImageCache[char] = entry;
@@ -1235,15 +1236,16 @@ window.renderSpecificPage = function (pageIdx, forceRedraw) {
         window.PaperRenderer.drawPaperBackground(bgCtx, S.paperStyle);
         window.PaperRenderer.renderSmudgeEffects(bgCtx, pageIdx);
       }
-    } catch (e) {
+    } catch {
       /* ignore compositor errors */
     }
   }
 
   const pageItems = (window.currentRenderQueue || []).filter((item) => item.pageIdx === pageIdx);
 
-  if (S.cursiveMode && cursiveConnector) {
-    renderCursiveConnections(pageItems);
+  const renderCursive = window.ExportRenderers?.renderCursiveConnectionsOn;
+  if (S.cursiveMode && cursiveConnector && typeof renderCursive === 'function') {
+    renderCursive(ctx, pageItems);
   }
 
   pageItems.forEach((item) => {
@@ -1523,13 +1525,14 @@ function debounceRender() {
 }
 
 function triggerRender() {
-  S.text = document.getElementById('text-input').value;
+  const input = document.getElementById('text-input');
+  if (input) S.text = input.value;
   renderText(S.text);
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   TASK 13 â€” COLLABORATIVE WRITING ENGINE
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ───────────────────────────────────────────
+   TASK 13 — COLLABORATIVE WRITING ENGINE
+─────────────────────────────────────────── */
 let collabEngine = null;
 const COLLAB_SERVER_URL = 'ws://localhost:8080';
 
@@ -1603,7 +1606,7 @@ function toggleCollaboration() {
       if (isOnline) {
         btn.textContent = 'Disconnect';
         document.getElementById('collab-users-container').classList.remove('hidden');
-      } else if (text !== 'Connectingâ€¦') {
+      } else if (text !== 'Connecting…') {
         btn.textContent = 'Connect to Session';
       }
     },
@@ -1611,7 +1614,7 @@ function toggleCollaboration() {
 
   collabEngine.initialize();
   collabEngine.connect(COLLAB_SERVER_URL);
-  btn.textContent = 'Connectingâ€¦';
+  btn.textContent = 'Connecting…';
   btn.disabled = true;
   setTimeout(() => {
     btn.disabled = false;
@@ -1619,10 +1622,11 @@ function toggleCollaboration() {
 }
 
 /**
- * PHASE 6.0 â€” DIAGRAM TEMPLATES
+ * PHASE 6.0 — DIAGRAM TEMPLATES
  */
 function insertDiagramTemplate(type) {
   const textarea = document.getElementById('text-input');
+  if (!textarea) return;
   const start = textarea.selectionStart;
   const end = textarea.selectionEnd;
   const current = textarea.value;
@@ -1660,7 +1664,8 @@ function stopAnimation() {
   if (animFrameId) cancelAnimationFrame(animFrameId);
   animFrameId = null;
   isAnimating = false;
-  document.getElementById('pen-cursor').style.display = 'none';
+  const cursor = document.getElementById('pen-cursor');
+  if (cursor) cursor.style.display = 'none';
 }
 
 function startAnimation() {
@@ -1837,48 +1842,48 @@ function startAnimation() {
 document.getElementById('btn-animate').addEventListener('click', startAnimation);
 document.getElementById('btn-clear').addEventListener('click', clearText);
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   PHASE 7.2 â€” MULTI-PROVIDER AI ENGINE
+/* ───────────────────────────────────────────
+   PHASE 7.2 — MULTI-PROVIDER AI ENGINE
    Supports: OpenRouter (100+ models) & Anthropic Direct
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+─────────────────────────────────────────── */
 
 const AI_MODELS = {
   openrouter: [
-    // â”€â”€ Google â”€â”€
-    { id: 'google/gemini-2.5-flash-preview', name: 'âš¡ Gemini 2.5 Flash (Free)' },
-    { id: 'google/gemini-2.5-pro-preview', name: 'ðŸ”¥ Gemini 2.5 Pro' },
-    { id: 'google/gemini-2.0-flash-001', name: 'âš¡ Gemini 2.0 Flash (Free)' },
-    // â”€â”€ Anthropic â”€â”€
-    { id: 'anthropic/claude-sonnet-4', name: 'ðŸŸ£ Claude Sonnet 4' },
-    { id: 'anthropic/claude-3.5-sonnet', name: 'ðŸŸ£ Claude 3.5 Sonnet' },
-    { id: 'anthropic/claude-3-haiku', name: 'ðŸŸ£ Claude 3 Haiku (Fast)' },
-    // â”€â”€ OpenAI â”€â”€
-    { id: 'openai/gpt-4.1', name: 'ðŸŸ¢ GPT-4.1' },
-    { id: 'openai/gpt-4.1-mini', name: 'ðŸŸ¢ GPT-4.1 Mini' },
-    { id: 'openai/gpt-4.1-nano', name: 'ðŸŸ¢ GPT-4.1 Nano' },
-    { id: 'openai/gpt-4o', name: 'ðŸŸ¢ GPT-4o' },
-    { id: 'openai/gpt-4o-mini', name: 'ðŸŸ¢ GPT-4o Mini' },
-    { id: 'openai/o3-mini', name: 'ðŸŸ¢ o3-Mini (Reasoning)' },
-    // â”€â”€ Meta â”€â”€
-    { id: 'meta-llama/llama-4-maverick', name: 'ðŸ¦™ Llama 4 Maverick' },
-    { id: 'meta-llama/llama-4-scout', name: 'ðŸ¦™ Llama 4 Scout' },
-    { id: 'meta-llama/llama-3.3-70b-instruct', name: 'ðŸ¦™ Llama 3.3 70B (Free)' },
-    // â”€â”€ DeepSeek â”€â”€
-    { id: 'deepseek/deepseek-chat-v3-0324', name: 'ðŸŒŠ DeepSeek V3' },
-    { id: 'deepseek/deepseek-r1', name: 'ðŸŒŠ DeepSeek R1 (Reasoning)' },
-    // â”€â”€ Mistral â”€â”€
-    { id: 'mistralai/mistral-large-2411', name: 'ðŸ”· Mistral Large' },
-    { id: 'mistralai/mistral-small-2503', name: 'ðŸ”· Mistral Small' },
-    { id: 'mistralai/codestral-mamba', name: 'ðŸ”· Codestral Mamba' },
-    // â”€â”€ Qwen â”€â”€
-    { id: 'qwen/qwen-2.5-72b-instruct', name: 'ðŸŸ  Qwen 2.5 72B' },
-    { id: 'qwen/qwen3-235b-a22b', name: 'ðŸŸ  Qwen 3 235B' },
-    // â”€â”€ xAI â”€â”€
-    { id: 'x-ai/grok-3-mini-beta', name: 'âœ– Grok 3 Mini' },
-    // â”€â”€ Others â”€â”€
-    { id: 'nvidia/llama-3.1-nemotron-70b-instruct', name: 'ðŸŸ© Nemotron 70B (Free)' },
-    { id: 'microsoft/phi-4', name: 'ðŸªŸ Phi-4 (Free)' },
-    { id: 'cohere/command-a', name: 'ðŸ”´ Command A' },
+    // ── Google ──
+    { id: 'google/gemini-2.5-flash-preview', name: '⚡ Gemini 2.5 Flash (Free)' },
+    { id: 'google/gemini-2.5-pro-preview', name: '🔥 Gemini 2.5 Pro' },
+    { id: 'google/gemini-2.0-flash-001', name: '⚡ Gemini 2.0 Flash (Free)' },
+    // ── Anthropic ──
+    { id: 'anthropic/claude-sonnet-4', name: '🟣 Claude Sonnet 4' },
+    { id: 'anthropic/claude-3.5-sonnet', name: '🟣 Claude 3.5 Sonnet' },
+    { id: 'anthropic/claude-3-haiku', name: '🟣 Claude 3 Haiku (Fast)' },
+    // ── OpenAI ──
+    { id: 'openai/gpt-4.1', name: '🟢 GPT-4.1' },
+    { id: 'openai/gpt-4.1-mini', name: '🟢 GPT-4.1 Mini' },
+    { id: 'openai/gpt-4.1-nano', name: '🟢 GPT-4.1 Nano' },
+    { id: 'openai/gpt-4o', name: '🟢 GPT-4o' },
+    { id: 'openai/gpt-4o-mini', name: '🟢 GPT-4o Mini' },
+    { id: 'openai/o3-mini', name: '🟢 o3-Mini (Reasoning)' },
+    // ── Meta ──
+    { id: 'meta-llama/llama-4-maverick', name: '🦙 Llama 4 Maverick' },
+    { id: 'meta-llama/llama-4-scout', name: '🦙 Llama 4 Scout' },
+    { id: 'meta-llama/llama-3.3-70b-instruct', name: '🦙 Llama 3.3 70B (Free)' },
+    // ── DeepSeek ──
+    { id: 'deepseek/deepseek-chat-v3-0324', name: '🌊 DeepSeek V3' },
+    { id: 'deepseek/deepseek-r1', name: '🌊 DeepSeek R1 (Reasoning)' },
+    // ── Mistral ──
+    { id: 'mistralai/mistral-large-2411', name: '🔷 Mistral Large' },
+    { id: 'mistralai/mistral-small-2503', name: '🔷 Mistral Small' },
+    { id: 'mistralai/codestral-mamba', name: '🔷 Codestral Mamba' },
+    // ── Qwen ──
+    { id: 'qwen/qwen-2.5-72b-instruct', name: '🟠 Qwen 2.5 72B' },
+    { id: 'qwen/qwen3-235b-a22b', name: '🟠 Qwen 3 235B' },
+    // ── xAI ──
+    { id: 'x-ai/grok-3-mini-beta', name: '✖ Grok 3 Mini' },
+    // ── Others ──
+    { id: 'nvidia/llama-3.1-nemotron-70b-instruct', name: '🟩 Nemotron 70B (Free)' },
+    { id: 'microsoft/phi-4', name: '🪟 Phi-4 (Free)' },
+    { id: 'cohere/command-a', name: '🔴 Command A' },
   ],
   anthropic: [
     { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4 (Latest)' },
@@ -1902,20 +1907,20 @@ async function fetchOpenRouterModels() {
     const data = await res.json();
     if (data && Array.isArray(data.data)) {
       const fetched = data.data.map((item) => {
-        let emoji = 'ðŸ¤– ';
+        let emoji = '🤖 ';
         const id = item.id.toLowerCase();
 
-        if (id.startsWith('google/')) emoji = 'âš¡ ';
-        else if (id.startsWith('anthropic/')) emoji = 'ðŸŸ£ ';
-        else if (id.startsWith('openai/')) emoji = 'ðŸŸ¢ ';
-        else if (id.startsWith('meta-llama/')) emoji = 'ðŸ¦™ ';
-        else if (id.startsWith('deepseek/')) emoji = 'ðŸŒŠ ';
-        else if (id.startsWith('mistralai/')) emoji = 'ðŸ”· ';
-        else if (id.startsWith('qwen/')) emoji = 'ðŸŸ  ';
-        else if (id.startsWith('x-ai/')) emoji = 'âœ– ';
-        else if (id.startsWith('cohere/')) emoji = 'ðŸ”´ ';
-        else if (id.startsWith('nvidia/')) emoji = 'ðŸŸ© ';
-        else if (id.startsWith('microsoft/')) emoji = 'ðŸªŸ ';
+        if (id.startsWith('google/')) emoji = '⚡ ';
+        else if (id.startsWith('anthropic/')) emoji = '🟣 ';
+        else if (id.startsWith('openai/')) emoji = '🟢 ';
+        else if (id.startsWith('meta-llama/')) emoji = '🦙 ';
+        else if (id.startsWith('deepseek/')) emoji = '🌊 ';
+        else if (id.startsWith('mistralai/')) emoji = '🔷 ';
+        else if (id.startsWith('qwen/')) emoji = '🟠 ';
+        else if (id.startsWith('x-ai/')) emoji = '✖ ';
+        else if (id.startsWith('cohere/')) emoji = '🔴 ';
+        else if (id.startsWith('nvidia/')) emoji = '🟩 ';
+        else if (id.startsWith('microsoft/')) emoji = '🪟 ';
 
         const isFree =
           item.pricing && parseFloat(item.pricing.prompt) === 0 && parseFloat(item.pricing.completion) === 0;
@@ -1982,12 +1987,12 @@ function onProviderChange() {
   // Update key label and placeholder
   if (provider === 'openrouter') {
     keyLabel.textContent = 'OpenRouter API Key';
-    keyInput.placeholder = 'sk-or-v1-â€¦';
+    keyInput.placeholder = 'sk-or-v1-…';
     // Async fetch up-to-date models automatically from openrouter
     fetchOpenRouterModels();
   } else {
     keyLabel.textContent = 'Anthropic API Key';
-    keyInput.placeholder = 'sk-ant-apiâ€¦';
+    keyInput.placeholder = 'sk-ant-api…';
   }
 }
 
@@ -1995,343 +2000,21 @@ function onProviderChange() {
 onProviderChange();
 fetchOpenRouterModels();
 
-async function callClaude(prompt, systemPrompt, onChunk) {
-  const provider = document.getElementById('ai-provider').value;
-  const model = document.getElementById('ai-model').value;
-  const key = document.getElementById('api-key').value.trim();
+/* -- AI ASSISTANT � delegated to ai-assistant.js -------------------------- */
+const callClaude = (...a) => window.AIAssistant.callClaude(...a);
+const setAiStatus = (...a) => window.AIAssistant.setAiStatus(...a);
+const aiAction = (...a) => window.AIAssistant.aiAction(...a);
+const GrammarCorrector = window.AIAssistant.GrammarCorrector;
+const acceptGrammarCorrection = (...a) => window.AIAssistant.acceptGrammarCorrection(...a);
 
-  if (!key) {
-    setAiStatus('âš  Enter your ' + (provider === 'openrouter' ? 'OpenRouter' : 'Anthropic') + ' API key first.');
-    return null;
-  }
-
-  setAiStatus('âœ¦ Generating via ' + (provider === 'openrouter' ? 'OpenRouter' : 'Anthropic') + 'â€¦');
-
-  try {
-    let res;
-
-    if (provider === 'openrouter') {
-      res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + key,
-          'HTTP-Referer': window.location.href,
-          'X-Title': 'Inkflow Notes Generator',
-        },
-        body: JSON.stringify({
-          model: model,
-          max_tokens: 1500,
-          stream: true,
-          messages: [
-            { role: 'system', content: systemPrompt || 'You are a helpful assistant for a handwritten notes app.' },
-            { role: 'user', content: prompt },
-          ],
-        }),
-      });
-    } else {
-      res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': key,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
-        body: JSON.stringify({
-          model: model,
-          max_tokens: 1500,
-          stream: true,
-          system: systemPrompt || 'You are a helpful assistant for a handwritten notes app.',
-          messages: [{ role: 'user', content: prompt }],
-        }),
-      });
-    }
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      setAiStatus('âœ• API Error: ' + (err.error?.message || res.status));
-      return null;
-    }
-
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-    let textContent = '';
-
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop();
-
-      for (const line of lines) {
-        const cleaned = line.trim();
-        if (!cleaned) continue;
-        if (cleaned.startsWith('data: ')) {
-          const dataStr = cleaned.slice(6);
-          if (dataStr === '[DONE]') continue;
-          try {
-            const dataObj = JSON.parse(dataStr);
-            if (provider === 'openrouter') {
-              const delta = dataObj.choices?.[0]?.delta?.content || '';
-              if (delta) {
-                textContent += delta;
-                if (onChunk) onChunk(textContent);
-              }
-            } else {
-              if (dataObj.type === 'content_block_delta') {
-                const delta = dataObj.delta?.text || '';
-                if (delta) {
-                  textContent += delta;
-                  if (onChunk) onChunk(textContent);
-                }
-              }
-            }
-          } catch (err) {
-            // Ignore incomplete chunks
-          }
-        }
-      }
-    }
-
-    setAiStatus('âœ“ Done â€” ' + model.split('/').pop());
-    setTimeout(() => setAiStatus(''), 3000);
-    return textContent;
-  } catch (e) {
-    setAiStatus('âœ• Network error: ' + e.message);
-    return null;
-  }
-}
-
-function setAiStatus(msg) {
-  document.getElementById('ai-status').textContent = msg;
-}
-
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   PHASE 11 â€” GRAMMAR CORRECTOR
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-class GrammarCorrector {
-  static detectLanguage(text) {
-    if (!text) return 'english';
-    let devanagariCount = 0;
-    let latinCount = 0;
-    const graphemes = getGraphemes(text);
-    graphemes.forEach((ch) => {
-      if (ScriptDetector.isIndicScript(ch)) devanagariCount++;
-      else if (ScriptDetector.isBasicLatin(ch)) latinCount++;
-    });
-
-    if (devanagariCount > latinCount) return 'hindi'; // >50% Devanagari
-    if (devanagariCount > 0 && latinCount > 0) return 'hinglish';
-    return 'english';
-  }
-
-  static getPrompt(language) {
-    if (language === 'hindi') {
-      return 'Fix the grammar, spelling, and phrasing of this Hindi text. Keep the content and meaning identical. Preserve the Devanagari script entirely. Do not translate. Return plain text only, no markdown.';
-    } else if (language === 'hinglish') {
-      return 'Fix the grammar, spelling, and phrasing of this mixed Hinglish (Hindi + English) text. Keep the content and meaning identical. Preserve the script integrity (do not transliterate Hindi to English or vice versa). Return plain text only, no markdown.';
-    } else {
-      return 'Fix the grammar, spelling, and phrasing of this text. Keep the content and meaning identical. Return plain text only, no markdown.';
-    }
-  }
-}
-
-function closeGrammarModal() {
-  document.getElementById('grammar-modal').classList.add('hidden');
-}
-
-function acceptGrammarCorrection() {
-  const corrected = document.getElementById('grammar-corrected').value;
-  if (corrected && corrected !== 'Correcting...') {
-    const textarea = document.getElementById('text-input');
-    textarea.value = corrected;
-    S.text = corrected;
-    renderText(S.text);
-    autosave();
-  }
-  closeGrammarModal();
-}
-
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   PHASE 7.3â€“7.6 â€” AI ACTION DISPATCHER
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-async function aiAction(type) {
-  const textarea = document.getElementById('text-input');
-  const currentText = textarea.value.trim();
-
-  const btns = document.querySelectorAll('.ai-btn-group .btn');
-  btns.forEach((b) => (b.disabled = true));
-
-  let result = null;
-  let lastRenderTime = 0;
-
-  const onChunk = (text) => {
-    textarea.value = text;
-    S.text = text;
-    const now = Date.now();
-    if (now - lastRenderTime > 200) {
-      renderText(text);
-      lastRenderTime = now;
-    }
-  };
-
-  if (type === 'doubt') {
-    if (!currentText) {
-      setAiStatus('âš  Please enter a problem to solve');
-      btns.forEach((b) => (b.disabled = false));
-      return;
-    }
-
-    const systemPrompt = `You are an expert tutor helping Indian students solve math and physics problems aligned with CBSE, ICSE, and State Board curricula.
-
-Your task is to provide step-by-step solutions with clear working and explanations suitable for student learning.
-
-Format your response as:
-- Start with "Step 1:" for the first step
-- Continue with "Step 2:", "Step 3:", etc.
-- Include all mathematical working and intermediate calculations
-- Show the final answer clearly
-- Use plain-text mathematical notation (e.g., x^2 for x squared, sqrt(x) for square root, integral for integration)
-- Provide clear explanations for each step
-- Maintain handwriting-suitable formatting with proper line breaks
-
-Focus on conceptual clarity and helping students understand the problem-solving process.`;
-
-    result = await callClaude('Solve this problem step by step:\n\n' + currentText, systemPrompt, onChunk);
-  }
-
-  if (type === 'diagram') {
-    const topic = document.getElementById('ai-topic').value.trim() || currentText;
-    if (!topic) {
-      setAiStatus('âš  Enter a topic first.');
-      btns.forEach((b) => (b.disabled = false));
-      return;
-    }
-
-    // For diagram, we need a special prompt that forces structured JSON
-    const systemPrompt = `Generate a structured diagram JSON for the topic: ${topic}.
-Return ONLY a JSON object surrounded by \`\`\`diagram and \`\`\` tags.
-Supported types: "cycle", "flowchart".
-Constraints: 
-- Max 6 nodes.
-- Short labels (2-3 words).
-- If Hindi is detected, use Devanagari.
-- Cycle format: { "type": "cycle", "nodes": [{ "id": "n1", "label": "Text" }, ...], "edges": [{ "from": "n1", "to": "n2" }, ...] }
-- Flowchart format: { "type": "flowchart", "nodes": [{ "id": "s1", "label": "Step", "shape": "box/diamond/oval" }, ...], "edges": [{ "from": "s1", "to": "s2", "label": "Yes/No" }, ...] }`;
-
-    result = await callClaude(
-      'Generate a ' + (topic.length > 20 ? 'diagram of ' : '') + topic,
-      systemPrompt,
-      (text) => {
-        textarea.value = text;
-        S.text = text;
-        // Don't render until it's likely finished or at least has a valid block
-        if (text.includes('```diagram') && text.includes('```')) {
-          debounceRender();
-        }
-      }
-    );
-  }
-
-  if (type === 'summarize') {
-    if (!currentText) {
-      setAiStatus('âš  Add some text first.');
-      btns.forEach((b) => (b.disabled = false));
-      return;
-    }
-    result = await callClaude(
-      currentText,
-      'Summarize the following text into clear, concise bullet-point notes. Use short sentences. No markdown formatting â€” plain text only.',
-      onChunk
-    );
-  }
-
-  if (type === 'arrange') {
-    if (!currentText) {
-      setAiStatus('âš  Add some text first.');
-      btns.forEach((b) => (b.disabled = false));
-      return;
-    }
-    result = await callClaude(
-      currentText,
-      'Reorganize and format the following text to look like beautifully arranged handwritten notes. Add appropriate section headers, bullet points, and clean paragraph breaks. Ensure the flow is logical and aesthetic. Use plain text only, no markdown symbols like asterisks or hashtags.',
-      onChunk
-    );
-  }
-
-  if (type === 'grammar') {
-    if (!currentText) {
-      setAiStatus('âš  Add some text first.');
-      btns.forEach((b) => (b.disabled = false));
-      return;
-    }
-
-    const language = GrammarCorrector.detectLanguage(currentText);
-    if (language === 'hindi') setAiStatus('Using Hindi grammar model...');
-    else if (language === 'hinglish') setAiStatus('Using Hinglish grammar model...');
-
-    document.getElementById('grammar-original').value = currentText;
-    document.getElementById('grammar-corrected').value = 'Correcting...';
-    document.getElementById('grammar-lang-badge').textContent =
-      language === 'hindi' ? 'Hindi' : language === 'hinglish' ? 'Hinglish' : 'English';
-    document.getElementById('grammar-modal').classList.remove('hidden');
-
-    result = await callClaude(currentText, GrammarCorrector.getPrompt(language), (text) => {
-      document.getElementById('grammar-corrected').value = text;
-    });
-
-    btns.forEach((b) => (b.disabled = false));
-    return;
-  }
-
-  if (type === 'lecture') {
-    if (!currentText) {
-      setAiStatus('âš  Paste lecture text first.');
-      btns.forEach((b) => (b.disabled = false));
-      return;
-    }
-    result = await callClaude(
-      currentText,
-      'Convert this raw lecture transcript into clean, well-structured handwritten-style notes. Use headings, bullet points, and numbered lists where appropriate. Plain text only, no markdown symbols.',
-      onChunk
-    );
-  }
-
-  if (type === 'assignment') {
-    const topic = document.getElementById('ai-topic').value.trim() || currentText;
-    if (!topic) {
-      setAiStatus('âš  Enter a topic first.');
-      btns.forEach((b) => (b.disabled = false));
-      return;
-    }
-    result = await callClaude(
-      'Write a detailed, well-structured academic assignment on the topic: ' + topic,
-      'Generate a complete handwritten-style assignment with an introduction, body paragraphs, and conclusion. Use plain text only. No markdown. Write naturally as someone would write in a notebook.',
-      onChunk
-    );
-  }
-
-  if (result !== null && type !== 'grammar') {
-    textarea.value = result;
-    S.text = result;
-    renderText(S.text);
-    autosave();
-  }
-
-  btns.forEach((b) => (b.disabled = false));
-}
-
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   PHASE 8.1â€“8.2 â€” IMAGE EXPORT (PNG / JPG)
+/* ───────────────────────────────────────────
+   PHASE 8.1–8.2 — IMAGE EXPORT (PNG / JPG)
    Reads directly from the canvas elements at full native resolution.
    For single-page docs: one file. For multi-page: one file per page.
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+─────────────────────────────────────────── */
 async function exportImage(format) {
   if (!pages || pages.length === 0) {
-    showExportToast('Nothing to export â€” add some text first.', 'warn');
+    showExportToast('Nothing to export — add some text first.', 'warn');
     return;
   }
 
@@ -2346,7 +2029,7 @@ async function exportImage(format) {
 
   try {
     if (pages.length === 1) {
-      showExportToast('Exporting ' + ext.toUpperCase() + 'â€¦', 'info');
+      showExportToast('Exporting ' + ext.toUpperCase() + '…', 'info');
       pages[0].toBlob(
         (blob) => {
           if (!blob) {
@@ -2356,14 +2039,14 @@ async function exportImage(format) {
           const url = URL.createObjectURL(blob);
           triggerDownload(url, 'inkflow-notes.' + ext);
           setTimeout(() => URL.revokeObjectURL(url), 1000);
-          showExportToast('âœ“ ' + ext.toUpperCase() + ' saved!', 'success');
+          showExportToast('✓ ' + ext.toUpperCase() + ' saved!', 'success');
         },
         mimeType,
         quality
       );
     } else {
       for (let i = 0; i < pages.length; i++) {
-        showExportToast(`Exporting ${ext.toUpperCase()} (Page ${i + 1}/${pages.length})â€¦`, 'info');
+        showExportToast(`Exporting ${ext.toUpperCase()} (Page ${i + 1}/${pages.length})…`, 'info');
         await new Promise((resolve) => {
           pages[i].toBlob(
             (blob) => {
@@ -2382,7 +2065,7 @@ async function exportImage(format) {
         });
         await new Promise((r) => setTimeout(r, 120));
       }
-      showExportToast('âœ“ ' + ext.toUpperCase() + ' pages saved!', 'success');
+      showExportToast('✓ ' + ext.toUpperCase() + ' pages saved!', 'success');
     }
   } catch (e) {
     showExportToast('Export failed: ' + e.message, 'error');
@@ -2392,7 +2075,7 @@ async function exportImage(format) {
 
 async function exportTransparentPNG() {
   if (!pages || pages.length === 0) {
-    showExportToast('Nothing to export â€” add some text first.', 'warn');
+    showExportToast('Nothing to export — add some text first.', 'warn');
     return;
   }
 
@@ -2406,17 +2089,19 @@ async function exportTransparentPNG() {
 
   try {
     for (let i = 0; i < pages.length; i++) {
-      showExportToast(`Exporting transparent PNG (Page ${i + 1}/${pages.length})â€¦`, 'info');
+      showExportToast(`Exporting transparent PNG (Page ${i + 1}/${pages.length})…`, 'info');
       const tmpCanvas = document.createElement('canvas');
       tmpCanvas.width = PAGE_W;
       tmpCanvas.height = PAGE_H;
       const tmpCtx = tmpCanvas.getContext('2d');
 
       const pageItems = queue.filter((item) => item.pageIdx === i);
-      if (S.cursiveMode && cursiveConnector) {
+      if (S.cursiveMode && cursiveConnector && window.ExportRenderers) {
         window.ExportRenderers.renderCursiveConnectionsOn(tmpCtx, tmpCanvas, pageItems);
       }
-      window.ExportRenderers.renderQueueItems(tmpCtx, tmpCanvas, pageItems);
+      if (window.ExportRenderers) {
+        window.ExportRenderers.renderQueueItems(tmpCtx, tmpCanvas, pageItems);
+      }
 
       await new Promise((resolve) => {
         tmpCanvas.toBlob(
@@ -2436,7 +2121,7 @@ async function exportTransparentPNG() {
       });
       await new Promise((r) => setTimeout(r, 120));
     }
-    showExportToast('âœ“ Transparent PNGs saved!', 'success');
+    showExportToast('✓ Transparent PNGs saved!', 'success');
   } catch (e) {
     showExportToast('Export failed: ' + e.message, 'error');
     console.error('[Inkflow] exportTransparentPNG error:', e);
@@ -2445,7 +2130,7 @@ async function exportTransparentPNG() {
 
 async function exportPDF() {
   if (!pages || pages.length === 0) {
-    showExportToast('Nothing to export â€” add some text first.', 'warn');
+    showExportToast('Nothing to export — add some text first.', 'warn');
     return;
   }
 
@@ -2469,7 +2154,7 @@ async function exportPDF() {
     });
 
     for (let i = 0; i < pages.length; i++) {
-      showExportToast(`Building PDF (Page ${i + 1}/${pages.length})â€¦`, 'info');
+      showExportToast(`Building PDF (Page ${i + 1}/${pages.length})…`, 'info');
       await new Promise((r) => setTimeout(r, 60));
       if (i > 0) doc.addPage();
       const imgData = pages[i].toDataURL('image/jpeg', 0.93);
@@ -2477,7 +2162,7 @@ async function exportPDF() {
     }
 
     doc.save('inkflow-notes.pdf');
-    showExportToast('âœ“ PDF saved!', 'success');
+    showExportToast('✓ PDF saved!', 'success');
   } catch (e) {
     showExportToast('PDF export failed: ' + e.message, 'error');
     console.error('[Inkflow] exportPDF error:', e);
@@ -2486,7 +2171,7 @@ async function exportPDF() {
 
 async function exportSVG() {
   if (!pages || pages.length === 0) {
-    showExportToast('Nothing to export â€” add some text first.', 'warn');
+    showExportToast('Nothing to export — add some text first.', 'warn');
     return;
   }
 
@@ -2497,7 +2182,7 @@ async function exportSVG() {
 
   try {
     for (let i = 0; i < pages.length; i++) {
-      showExportToast(`Building SVG (Page ${i + 1}/${pages.length})â€¦`, 'info');
+      showExportToast(`Building SVG (Page ${i + 1}/${pages.length})…`, 'info');
       await new Promise((r) => setTimeout(r, 60));
       const imgData = pages[i].toDataURL('image/png', 1.0);
       const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
@@ -2512,7 +2197,7 @@ async function exportSVG() {
       URL.revokeObjectURL(url);
       await new Promise((r) => setTimeout(r, 120));
     }
-    showExportToast('âœ“ SVG saved!', 'success');
+    showExportToast('✓ SVG saved!', 'success');
   } catch (e) {
     showExportToast('SVG export failed: ' + e.message, 'error');
     console.error('[Inkflow] exportSVG error:', e);
@@ -2521,7 +2206,7 @@ async function exportSVG() {
 
 async function copyToClipboard() {
   if (!pages || pages.length === 0) {
-    showExportToast('Nothing to copy â€” add some text first.', 'warn');
+    showExportToast('Nothing to copy — add some text first.', 'warn');
     return;
   }
   try {
@@ -2530,7 +2215,7 @@ async function copyToClipboard() {
       async (blob) => {
         try {
           await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-          showExportToast('âœ“ Copied to clipboard!', 'success');
+          showExportToast('✓ Copied to clipboard!', 'success');
         } catch (e) {
           showExportToast('Clipboard copy failed: ' + e.message, 'error');
         }
@@ -2543,9 +2228,9 @@ async function copyToClipboard() {
   }
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+/* ───────────────────────────────────────────
    SHARED EXPORT HELPERS
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+─────────────────────────────────────────── */
 function triggerDownload(url, filename) {
   const a = document.createElement('a');
   a.href = url;
@@ -2576,9 +2261,9 @@ function showExportToast(msg, type = 'info') {
 }
 const showToast = showExportToast;
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   PHASE 8.6â€“8.7 â€” AUTOSAVE & STATE RESTORE
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ───────────────────────────────────────────
+   PHASE 8.6–8.7 — AUTOSAVE & STATE RESTORE
+─────────────────────────────────────────── */
 const DB_NAME = 'InkflowDB';
 const DB_VERSION = 1;
 const STORE_NAME = 'draftedGlyphs';
@@ -2654,10 +2339,10 @@ function glyphHasInk(dataUrl) {
       const cctx = c.getContext('2d');
       cctx.drawImage(img, 0, 0);
       try {
-        // Phase 9.8 — Use stricter isCellBlank check
+        // Phase 9.8 � Use stricter isCellBlank check
         resolve(!window.FontCompilation.isCellBlank(c));
-      } catch (e) {
-        // Can't inspect it (e.g. tainted canvas) — don't destroy data we can't verify.
+      } catch {
+        // Can't inspect it (e.g. tainted canvas) � don't destroy data we can't verify.
         resolve(true);
       }
     };
@@ -2670,7 +2355,7 @@ function glyphHasInk(dataUrl) {
 // These can linger from before saveActiveCharacter() rejected empty
 // sketches (or from an old imported project), and they make renderText()
 // draw an invisible image instead of falling back to the system font for
-// that character — which is exactly what causes "missing" letters.
+// that character � which is exactly what causes "missing" letters.
 async function pruneBlankGlyphs() {
   const chars = Object.keys(draftedGlyphs);
   let pruned = 0;
@@ -2851,7 +2536,7 @@ async function restoreState() {
       delete state.draftedGlyphs;
       localStorage.setItem('inkflow-state', JSON.stringify(state));
     }
-  } catch (e) {
+  } catch {
     /* ignore corrupt state */
   }
 
@@ -2872,9 +2557,9 @@ async function restoreState() {
   if (typeof drawStudioCanvas === 'function') drawStudioCanvas();
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   PHASE 8.8 â€” PAGE NAVIGATION
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ───────────────────────────────────────────
+   PHASE 8.8 — PAGE NAVIGATION
+─────────────────────────────────────────── */
 function updatePageNav() {
   const total = pages.length || 1;
   const cur = Math.min(S.currentPage + 1, total);
@@ -2894,9 +2579,9 @@ function navigatePage(dir) {
   updatePageNav();
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   PHASE 8.7 + INIT â€” APP BOOT
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ───────────────────────────────────────────
+   PHASE 8.7 + INIT — APP BOOT
+─────────────────────────────────────────── */
 async function initApp() {
   await restoreState();
   setupFileUpload();
@@ -2933,7 +2618,7 @@ async function initApp() {
     bgCtx.font = `italic 18px "${S.font}"`;
     bgCtx.fillStyle = S.inkColor;
     bgCtx.globalAlpha = 0.18;
-    bgCtx.fillText('Start typing in the panel to the leftâ€¦', S.margin, S.margin + S.fontSize + lineH);
+    bgCtx.fillText('Start typing in the panel to the left…', S.margin, S.margin + S.fontSize + lineH);
     bgCtx.restore();
     // If we used a layer canvas, composite now; otherwise content is already on the main canvas
     if (window.layerCompositor && bgCtx !== canvas.getContext('2d')) {
@@ -2963,9 +2648,9 @@ if (inkColorInput) inkColorInput.addEventListener('change', syncMarkdownPenContr
 // Boot
 initApp();
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+/* ───────────────────────────────────────────
    PREMIUM FILE UPLOAD MODULE
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+─────────────────────────────────────────── */
 function setupFileUpload() {
   const fileUpload = document.getElementById('file-upload');
   const dropZone = document.getElementById('drop-zone');
@@ -3049,14 +2734,14 @@ function setupFileUpload() {
       renderText(text);
       autosave();
 
-      statusText.textContent = 'âœ“ File loaded successfully!';
+      statusText.textContent = '✓ File loaded successfully!';
       statusText.style.color = '#2d6a4f';
       statusText.style.fontWeight = '600';
       setTimeout(() => {
         uploadStatus.style.display = 'none';
       }, 3500);
     } catch (e) {
-      statusText.textContent = `âœ• Error: ${e.message}`;
+      statusText.textContent = `✕ Error: ${e.message}`;
       statusText.style.color = '#8b0000';
       statusText.style.fontWeight = '600';
       console.error(e);
@@ -3122,9 +2807,9 @@ function setupFileUpload() {
   }
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+/* ───────────────────────────────────────────
    RESET PARAMETERS TO DEFAULTS
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+─────────────────────────────────────────── */
 function resetToDefaults() {
   const defaults = {
     font: 'Caveat',
@@ -3174,7 +2859,7 @@ function resetToDefaults() {
   const inkColorInput = document.getElementById('ink-color');
   if (inkColorInput) {
     inkColorInput.value = defaults.inkColor;
-    document.getElementById('ink-color-label').textContent = defaults.inkColor + ' â€” Navy';
+    document.getElementById('ink-color-label').textContent = defaults.inkColor + ' — Navy';
   }
 
   // Update Text Alignment
@@ -3196,9 +2881,9 @@ function resetToDefaults() {
   debounceRender();
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+/* ───────────────────────────────────────────
    HANDFONTED STUDIO CUSTOM FONT BUILDER
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+─────────────────────────────────────────── */
 
 // Modal Toggles
 
@@ -3434,9 +3119,9 @@ function saveActiveCharacter() {
   const canvas = document.getElementById('sketch-canvas');
   if (!canvas) return;
 
-  // Phase 9.8 â€” Check if canvas has any significant ink before saving
+  // Phase 9.8 — Check if canvas has any significant ink before saving
   if (window.FontCompilation.isCellBlank(canvas)) {
-    alert('Nothing drawn â€” sketch the character before saving with dark ink.');
+    alert('Nothing drawn — sketch the character before saving with dark ink.');
     return;
   }
 
@@ -3519,7 +3204,7 @@ function exportFontProject() {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 
-  showToast(`âœ… Project saved: ${projectData.totalGlyphs} characters`, 'success');
+  showToast(`✅ Project saved: ${projectData.totalGlyphs} characters`, 'success');
 }
 
 // Import font project from JSON
@@ -3558,10 +3243,10 @@ function importFontProject(event) {
         selectSketchCharacter(ALL_TEMPLATE_CHARS[0]);
       }
 
-      showToast(`âœ… Loaded ${Object.keys(projectData.glyphs).length} characters`, 'success');
+      showToast(`✅ Loaded ${Object.keys(projectData.glyphs).length} characters`, 'success');
     } catch (error) {
       console.error('Error loading project:', error);
-      showToast('âŒ Failed to load project file', 'error');
+      showToast('❌ Failed to load project file', 'error');
     }
   };
   reader.readAsText(file);
@@ -3570,13 +3255,13 @@ function importFontProject(event) {
   event.target.value = '';
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+/* ───────────────────────────────────────────
    DEVICE & RESOLUTION DETECTION
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+─────────────────────────────────────────── */
 
 function getDeviceType() {
   const width = window.innerWidth;
-  const height = window.innerHeight;
+  const _height = window.innerHeight;
   const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
   if (width <= 480) {
@@ -3644,12 +3329,12 @@ function advanceActiveCharacter() {
     selectSketchCharacter(chars[curIdx + 1]);
   } else {
     if (activeSheet === 'letters') {
-      if (confirm('ðŸŽ‰ Finished Letters template! Would you like to switch to Numbers & Symbols?')) {
+      if (confirm('🎉 Finished Letters template! Would you like to switch to Numbers & Symbols?')) {
         switchSheet('symbols');
       }
     } else {
       alert(
-        'ðŸŽ‰ You have drafted all characters in this set! Click "Generate & Apply Font" below to compile your TrueType handwriting font.'
+        '🎉 You have drafted all characters in this set! Click "Generate & Apply Font" below to compile your TrueType handwriting font.'
       );
     }
   }
@@ -3681,7 +3366,7 @@ function generateDownloadTemplate() {
   frontCtx.fillStyle = '#c0622a';
   frontCtx.font = 'bold 72px serif';
   frontCtx.textAlign = 'center';
-  frontCtx.fillText('âœ¨ HandFonted Studio', 800, 200);
+  frontCtx.fillText('✨ HandFonted Studio', 800, 200);
 
   frontCtx.fillStyle = '#1c2340';
   frontCtx.font = '42px serif';
@@ -3703,7 +3388,7 @@ function generateDownloadTemplate() {
   frontCtx.fillStyle = '#c0622a';
   frontCtx.font = 'bold 36px sans-serif';
   frontCtx.textAlign = 'left';
-  frontCtx.fillText('ðŸ“‹ Instructions:', 200, 490);
+  frontCtx.fillText('📋 Instructions:', 200, 490);
 
   // Instructions text
   frontCtx.fillStyle = '#1c2340';
@@ -3717,14 +3402,14 @@ function generateDownloadTemplate() {
     '3. Write naturally - your unique style will be captured!',
     '',
     '4. For best results:',
-    '   â€¢ Keep characters centered in each box',
-    '   â€¢ Use consistent size and slant',
-    '   â€¢ Write on a flat surface with good lighting',
-    '   â€¢ Avoid touching the box edges',
+    '   • Keep characters centered in each box',
+    '   • Use consistent size and slant',
+    '   • Write on a flat surface with good lighting',
+    '   • Avoid touching the box edges',
     '',
     '5. Scan or photograph the completed sheets',
-    '   â€¢ Use high contrast (300 DPI recommended)',
-    '   â€¢ Ensure the image is well-lit and in focus',
+    '   • Use high contrast (300 DPI recommended)',
+    '   • Ensure the image is well-lit and in focus',
     '',
     "6. Upload your sheets in Inkflow's HandFonted Studio",
     '',
@@ -3747,7 +3432,7 @@ function generateDownloadTemplate() {
   frontCtx.fillStyle = '#9e9078';
   frontCtx.font = 'italic 20px serif';
   frontCtx.textAlign = 'center';
-  frontCtx.fillText('Powered by Inkflow â€” AI Handwritten Notes Generator', 800, 1500);
+  frontCtx.fillText('Powered by Inkflow — AI Handwritten Notes Generator', 800, 1500);
   frontCtx.fillText('inkflow.app', 800, 1535);
 
   sheets.push({
@@ -3776,7 +3461,7 @@ function generateDownloadTemplate() {
     ctx.fillStyle = '#1c2340';
     ctx.font = 'bold 36px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(`HandFonted Studio â€” ${sheetType.title}`, 800, 70);
+    ctx.fillText(`HandFonted Studio — ${sheetType.title}`, 800, 70);
     ctx.font = '22px sans-serif';
     ctx.fillStyle = '#555';
     ctx.fillText('Write each character clearly inside its designated box', 800, 110);
@@ -4117,14 +3802,14 @@ async function buildCustomFont() {
         }
       }
 
-      // Phase 9.8 â€” Check if cell is blank before processing
+      // Phase 9.8 — Check if cell is blank before processing
       if (window.FontCompilation.isCellBlank(cellCanvas)) {
         continue;
       }
 
       const path = window.FontCompilation.canvasToOpentypePath(cellCanvas);
 
-      // Skip cells with no ink â€” let the browser fall back to a system font
+      // Skip cells with no ink — let the browser fall back to a system font
       // for these instead of baking in an invisible glyph.
       if (!path.commands || path.commands.length === 0) {
         continue;
@@ -4213,7 +3898,7 @@ async function buildCustomFont() {
     setTimeout(() => {
       progressDiv.classList.add('hidden');
       closeHandFontedModal();
-      alert(`ðŸŽ‰ Congratulation! "${fontName}" has been successfully created and applied to your handwritten notes!`);
+      alert(`🎉 Congratulation! "${fontName}" has been successfully created and applied to your handwritten notes!`);
     }, 1000);
   } catch (err) {
     console.error(err);
@@ -4222,9 +3907,9 @@ async function buildCustomFont() {
   }
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ═════════════════════════════════════════
    PHASE 16 - LAYER MANAGER UI
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+═════════════════════════════════════════ */
 let currentLayerPage = 0; // The page whose layers are being viewed/edited in the UI
 
 function updateLayerUI(pageIdx = 0) {
@@ -4244,13 +3929,13 @@ function updateLayerUI(pageIdx = 0) {
     // Drag handle
     const drag = document.createElement('div');
     drag.className = 'layer-drag';
-    drag.textContent = 'â‰¡';
+    drag.textContent = '≡';
     drag.title = 'Drag to reorder';
 
     // Visibility toggle
     const vis = document.createElement('div');
     vis.className = 'layer-vis';
-    vis.textContent = layer.visible ? 'ðŸ‘ï¸' : 'ðŸš«';
+    vis.textContent = layer.visible ? '👁️' : '🚫';
     vis.title = 'Toggle visibility';
     vis.onclick = () => {
       window.layerCompositor.setLayerProperty(pageIdx, layer.id, 'visible', !layer.visible);
@@ -4309,7 +3994,7 @@ function updateLayerUI(pageIdx = 0) {
     // Delete
     const del = document.createElement('div');
     del.className = 'layer-delete';
-    del.textContent = 'âœ–';
+    del.textContent = '✖';
     del.title = 'Delete layer';
     del.onclick = () => {
       if (window.layerCompositor.deleteLayer(pageIdx, layer.id)) {

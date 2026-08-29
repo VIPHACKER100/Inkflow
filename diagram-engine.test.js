@@ -1,141 +1,144 @@
-/**
- * Diagram Engine Tests
- * Tests for layout algorithms and diagram parsing.
- */
+import { describe, it, expect } from 'vitest';
+import {
+  layoutCycle,
+  layoutFlowchart,
+  layoutHierarchy,
+  parseDiagramJSON,
+  positionDiagramNodes,
+} from './diagram-engine.js';
 
-const { layoutCycle, layoutFlowchart, layoutHierarchy, parseDiagramJSON, positionDiagramNodes } = require('./diagram-engine.js');
+describe('DiagramEngine', () => {
+  describe('layoutCycle', () => {
+    it('spaces nodes evenly in a circle around center', () => {
+      const cycleNodes = [
+        { id: 'a', label: 'A' },
+        { id: 'b', label: 'B' },
+        { id: 'c', label: 'C' },
+        { id: 'd', label: 'D' },
+      ];
+      const cycleResult = layoutCycle(cycleNodes, 100, { x: 200, y: 200 });
 
-let passed = 0;
-let failed = 0;
+      expect(cycleResult).toHaveLength(4);
+      expect(cycleResult[0].shape).toBe('circle');
+      expect(cycleResult[0].x).toBeCloseTo(200, 0);
+      expect(cycleResult[0].y).toBeCloseTo(100, 0);
+      expect(cycleResult[0].label).toBe('A');
 
-function assert(condition, message) {
-  if (condition) {
-    passed++;
-    console.log(`  ✓ ${message}`);
-  } else {
-    failed++;
-    console.log(`  ✗ FAIL: ${message}`);
-  }
-}
+      const angles = cycleResult.map((n) => Math.atan2(n.y - 200, n.x - 200));
+      const angleDiffs = [];
+      for (let i = 1; i < angles.length; i++) {
+        angleDiffs.push(Math.abs(angles[i] - angles[i - 1]));
+      }
+      const avgDiff = angleDiffs.reduce((a, b) => a + b, 0) / angleDiffs.length;
+      expect(avgDiff).toBeCloseTo(Math.PI / 2, 1);
+    });
+  });
 
-function assertApprox(a, b, tolerance, message) {
-  assert(Math.abs(a - b) < tolerance, `${message} (${a} ≈ ${b})`);
-}
+  describe('layoutFlowchart', () => {
+    it('layers nodes hierarchically according to in-degrees and edges', () => {
+      const fcNodes = [
+        { id: 'start', label: 'Start', shape: 'box' },
+        { id: 'check', label: 'Check?', shape: 'diamond' },
+        { id: 'ok', label: 'OK', shape: 'box' },
+        { id: 'fail', label: 'Fail', shape: 'box' },
+      ];
+      const fcEdges = [
+        { from: 'start', to: 'check' },
+        { from: 'check', to: 'ok', label: 'Yes' },
+        { from: 'check', to: 'fail', label: 'No' },
+      ];
+      const fcResult = layoutFlowchart(fcNodes, fcEdges, 0, 0, 600);
 
-// ── layoutCycle ──────────────────────────────────────────
-console.log('\n--- layoutCycle ---');
+      expect(fcResult).toHaveLength(4);
+      expect(fcResult[0].shape).toBe('box');
 
-const cycleNodes = [
-  { id: 'a', label: 'A' },
-  { id: 'b', label: 'B' },
-  { id: 'c', label: 'C' },
-  { id: 'd', label: 'D' }
-];
-const cycleResult = layoutCycle(cycleNodes, 100, { x: 200, y: 200 });
+      const startY = fcResult.find((n) => n.id === 'start').y;
+      const checkY = fcResult.find((n) => n.id === 'check').y;
+      const okY = fcResult.find((n) => n.id === 'ok').y;
 
-assert(cycleResult.length === 4, 'Returns all nodes');
-assert(cycleResult[0].shape === 'circle', 'Default shape is circle');
-assertApprox(cycleResult[0].x, 200, 1, 'First node x ≈ center (top)');
-assertApprox(cycleResult[0].y, 100, 1, 'First node y ≈ center-radius (top)');
-assert(cycleResult[0].label === 'A', 'Preserves label');
+      expect(checkY).toBeGreaterThan(startY);
+      expect(okY).toBeGreaterThan(checkY);
+    });
+  });
 
-// Nodes should be evenly spaced around circle
-const angles = cycleResult.map(n => Math.atan2(n.y - 200, n.x - 200));
-const angleDiffs = [];
-for (let i = 1; i < angles.length; i++) {
-  angleDiffs.push(Math.abs(angles[i] - angles[i - 1]));
-}
-const avgDiff = angleDiffs.reduce((a, b) => a + b, 0) / angleDiffs.length;
-assertApprox(avgDiff, Math.PI / 2, 0.1, 'Nodes are ~90° apart');
+  describe('layoutHierarchy', () => {
+    it('arranges tree nodes top-down with increasing vertical depth', () => {
+      const hierNodes = [
+        { id: 'root', label: 'Root' },
+        { id: 'child1', label: 'Child 1' },
+        { id: 'child2', label: 'Child 2' },
+        { id: 'grandchild', label: 'Grandchild' },
+      ];
+      const hierEdges = [
+        { from: 'root', to: 'child1' },
+        { from: 'root', to: 'child2' },
+        { from: 'child1', to: 'grandchild' },
+      ];
+      const hierResult = layoutHierarchy(hierNodes, hierEdges, 0, 0, 600, 400);
 
-// ── layoutFlowchart ──────────────────────────────────────
-console.log('\n--- layoutFlowchart ---');
+      expect(hierResult).toHaveLength(4);
+      const rootH = hierResult.find((n) => n.id === 'root');
+      const child1H = hierResult.find((n) => n.id === 'child1');
+      const gcH = hierResult.find((n) => n.id === 'grandchild');
 
-const fcNodes = [
-  { id: 'start', label: 'Start', shape: 'box' },
-  { id: 'check', label: 'Check?', shape: 'diamond' },
-  { id: 'ok', label: 'OK', shape: 'box' },
-  { id: 'fail', label: 'Fail', shape: 'box' }
-];
-const fcEdges = [
-  { from: 'start', to: 'check' },
-  { from: 'check', to: 'ok', label: 'Yes' },
-  { from: 'check', to: 'fail', label: 'No' }
-];
-const fcResult = layoutFlowchart(fcNodes, fcEdges, 0, 0, 600);
+      expect(rootH.y).toBeLessThan(child1H.y);
+      expect(child1H.y).toBeLessThan(gcH.y);
+    });
+  });
 
-assert(fcResult.length === 4, 'Returns all nodes');
-assert(fcResult[0].shape === 'box', 'Preserves shape');
+  describe('parseDiagramJSON', () => {
+    it('parses valid diagram JSON strings', () => {
+      const validJSON = '{"type":"cycle","nodes":[{"id":"a","label":"A"}],"edges":[]}';
+      const parsed = parseDiagramJSON(validJSON);
+      expect(parsed).not.toBeNull();
+      expect(parsed.type).toBe('cycle');
+      expect(parsed.nodes).toHaveLength(1);
+    });
 
-// start should be in layer 0, check in layer 1, ok/fail in layer 2
-const startY = fcResult.find(n => n.id === 'start').y;
-const checkY = fcResult.find(n => n.id === 'check').y;
-const okY = fcResult.find(n => n.id === 'ok').y;
-assert(checkY > startY, 'Check is below start');
-assert(okY > checkY, 'OK is below check');
+    it('returns null on invalid JSON or missing nodes property', () => {
+      expect(parseDiagramJSON('not json')).toBeNull();
+      expect(parseDiagramJSON('{"no":"nodes"}')).toBeNull();
+    });
+  });
 
-// ── layoutHierarchy ──────────────────────────────────────
-console.log('\n--- layoutHierarchy ---');
+  describe('positionDiagramNodes', () => {
+    const posNodes = [
+      { id: 'a', label: 'A' },
+      { id: 'b', label: 'B' },
+      { id: 'c', label: 'C' },
+    ];
 
-const hierNodes = [
-  { id: 'root', label: 'Root' },
-  { id: 'child1', label: 'Child 1' },
-  { id: 'child2', label: 'Child 2' },
-  { id: 'grandchild', label: 'Grandchild' }
-];
-const hierEdges = [
-  { from: 'root', to: 'child1' },
-  { from: 'root', to: 'child2' },
-  { from: 'child1', to: 'grandchild' }
-];
-const hierResult = layoutHierarchy(hierNodes, hierEdges, 0, 0, 600, 400);
+    it('positions cycle diagrams correctly', () => {
+      const cyclePos = positionDiagramNodes({ type: 'cycle', nodes: posNodes }, 0, 0, 600, 300);
+      expect(cyclePos).toHaveLength(3);
+    });
 
-assert(hierResult.length === 4, 'Returns all nodes');
-const rootH = hierResult.find(n => n.id === 'root');
-const child1H = hierResult.find(n => n.id === 'child1');
-const gcH = hierResult.find(n => n.id === 'grandchild');
-assert(rootH.y < child1H.y, 'Root is above children');
-assert(child1H.y < gcH.y, 'Child is above grandchild');
+    it('positions flowchart diagrams correctly', () => {
+      const flowPos = positionDiagramNodes(
+        { type: 'flowchart', nodes: posNodes, edges: [{ from: 'a', to: 'b' }, { from: 'b', to: 'c' }] },
+        0,
+        0,
+        600,
+        300
+      );
+      expect(flowPos).toHaveLength(3);
+    });
 
-// ── parseDiagramJSON ─────────────────────────────────────
-console.log('\n--- parseDiagramJSON ---');
+    it('positions hierarchy diagrams correctly', () => {
+      const hierPos = positionDiagramNodes(
+        { type: 'hierarchy', nodes: posNodes, edges: [{ from: 'a', to: 'b' }, { from: 'a', to: 'c' }] },
+        0,
+        0,
+        600,
+        300
+      );
+      expect(hierPos).toHaveLength(3);
+    });
 
-const validJSON = '{"type":"cycle","nodes":[{"id":"a","label":"A"}],"edges":[]}';
-const parsed = parseDiagramJSON(validJSON);
-assert(parsed !== null, 'Parses valid JSON');
-assert(parsed.type === 'cycle', 'Preserves type');
-assert(parsed.nodes.length === 1, 'Has nodes');
-
-assert(parseDiagramJSON('not json') === null, 'Returns null for invalid JSON');
-assert(parseDiagramJSON('{"no":"nodes"}') === null, 'Returns null when nodes missing');
-
-// ── positionDiagramNodes ─────────────────────────────────
-console.log('\n--- positionDiagramNodes ---');
-
-const posNodes = [
-  { id: 'a', label: 'A' },
-  { id: 'b', label: 'B' },
-  { id: 'c', label: 'C' }
-];
-
-const cyclePos = positionDiagramNodes({ type: 'cycle', nodes: posNodes }, 0, 0, 600, 300);
-assert(cyclePos.length === 3, 'Cycle positioning works');
-
-const flowPos = positionDiagramNodes({ type: 'flowchart', nodes: posNodes, edges: [{ from: 'a', to: 'b' }, { from: 'b', to: 'c' }] }, 0, 0, 600, 300);
-assert(flowPos.length === 3, 'Flowchart positioning works');
-
-const hierPos = positionDiagramNodes({ type: 'hierarchy', nodes: posNodes, edges: [{ from: 'a', to: 'b' }, { from: 'a', to: 'c' }] }, 0, 0, 600, 300);
-assert(hierPos.length === 3, 'Hierarchy positioning works');
-
-const pyrPos = positionDiagramNodes({ type: 'pyramid', nodes: posNodes }, 0, 0, 600, 300);
-assert(pyrPos.length === 3, 'Pyramid positioning works');
-assert(pyrPos[0].x === pyrPos[1].x, 'Pyramid nodes are centered horizontally');
-
-// ── Summary ──────────────────────────────────────────────
-console.log(`\n${'='.repeat(50)}`);
-console.log(`Results: ${passed} passed, ${failed} failed`);
-console.log(`${'='.repeat(50)}\n`);
-
-if (typeof process !== 'undefined' && process.exit && typeof vitest === 'undefined') {
-  process.exit(failed > 0 ? 1 : 0);
-}
+    it('positions pyramid diagrams centered horizontally', () => {
+      const pyrPos = positionDiagramNodes({ type: 'pyramid', nodes: posNodes }, 0, 0, 600, 300);
+      expect(pyrPos).toHaveLength(3);
+      expect(pyrPos[0].x).toBe(pyrPos[1].x);
+    });
+  });
+});

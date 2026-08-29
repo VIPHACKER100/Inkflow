@@ -150,6 +150,14 @@ wss.on('connection', (ws) => {
         }
 
         // Apply operation to server's document text
+        if (typeof op.char !== 'string') {
+          ws.close();
+          return;
+        }
+        if (typeof op.position !== 'number' || op.position < 0 || op.position > documentText.length) {
+          ws.close();
+          return;
+        }
         if (op.type === 'INSERT') {
           documentText = documentText.slice(0, op.position) + op.char + documentText.slice(op.position);
         } else if (op.type === 'DELETE') {
@@ -199,6 +207,8 @@ wss.on('connection', (ws) => {
       console.error('Error processing message:', e);
     }
   });
+
+  ws.on('error', () => {});
 
   ws.on('close', () => {
     console.log(`Client disconnected: ${userId}`);

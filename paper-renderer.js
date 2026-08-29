@@ -41,7 +41,11 @@
     ctx.restore();
   }
 
-  function drawPaperBackground(ctx, style) {
+  // Offscreen canvas cache for static paper backgrounds
+  const _paperBgCache = new Map();
+
+  function _renderPaperBackgroundDirect(ctx, style) {
+    if (!S || !PAGE_W || !PAGE_H) return;
     const w = PAGE_W,
       h = PAGE_H;
     ctx.clearRect(0, 0, w, h);
@@ -351,6 +355,38 @@
     ctx.restore();
 
     drawLayoutDecorations(ctx, S.noteLayout);
+  }
+
+  function drawPaperBackground(ctx, style) {
+    if (!S || !PAGE_W || !PAGE_H || !ctx) return;
+    const w = PAGE_W,
+      h = PAGE_H;
+
+    // Build unique cache key based on style, dimensions, and layout properties
+    const cacheKey = `${style}_${w}_${h}_${S.lineHeight}_${S.fontSize}_${S.margin}_${S.noteLayout || 'standard'}`;
+
+    if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
+      let cachedCanvas = _paperBgCache.get(cacheKey);
+      if (!cachedCanvas) {
+        cachedCanvas = document.createElement('canvas');
+        cachedCanvas.width = w;
+        cachedCanvas.height = h;
+        const offCtx = cachedCanvas.getContext('2d');
+        if (offCtx) {
+          _renderPaperBackgroundDirect(offCtx, style);
+          _paperBgCache.set(cacheKey, cachedCanvas);
+        }
+      }
+
+      if (cachedCanvas) {
+        ctx.clearRect(0, 0, w, h);
+        ctx.drawImage(cachedCanvas, 0, 0);
+        return;
+      }
+    }
+
+    // Direct fallback if document / offscreen canvas is unavailable
+    _renderPaperBackgroundDirect(ctx, style);
   }
 
   function renderSmudgeEffects(ctx, pageIdx) {

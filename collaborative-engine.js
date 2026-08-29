@@ -93,6 +93,9 @@ class CollaborativeEngine {
     this.ws = null;
     this.userId = null;
     this.color = null;
+    this._disconnectRequested = false;
+    this._reconnectAttempts = 0;
+    this._reconnectTimer = null;
 
     // OT state
     this.serverRevision = 0; // Last revision acknowledged from server
@@ -116,6 +119,9 @@ class CollaborativeEngine {
   }
 
   connect(url = 'ws://localhost:8080') {
+    this._disconnectRequested = false;
+    this._reconnectAttempts = 0;
+    this.url = url;
     this.onStatusChange('Connecting…', false);
     this.ws = new WebSocket(url);
 
@@ -132,6 +138,15 @@ class CollaborativeEngine {
 
     this.ws.onclose = () => {
       this.onStatusChange('Offline', false);
+      // ponytail: simple reconnection with backoff, max 3 attempts
+      if (!this._disconnectRequested && this._reconnectAttempts < 3) {
+        this._reconnectAttempts++;
+        const delay = Math.min(1000 * Math.pow(2, this._reconnectAttempts - 1), 8000);
+        this.onStatusChange(`Reconnecting in ${delay / 1000}s...`, false);
+        this._reconnectTimer = setTimeout(() => {
+          if (!this._disconnectRequested) this.connect(this.ws?.url || this.url);
+        }, delay);
+      }
     };
 
     this.ws.onerror = (err) => {
@@ -141,6 +156,11 @@ class CollaborativeEngine {
   }
 
   disconnect() {
+    this._disconnectRequested = true;
+    if (this._reconnectTimer) {
+      clearTimeout(this._reconnectTimer);
+      this._reconnectTimer = null;
+    }
     if (this.ws) {
       this.ws.close();
       this.ws = null;

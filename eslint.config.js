@@ -80,14 +80,9 @@ module.exports = [
         localStorage: 'readonly',
         sessionStorage: 'readonly',
         indexedDB: 'readonly',
-        // Project globals
-        S: 'readonly',
-        pages: 'writable',
-        ctx: 'writable',
-        currentFont: 'writable',
-        cursiveMode: 'writable',
-        isAnimating: 'writable',
-        roughCanvas: 'writable',
+        // Project globals (declared in code, not true globals)
+        // S, pages, isAnimating, cursiveConnector, getDiagramImage, PAGE_W, PAGE_H
+        // are declared in index.js and used by other modules via window.*
         PDFDocument: 'readonly',
         jsPDF: 'readonly',
         mermaid: 'readonly',
@@ -152,10 +147,18 @@ module.exports = [
         screen: 'readonly',
         PAGE_W: 'readonly',
         PAGE_H: 'readonly',
+        S: 'readonly',
       },
     },
     rules: {
-      'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^(pageTexts|pageCount|queue)$' }],
+      'no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern:
+            '^(pageTexts|pageCount|queue|toggleSection|triggerRender|clearText|insertDiagramTemplate|autoFitFontSize|setTextAlignment|resetToDefaults|toggleCollaboration|setPaper|addNewLayer|flattenAllLayers|setInkPreset|toggleAudioRecording|aiAction|exportImage|exportTransparentPNG|exportPDF|exportSVG|copyToClipboard|startAnimation|stopAnimation|navigatePage|closeHandFontedModal|switchFontTab|switchSheet|undoSketchStroke|clearSketchCanvas|saveActiveCharacter|advanceActiveCharacter|exportFontProject|generateDownloadTemplate|buildCustomFont|closeGrammarModal|acceptGrammarCorrection|onSmudgeEffectsToggle|GrammarCorrector|callClaude|setAiStatus|getOptimalAnimationSettings|buildCharQueue)$',
+        },
+      ],
       'no-undef': 'error',
       'no-redeclare': 'warn',
       'no-constant-condition': 'warn',
