@@ -735,7 +735,7 @@ html.dark .export-toast--error   { color: #f07070; }
   outline: none;
   background: transparent;
   color: transparent;
-  caret-color: #1c2340;
+  caret-color: var(--ink-default, #1c2340);
   text-align: left;
   white-space: pre-wrap;
   word-wrap: break-word;
@@ -755,14 +755,15 @@ html.dark .export-toast--error   { color: #f07070; }
   left: 0;
   width: 80px;
   height: 100%;
-  padding: 20px 8px;
+  padding: 0;
   z-index: 3;
   border: none;
   outline: none;
   background: transparent;
-  color: var(--ink-default);
+  color: transparent;
   font-family: var(--font-canvas);
-  font-size: 14px;
+  font-size: 22px;
+  font-style: normal;
   text-align: left;
   white-space: pre-wrap;
   word-wrap: break-word;
@@ -772,8 +773,8 @@ html.dark .export-toast--error   { color: #f07070; }
   user-select: text;
   -webkit-user-select: text;
   caret-color: var(--ink-default);
-  line-height: 1.4;
-  opacity: 0.85;
+  line-height: 1.5;
+  opacity: 1;
 }
 
 .margin-text-overlay:focus {

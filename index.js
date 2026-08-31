@@ -19,12 +19,28 @@ const S = {
   textAlignment: 'middle', // 'top', 'middle', 'bottom'
   pageDates: {},
   pageNos: {},
+  marginNotes: {},
   showHeaderBox: true,
 };
 
 /* Canvas pages array */
 let pages = [];
 let animFrameId = null;
+
+/* ───────────────────────────────────────────
+   EDITOR TEXT AGGREGATION
+─────────────────────────────────────────── */
+function getGlobalTextFromEditors() {
+  // Collect the innerText of every .page-editor in DOM order,
+  // joining pages with a single newline. This keeps S.text and
+  // the sidebar textarea in sync with what the user is typing.
+  const editors = document.querySelectorAll('.page-editor');
+  const parts = [];
+  editors.forEach(ed => parts.push(ed.innerText || ''));
+  return parts.join('\n');
+}
+
+
 let isAnimating = false;
 let renderTimeout = null;
 
@@ -109,10 +125,13 @@ const fontSelect = document.getElementById('font-select');
 fontSelect.addEventListener('change', () => {
   S.font = fontSelect.value;
   fontSelect.style.fontFamily = S.font;
+  if (typeof syncAllEditorStyles === 'function') syncAllEditorStyles();
   if (document.fonts) {
     document.fonts.load(`${S.fontSize}px "${S.font}"`).then(() => {
+      if (typeof syncAllEditorStyles === 'function') syncAllEditorStyles();
       debounceRender();
     }).catch(() => {
+      if (typeof syncAllEditorStyles === 'function') syncAllEditorStyles();
       debounceRender();
     });
   } else {
@@ -125,6 +144,7 @@ const layoutSelect = document.getElementById('layout-select');
 if (layoutSelect) {
   layoutSelect.addEventListener('change', () => {
     S.noteLayout = layoutSelect.value;
+    if (typeof syncAllEditorStyles === 'function') syncAllEditorStyles();
     autosave();
     debounceRender();
   });
@@ -207,12 +227,23 @@ function autoFitFontSize() {
 /* ───────────────────────────────────────────
    PHASE 5.1–5.6 — SLIDER CONTROLS
 ─────────────────────────────────────────── */
+function syncAllEditorStyles() {
+  pages.forEach((c, idx) => {
+    const editor = document.getElementById('editor-' + (idx + 1));
+    if (editor) {
+      updateEditorStyles(editor, c);
+    }
+  });
+}
+
 function bindSlider(id, valId, key, parse = parseFloat, suffix = '') {
   const el = document.getElementById(id);
   const disp = document.getElementById(valId);
+  if (!el || !disp) return;
   el.addEventListener('input', () => {
     S[key] = parse(el.value);
     disp.textContent = parse(el.value) + suffix;
+    syncAllEditorStyles();
     debounceRender();
   });
 }
@@ -231,6 +262,7 @@ const inkColorInput = document.getElementById('ink-color');
 inkColorInput.addEventListener('input', () => {
   S.inkColor = inkColorInput.value;
   document.getElementById('ink-color-label').textContent = S.inkColor;
+  syncAllEditorStyles();
   debounceRender();
 });
 
@@ -238,6 +270,7 @@ function setInkPreset(hex, name) {
   S.inkColor = hex;
   inkColorInput.value = hex;
   document.getElementById('ink-color-label').textContent = hex + ' — ' + name;
+  syncAllEditorStyles();
   debounceRender();
 }
 
@@ -293,6 +326,104 @@ function setTextAlignment(alignment) {
   
   // Re-render with new alignment
   debounceRender();
+}
+
+/* ───────────────────────────────────────────
+   LINE CLICKING & CARET POSITIONING HELPERS
+─────────────────────────────────────────── */
+function setCursorAtLine(element, targetLineIndex) {
+  if (!element) return;
+  element.focus();
+
+  const text = element.innerText || '';
+  const lines = text.split('\n');
+  if (targetLineIndex >= lines.length) targetLineIndex = lines.length - 1;
+  if (targetLineIndex < 0) targetLineIndex = 0;
+
+  let targetCharOffset = 0;
+  for (let i = 0; i < targetLineIndex; i++) {
+    targetCharOffset += lines[i].length + 1; // +1 for \n
+  }
+  targetCharOffset += lines[targetLineIndex].length;
+
+  const sel = window.getSelection();
+  const range = document.createRange();
+
+  let currentOffset = 0;
+  let placed = false;
+
+  function walk(node) {
+    if (placed) return;
+    if (node.nodeType === Node.TEXT_NODE) {
+      const len = node.nodeValue.length;
+      if (currentOffset + len >= targetCharOffset) {
+        const pos = Math.min(targetCharOffset - currentOffset, len);
+        range.setStart(node, pos);
+        range.setEnd(node, pos);
+        placed = true;
+      } else {
+        currentOffset += len;
+      }
+    } else if (node.nodeName === 'BR') {
+      if (currentOffset >= targetCharOffset) {
+        range.setStartBefore(node);
+        range.setEndBefore(node);
+        placed = true;
+      } else {
+        currentOffset += 1;
+      }
+    } else {
+      for (let i = 0; i < node.childNodes.length; i++) {
+        walk(node.childNodes[i]);
+        if (placed) return;
+      }
+    }
+  }
+
+  walk(element);
+
+  if (!placed) {
+    try {
+      range.selectNodeContents(element);
+      range.collapse(false);
+    } catch (err) {}
+  }
+
+  try {
+    sel.removeAllRanges();
+    sel.addRange(range);
+  } catch (err) {}
+}
+
+function handleLineClick(e, targetElement, canvas) {
+  if (!canvas || !targetElement) return;
+  const rect = canvas.getBoundingClientRect();
+  const clickYInCanvas = (e.clientY - rect.top) * (PAGE_H / rect.height);
+
+  const lineSpacingPx = S.fontSize * S.lineHeight;
+  let targetLineIndex = Math.floor((clickYInCanvas - S.margin) / lineSpacingPx);
+  if (targetLineIndex < 0) targetLineIndex = 0;
+
+  const currentText = targetElement.innerText || '';
+  const lines = currentText.split('\n');
+
+  let textChanged = false;
+  while (lines.length <= targetLineIndex) {
+    lines.push('');
+    textChanged = true;
+  }
+
+  if (textChanged) {
+    targetElement.innerText = lines.join('\n');
+    if (targetElement.classList.contains('page-editor')) {
+      const globalText = getGlobalTextFromEditors();
+      S.text = globalText;
+      document.getElementById('text-input').value = globalText;
+      autosave();
+    }
+  }
+
+  setCursorAtLine(targetElement, targetLineIndex);
 }
 
 /* ───────────────────────────────────────────
@@ -413,17 +544,18 @@ function createPage(pageNum) {
     autosave();
   });
 
-  // Focus: clear canvas text (draw only background) and show overlay text
+  // Focus: clear canvas text, preserve margin text, and enable overlay text in inkColor
   editor.addEventListener('focus', () => {
     const ctx = canvas.getContext('2d');
     drawPaperBackground(ctx, S.paperStyle, pageNum);
-    editor.style.color = S.inkColor;
+    drawMarginTextOnCanvas(ctx, pageNum);
+    updateEditorStyles(editor, canvas);
   });
 
-  // Blur: hide overlay text and redraw handwriting to canvas
+  // Blur: hide overlay text and redraw THIS page's canvas handwriting only
   editor.addEventListener('blur', () => {
     editor.style.color = 'transparent';
-    renderText(S.text);
+    redrawPageCanvas(pageNum);
   });
 
   // Input: concatenate all editor contents, sync to sidebar, and autosave
@@ -431,9 +563,13 @@ function createPage(pageNum) {
     const globalText = getGlobalTextFromEditors();
     S.text = globalText;
     document.getElementById('text-input').value = globalText;
+    updateEditorStyles(editor, canvas);
     autosave();
-    // Re-evaluate font family stack dynamically in case Indic characters were typed
-    editor.style.fontFamily = getFontStack(containsDevanagari(editor.innerText));
+  });
+
+  // Click listener on main page editor
+  editor.addEventListener('click', (e) => {
+    handleLineClick(e, editor, canvas);
   });
 
   // Create margin text overlay for left side notes
@@ -443,11 +579,38 @@ function createPage(pageNum) {
   marginText.contentEditable = 'true';
   marginText.setAttribute('aria-label', 'Margin notes for Page ' + pageNum);
   marginText.setAttribute('placeholder', '📝');
-  marginText.style.fontFamily = S.font;
+  marginText.innerText = (S.marginNotes && S.marginNotes[pageNum]) ? S.marginNotes[pageNum] : '';
+  marginText.style.fontFamily = getFontStack(containsDevanagari(marginText.innerText));
 
-  // Update font when typing
+  // Focus: show editable overlay in inkColor; canvas keeps main text visible
+  marginText.addEventListener('focus', () => {
+    marginText.style.color = S.inkColor;
+    marginText.style.caretColor = S.inkColor;
+    // redrawPageCanvas draws paper + main text + margin text on canvas;
+    // the DOM overlay is now visible on top so the user can edit it
+    redrawPageCanvas(pageNum);
+    updateEditorStyles(editor, canvas);
+  });
+
+  // Blur: hide overlay and redraw canvas handwriting (includes margin text)
+  marginText.addEventListener('blur', () => {
+    marginText.style.color = 'transparent';
+    updateEditorStyles(editor, canvas);
+    redrawPageCanvas(pageNum);
+  });
+
+  // Input: update font stack, autosave, and sync styles
   marginText.addEventListener('input', () => {
+    if (!S.marginNotes) S.marginNotes = {};
+    S.marginNotes[pageNum] = marginText.innerText;
     marginText.style.fontFamily = getFontStack(containsDevanagari(marginText.innerText));
+    updateEditorStyles(editor, canvas);
+    autosave();
+  });
+
+  // Click listener on margin overlay
+  marginText.addEventListener('click', (e) => {
+    handleLineClick(e, marginText, canvas);
   });
 
   container.appendChild(canvas);
@@ -466,6 +629,57 @@ function createPage(pageNum) {
   return canvas;
 }
 
+function drawMarginTextOnCanvas(ctx, pageNum) {
+  const marginTextEl = document.getElementById('margin-' + pageNum);
+  if (!marginTextEl) return;
+  if (document.activeElement === marginTextEl) return;
+  const rawText = marginTextEl.innerText;
+  if (!rawText || !rawText.trim()) return;
+
+  const lines = rawText.split('\n');
+  const lineH = S.fontSize * S.lineHeight;
+  const alignOff = typeof getAlignmentOffset === 'function' ? getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight) : 0;
+
+  ctx.save();
+  for (let li = 0; li < lines.length; li++) {
+    const lineStr = lines[li];
+    if (!lineStr) continue;
+
+    const isIndic = containsDevanagari(lineStr);
+    const fontStack = getFontStack(isIndic);
+    const y = S.margin + (li + 1) * lineH + alignOff;
+    let x = 12;
+
+    const graphemes = getGraphemes(lineStr);
+    for (let ci = 0; ci < graphemes.length; ci++) {
+      const ch = graphemes[ci];
+      const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
+
+      ctx.save();
+      ctx.translate(x, y + v.baselineOff);
+      ctx.rotate((v.tiltDeg * (isIndic ? 0.3 : 1) * Math.PI) / 180);
+      ctx.scale(v.scaleX, v.scaleY);
+
+      const pxSize = S.fontSize * v.pressureMod;
+      ctx.font = `${Math.max(10, pxSize)}px ${fontStack}`;
+      ctx.globalAlpha = v.opacity;
+      if (S.paperStyle !== 'clean' && S.bleed > 0.05) {
+        ctx.shadowColor = S.shadowColor || S.inkColor;
+        ctx.shadowBlur = S.bleed * 1.4;
+      } else {
+        ctx.shadowBlur = 0;
+      }
+      ctx.fillStyle = S.inkColor;
+      ctx.fillText(ch, 0, 0);
+      ctx.restore();
+
+      ctx.font = `${S.fontSize}px ${fontStack}`;
+      x += ctx.measureText(ch).width + v.spacingExtra;
+    }
+  }
+  ctx.restore();
+}
+
 function redrawPageCanvas(pageNum) {
   const canvas = pages[pageNum - 1];
   if (!canvas) return;
@@ -476,84 +690,100 @@ function redrawPageCanvas(pageNum) {
 
   // 2. Pre-process text and layout to get characters queue
   const textInputVal = document.getElementById('text-input').value;
-  if (!textInputVal.trim()) return;
-  const { cleanText } = parseRichSyntax(sanitizeText(textInputVal));
-  const { queue } = layoutText(cleanText || textInputVal);
+  if (textInputVal.trim()) {
+    const { cleanText } = parseRichSyntax(sanitizeText(textInputVal));
+    const { queue } = layoutText(cleanText || textInputVal);
 
-  // 3. Draw characters for this specific page
-  queue.forEach((item) => {
-    if (item.pageIdx !== pageNum - 1) return;
-    if (item.isSticky || item.isCallout) return;
+    // 3. Draw characters for this specific page
+    queue.forEach((item) => {
+      if (item.pageIdx !== pageNum - 1) return;
+      if (item.isSticky || item.isCallout) return;
 
-    // Draw highlight
-    if (item.highlight) {
+      // Draw highlight
+      if (item.highlight) {
+        ctx.save();
+        ctx.globalAlpha = 0.28;
+        ctx.fillStyle = S._highlightColor || '#ffe066';
+        const hlFs = item.fontSize || S.fontSize;
+        const hlW = hlFs * 0.7;
+        const hlH = hlFs * 1.3;
+        ctx.fillRect(item.x - 1, item.y - hlFs * 0.85, hlW, hlH);
+        ctx.restore();
+      }
+
+      const v = item.v;
       ctx.save();
-      ctx.globalAlpha = 0.28;
-      ctx.fillStyle = S._highlightColor || '#ffe066';
-      const hlFs = item.fontSize || S.fontSize;
-      const hlW = hlFs * 0.7;
-      const hlH = hlFs * 1.3;
-      ctx.fillRect(item.x - 1, item.y - hlFs * 0.85, hlW, hlH);
-      ctx.restore();
-    }
+      ctx.translate(item.x, item.y);
+      ctx.rotate((v.tiltDeg * (item.isIndic ? 0.3 : 1) * Math.PI) / 180);
+      ctx.scale(v.scaleX, v.scaleY);
 
-    const v = item.v;
-    ctx.save();
-    ctx.translate(item.x, item.y);
-    ctx.rotate((v.tiltDeg * (item.isIndic ? 0.3 : 1) * Math.PI) / 180);
-    ctx.scale(v.scaleX, v.scaleY);
-
-    // In clean mode, bypass custom drafted glyphs
-    const useGlyph = S.paperStyle !== 'clean' && draftedGlyphs[item.ch];
-    if (useGlyph) {
-      const glyphImg = getCachedGlyphImage(item.ch, draftedGlyphs[item.ch]);
-      if (glyphImg) {
-        ctx.globalAlpha = v.opacity;
-        const drawSz = S.fontSize * 1.35;
-        ctx.drawImage(glyphImg, -drawSz / 2, -drawSz / 2, drawSz, drawSz);
+      // In clean mode, bypass custom drafted glyphs
+      const useGlyph = S.paperStyle !== 'clean' && draftedGlyphs[item.ch];
+      if (useGlyph) {
+        const glyphImg = getCachedGlyphImage(item.ch, draftedGlyphs[item.ch]);
+        if (glyphImg) {
+          ctx.globalAlpha = v.opacity;
+          const drawSz = S.fontSize * 1.35;
+          ctx.drawImage(glyphImg, -drawSz / 2, -drawSz / 2, drawSz, drawSz);
+        } else {
+          const fontSize = item.fontSize || S.fontSize;
+          const weight = item.isBold ? 'bold ' : '';
+          const pxSize = fontSize * v.pressureMod;
+          ctx.font = `${weight}${Math.max(10, pxSize)}px ${item.fontStack}`;
+          ctx.globalAlpha = v.opacity;
+          ctx.fillStyle = S.inkColor;
+          ctx.fillText(item.ch, 0, 0);
+        }
       } else {
         const fontSize = item.fontSize || S.fontSize;
         const weight = item.isBold ? 'bold ' : '';
         const pxSize = fontSize * v.pressureMod;
         ctx.font = `${weight}${Math.max(10, pxSize)}px ${item.fontStack}`;
         ctx.globalAlpha = v.opacity;
+        if (S.paperStyle !== 'clean' && S.bleed > 0.05) {
+          ctx.shadowColor = S.shadowColor || S.inkColor;
+          ctx.shadowBlur = S.bleed * 1.4;
+        } else {
+          ctx.shadowBlur = 0;
+        }
         ctx.fillStyle = S.inkColor;
         ctx.fillText(item.ch, 0, 0);
       }
-    } else {
-      const fontSize = item.fontSize || S.fontSize;
-      const weight = item.isBold ? 'bold ' : '';
-      const pxSize = fontSize * v.pressureMod;
-      ctx.font = `${weight}${Math.max(10, pxSize)}px ${item.fontStack}`;
-      ctx.globalAlpha = v.opacity;
-      if (S.paperStyle !== 'clean' && S.bleed > 0.05) {
-        ctx.shadowColor = S.shadowColor || S.inkColor;
-        ctx.shadowBlur = S.bleed * 1.4;
-      } else {
-        ctx.shadowBlur = 0;
-      }
-      ctx.fillStyle = S.inkColor;
-      ctx.fillText(item.ch, 0, 0);
-    }
-    ctx.restore();
-  });
+      ctx.restore();
+    });
 
-  // 4. Draw stickies and callouts for this page
-  paintStickyNotes(queue, pageNum - 1);
-  paintCallouts(queue, pageNum - 1);
+    // 4. Draw stickies and callouts for this page
+    paintStickyNotes(queue, pageNum - 1);
+    paintCallouts(queue, pageNum - 1);
+  }
+
+  // 5. Draw left margin text for this page
+  drawMarginTextOnCanvas(ctx, pageNum);
 }
 
 function updateEditorStyles(editor, canvas) {
   if (!editor || !canvas) return;
   const actualWidth = canvas.offsetWidth || parseFloat(canvas.style.width) || PAGE_W;
   const scale = actualWidth / PAGE_W;
+  const lineSpacingPx = S.fontSize * S.lineHeight;
+  const alignOff = typeof getAlignmentOffset === 'function' ? getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight) : 0;
+
+  // Calculate top padding so DOM text baseline sits exactly on the paper ruled line / canvas render baseline
+  const firstLineBaseline = S.margin + lineSpacingPx + alignOff;
+  const topPadding = Math.max(0, firstLineBaseline - S.fontSize * 0.82);
+
+  const isCornell = S.noteLayout === 'cornell';
+  const leftPad = isCornell ? 230 : S.margin;
+  const marginWidth = isCornell ? 220 : (S.margin - 10);
+
   editor.style.fontFamily = getFontStack(containsDevanagari(editor.innerText));
   editor.style.fontSize = (S.fontSize * scale) + 'px';
-  editor.style.lineHeight = S.lineHeight;
-  editor.style.paddingTop = ((S.margin + (S.fontSize * S.lineHeight)) * scale) + 'px';
-  editor.style.paddingLeft = (S.margin * scale) + 'px';
+  editor.style.lineHeight = (lineSpacingPx * scale) + 'px';
+  editor.style.paddingTop = (topPadding * scale) + 'px';
+  editor.style.paddingLeft = (leftPad * scale) + 'px';
   editor.style.paddingRight = (S.margin * scale) + 'px';
   editor.style.paddingBottom = (S.margin * scale) + 'px';
+  editor.style.fontStyle = 'normal';
 
   if (document.activeElement === editor) {
     editor.style.color = S.inkColor;
@@ -561,6 +791,28 @@ function updateEditorStyles(editor, canvas) {
     editor.style.color = 'transparent';
   }
   editor.style.caretColor = S.inkColor;
+
+  // Align left margin overlay text lines with right-hand side paper lines & font style
+  const pageId = editor.id ? editor.id.replace('editor-', '') : null;
+  if (pageId) {
+    const marginText = document.getElementById('margin-' + pageId);
+    if (marginText) {
+      marginText.style.fontFamily = getFontStack(containsDevanagari(marginText.innerText));
+      marginText.style.fontSize = (S.fontSize * scale) + 'px';
+      marginText.style.lineHeight = (lineSpacingPx * scale) + 'px';
+      marginText.style.paddingTop = (topPadding * scale) + 'px';
+      marginText.style.paddingLeft = (10 * scale) + 'px';
+      marginText.style.paddingRight = '4px';
+      marginText.style.width = Math.max(20, marginWidth * scale) + 'px';
+      marginText.style.fontStyle = 'normal';
+      if (document.activeElement === marginText) {
+        marginText.style.color = S.inkColor;
+      } else {
+        marginText.style.color = 'transparent';
+      }
+      marginText.style.caretColor = S.inkColor;
+    }
+  }
 }
 
 function getGlobalTextFromEditors() {
@@ -1049,6 +1301,7 @@ function clearPages() {
 function clearText() {
   document.getElementById('text-input').value = '';
   S.text = '';
+  S.marginNotes = {};
   clearPages();
   const canvas = createPage(1);
   drawPaperBackground(canvas.getContext('2d'), S.paperStyle, 1);
@@ -1056,6 +1309,10 @@ function clearText() {
   if (editor) {
     editor.innerText = '';
     updateEditorStyles(editor, canvas);
+  }
+  const marginText = document.getElementById('margin-1');
+  if (marginText) {
+    marginText.innerText = '';
   }
   autosave();
 }
@@ -2532,6 +2789,7 @@ function renderText(text) {
       c.dataset.text = pageTexts[idx] || '';
       updateEditorStyles(editor, c);
     }
+    drawMarginTextOnCanvas(c.getContext('2d'), idx + 1);
   });
 }
 
@@ -3351,7 +3609,7 @@ async function exportImage(format) {
     return;
   }
 
-  if (document.activeElement && document.activeElement.classList.contains('page-editor')) {
+  if (document.activeElement && (document.activeElement.classList.contains('page-editor') || document.activeElement.classList.contains('margin-text-overlay'))) {
     document.activeElement.blur();
     await new Promise(r => setTimeout(r, 320));
   }
@@ -3411,7 +3669,7 @@ async function exportPDF() {
     return;
   }
 
-  if (document.activeElement && document.activeElement.classList.contains('page-editor')) {
+  if (document.activeElement && (document.activeElement.classList.contains('page-editor') || document.activeElement.classList.contains('margin-text-overlay'))) {
     document.activeElement.blur();
     await new Promise(r => setTimeout(r, 320));
   }
@@ -3453,7 +3711,7 @@ async function exportSVG() {
     return;
   }
 
-  if (document.activeElement && document.activeElement.classList.contains('page-editor')) {
+  if (document.activeElement && (document.activeElement.classList.contains('page-editor') || document.activeElement.classList.contains('margin-text-overlay'))) {
     document.activeElement.blur();
     await new Promise(r => setTimeout(r, 320));
   }
@@ -3694,6 +3952,7 @@ function autosave() {
       activeNotebookId: activeNotebookId,
       pageDates: S.pageDates,
       pageNos: S.pageNos,
+      marginNotes: S.marginNotes,
       showHeaderBox: S.showHeaderBox
     };
     localStorage.setItem('inkflow-state', JSON.stringify(state));
@@ -3720,6 +3979,7 @@ function autosave() {
           noteLayout: S.noteLayout,
           pageDates: S.pageDates,
           pageNos: S.pageNos,
+          marginNotes: S.marginNotes,
           showHeaderBox: S.showHeaderBox
         }
       };
@@ -3806,9 +4066,10 @@ async function restoreState() {
       if (select) select.value = state.noteLayout;
     }
 
-    // Restore pageDates and pageNos
+    // Restore pageDates, pageNos, and marginNotes
     if (state.pageDates) S.pageDates = state.pageDates;
     if (state.pageNos) S.pageNos = state.pageNos;
+    if (state.marginNotes) S.marginNotes = state.marginNotes;
     if (state.showHeaderBox !== undefined) {
       S.showHeaderBox = state.showHeaderBox;
       const headerToggle = document.getElementById('header-toggle');
