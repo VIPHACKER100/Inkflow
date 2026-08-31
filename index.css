@@ -465,6 +465,11 @@ select {
 
 select:focus {
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+select:hover {
+  border-color: var(--accent);
 }
 
 .color-row {
@@ -934,11 +939,17 @@ html.dark .page-editor:focus {
 /* Text input area */
 #text-input {
   width: 100%;
-  min-height: 110px;
+  min-height: 120px;
   font-family: 'Caveat', cursive;
   font-size: 17px;
   line-height: 1.5;
   resize: vertical;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#text-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
 }
 
 /* Divider */
@@ -1117,17 +1128,13 @@ html.dark .drop-zone {
   font-style: italic;
 }
 
-.spinner {
+.upload-status .spinner {
   width: 14px;
   height: 14px;
   border: 2px solid var(--accent);
   border-top-color: transparent;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
 }
 
 /* ───────────────────────────────────────────
@@ -1486,6 +1493,11 @@ html.dark .drop-zone {
   margin-bottom: 10px;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.sketch-header-actions {
+  display: flex;
+  gap: 4px;
 }
 
 .canvas-wrapper {
@@ -2295,6 +2307,70 @@ html.dark .drop-zone {
   border-radius: 6px;
   display: block;
   border: 1px solid rgba(0,0,0,0.1);
+}
+
+/* ═══════════════════════════════════════════
+   UTILITY CLASSES & UI COMPONENTS
+════════════════════════════════════════════ */
+.notebook-actions-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.notebook-actions-row .btn {
+  flex: 1;
+}
+
+.notebook-list-scroll {
+  max-height: 250px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.flashcard-modal-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+
+.flashcard-controls-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 25px;
+  width: 100%;
+  gap: 15px;
+}
+
+.flashcard-controls-row .btn {
+  flex: 1;
+}
+
+.flashcard-progress-label {
+  font-weight: bold;
+  font-family: var(--font-ui);
+  min-width: 90px;
+  text-align: center;
+}
+
+.template-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ollama-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.ollama-hint code {
+  background: var(--sb-bg, var(--input-bg));
+  padding: 1px 4px;
+  border-radius: 3px;
 }
 
 /* ═══════════════════════════════════════════

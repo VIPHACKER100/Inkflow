@@ -89,12 +89,12 @@
           <span class="sb-arrow">▾</span>
         </div>
         <div class="sb-body">
-          <div class="notebook-actions-row" style="display: flex; gap: 8px; margin-bottom: 10px;">
-            <button class="btn sm primary" onclick="createNewNotebook()" title="Create New Notebook" style="flex: 1;">＋ New Note</button>
-            <button class="btn sm" onclick="createNewFolder()" title="Create New Folder" style="flex: 1;">＋ Folder</button>
+          <div class="notebook-actions-row">
+            <button class="btn sm primary" onclick="createNewNotebook()" title="Create New Notebook">＋ New Note</button>
+            <button class="btn sm" onclick="createNewFolder()" title="Create New Folder">＋ Folder</button>
           </div>
           <!-- Notebook Folder Tree view -->
-          <div class="notebook-list" id="notebook-list-container" style="max-height: 250px; overflow-y: auto; padding-right: 4px;">
+          <div class="notebook-list notebook-list-scroll" id="notebook-list-container">
             <!-- Dynamically populated from IndexedDB -->
             <div class="notebook-loading" style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 10px;">Loading notebooks...</div>
           </div>
@@ -113,9 +113,9 @@
 The handwriting engine will render each character with natural variation, baseline wobble, and ink effects.
 
 Try pasting a paragraph of lecture notes!"></textarea>
-          <div class="action-buttons-row" style="display: flex; gap: 6px;">
-            <button class="btn accent btn-render" onclick="triggerRender()" style="flex: 1;">✦ Render</button>
-            <button class="btn" id="btn-voice" onclick="toggleVoiceInput()" title="Voice to Notes" style="display: flex; align-items: center; justify-content: center; width: 38px; padding: 0;"><i class="fa-solid fa-microphone"></i></button>
+          <div class="action-buttons-row">
+            <button class="btn accent btn-render" onclick="triggerRender()">✦ Render</button>
+            <button class="btn" id="btn-voice" onclick="toggleVoiceInput()" title="Voice to Notes"><i class="fa-solid fa-microphone"></i></button>
             <button class="btn" onclick="clearText()" title="Clear text">✕</button>
           </div>
 
@@ -238,25 +238,6 @@ Try pasting a paragraph of lecture notes!"></textarea>
         </div>
       </div>
 
-      <!-- ── THEME PACKS SECTION ── -->
-      <div class="sb-section collapsed" id="sec-theme">
-        <div class="sb-section-header" onclick="toggleSection('sec-theme')">
-          🎨 &nbsp;Theme Packs
-          <span class="sb-arrow">▾</span>
-        </div>
-        <div class="sb-body">
-          <div class="sb-label">Notebook Theme</div>
-          <select id="theme-select" onchange="applyTheme(this.value)" title="Notebook Theme" style="width: 100%; padding: 8px 12px; border-radius: var(--radius); border: 1px solid var(--btn-border); background: var(--btn-bg); color: var(--text-primary); outline: none;">
-            <option value="default">Default Notebook</option>
-            <option value="vintage">Vintage Diary</option>
-            <option value="cute">Cute Pastel Notes</option>
-            <option value="science">Science Lab Notebook</option>
-            <option value="minimal">Minimal Noir</option>
-            <option value="scrapbook">Scrapbook Style</option>
-          </select>
-        </div>
-      </div>
-
       <!-- ── PAPER STYLE SECTION ── -->
       <div class="sb-section" id="sec-paper">
         <div class="sb-section-header" onclick="toggleSection('sec-paper')">
@@ -348,7 +329,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
           <div id="ollama-endpoint-row" style="display:none; margin-top:8px;">
             <div class="sb-label sb-label-sm">Ollama Endpoint URL</div>
             <input type="text" id="ollama-endpoint" value="http://localhost:11434" placeholder="http://localhost:11434" title="Ollama local server URL" />
-            <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Start Ollama with: <code style="background:var(--sb-bg);padding:1px 4px;border-radius:3px;">ollama serve</code></div>
+            <div class="ollama-hint">Start Ollama with: <code>ollama serve</code></div>
           </div>
 
           <!-- Model selector -->
@@ -530,7 +511,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
           <div class="sketch-main">
             <div class="sketch-header">
               <span class="active-char-label">Current: <strong id="current-char-display">A</strong></span>
-              <div style="display: flex; gap: 4px;">
+              <div class="sketch-header-actions">
                 <button class="btn sm" onclick="undoSketchStroke()" title="Undo last stroke">↶ Undo</button>
                 <button class="btn sm" onclick="clearSketchCanvas()" title="Clear canvas">🗑️ Clear</button>
               </div>
@@ -575,9 +556,9 @@ Try pasting a paragraph of lecture notes!"></textarea>
       <!-- Upload Template Panel -->
       <div id="panel-template" class="tab-panel hidden">
         <p class="modal-desc">Download the template package (instructions + 2 sheets), write your letters clearly, scan/photo them, and align the grid overlay below.</p>
-        <div class="template-actions" style="margin-top: 8px; justify-content: center; gap: 8px;">
+        <div class="template-actions template-actions-row">
           <button class="btn sm primary" onclick="generateDownloadTemplate()">📦 Download Template Package (3 sheets)</button>
-          <div style="display: flex; align-items: center; gap: 6px;">
+          <div class="template-actions-row">
             <span class="sb-label" style="margin: 0; font-size: 12px; color: var(--text-secondary);">Upload Sheet:</span>
             <select id="upload-template-sheet-select" style="font-size: 12px; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--btn-border); background: var(--btn-bg); color: var(--text-primary); outline: none;" title="Select template sheet type">
               <option value="letters">Letters (A-Z, a-z)</option>
@@ -654,7 +635,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
         <button class="modal-close" onclick="closeFlashcardsModal()">✕</button>
       </div>
       
-      <div class="modal-body flashcard-modal-body" style="display: flex; flex-direction: column; align-items: center; padding: 20px;">
+      <div class="modal-body flashcard-modal-body">
         <p class="modal-desc" style="text-align: center; margin-bottom: 20px;">Click the card to flip between Question and Answer.</p>
         
         <div class="flashcard-container" onclick="flipFlashcard()">
@@ -670,17 +651,17 @@ Try pasting a paragraph of lecture notes!"></textarea>
           </div>
         </div>
         
-        <div class="flashcard-controls" style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px; width: 100%; gap: 15px;">
-          <button class="btn" onclick="prevFlashcard()" style="flex: 1;">◀ Prev</button>
-          <span id="flashcard-progress" style="font-weight: bold; font-family: var(--font-ui); min-width: 90px; text-align: center;">Card 1 of 1</span>
-          <button class="btn" onclick="nextFlashcard()" style="flex: 1;">Next ▶</button>
+        <div class="flashcard-controls-row">
+          <button class="btn" onclick="prevFlashcard()">◀ Prev</button>
+          <span id="flashcard-progress" class="flashcard-progress-label">Card 1 of 1</span>
+          <button class="btn" onclick="nextFlashcard()">Next ▶</button>
         </div>
       </div>
     </div>
   </div>
 
   <!-- Floating exit study mode button -->
-  <button id="btn-exit-study-mode" class="btn" onclick="toggleStudyMode()" style="display: none; position: fixed; bottom: 25px; right: 25px; z-index: 1000; box-shadow: 0 4px 16px rgba(0,0,0,0.18); font-weight: bold; background: var(--accent); color: white; border: none; border-radius: 40px; padding: 12px 24px; font-size: 14px; align-items: center; gap: 8px;">🚪 Exit Study Mode</button>
+  <button id="btn-exit-study-mode" class="btn" onclick="toggleStudyMode()">🚪 Exit Study Mode</button>
 
   <!-- Vercel Web Analytics -->
   <script>

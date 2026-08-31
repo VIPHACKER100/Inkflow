@@ -17,6 +17,7 @@ const S = {
   currentPage: 0,
   noteLayout: 'standard',
   textAlignment: 'middle', // 'top', 'middle', 'bottom'
+  isStudyMode: false,
   pageDates: {},
   pageNos: {},
   marginNotes: {},
@@ -26,20 +27,6 @@ const S = {
 /* Canvas pages array */
 let pages = [];
 let animFrameId = null;
-
-/* ───────────────────────────────────────────
-   EDITOR TEXT AGGREGATION
-─────────────────────────────────────────── */
-function getGlobalTextFromEditors() {
-  // Collect the innerText of every .page-editor in DOM order,
-  // joining pages with a single newline. This keeps S.text and
-  // the sidebar textarea in sync with what the user is typing.
-  const editors = document.querySelectorAll('.page-editor');
-  const parts = [];
-  editors.forEach(ed => parts.push(ed.innerText || ''));
-  return parts.join('\n');
-}
-
 
 let isAnimating = false;
 let renderTimeout = null;
@@ -305,6 +292,14 @@ function setPaper(btn) {
     headerToggleContainer.style.display = (S.paperStyle === 'ruled' || S.paperStyle === 'clean') ? 'flex' : 'none';
   }
 
+  // Sync theme select dropdown
+  const themeSelect = document.getElementById('theme-select');
+  if (themeSelect) {
+    const matched = Object.keys(THEMES).find(k => THEMES[k].paperStyle === S.paperStyle);
+    themeSelect.value = matched || 'default';
+  }
+
+  autosave();
   debounceRender();
 }
 
@@ -422,8 +417,6 @@ function handleLineClick(e, targetElement, canvas) {
       autosave();
     }
   }
-
-  setCursorAtLine(targetElement, targetLineIndex);
 }
 
 /* ───────────────────────────────────────────
@@ -3506,6 +3499,15 @@ GUIDELINES:
 /* ───────────────────────────────────────────
    PHASE 7.3–7.6 — AI ACTION DISPATCHER
 ─────────────────────────────────────────── */
+async function callAI(prompt, systemPrompt, onChunk) {
+  const provider = document.getElementById('ai-provider').value;
+  if (provider === 'ollama') {
+    const model = document.getElementById('ai-model').value;
+    return callOllama(prompt, systemPrompt, model, onChunk);
+  }
+  return callClaude(prompt, systemPrompt, onChunk);
+}
+
 async function aiAction(type) {
   const textarea = document.getElementById('text-input');
   const currentText = textarea.value.trim();
@@ -3528,7 +3530,7 @@ async function aiAction(type) {
 
   if (type === 'summarize') {
     if (!currentText) { setAiStatus('⚠ Add some text first.'); btns.forEach(b => b.disabled = false); return; }
-    result = await callClaude(
+    result = await callAI(
       currentText,
       `${AI_SYSTEM_BASE_PROMPT}\n\nTASK: Summarize the provided text into clear, structured notebook notes. Include a '# Summary' header, main bullet points with ==highlighted== key terms, a '[sticky:cyan] Key Takeaway [sticky]' box, and 2-3 'Q: ... \\n A: ...' flashcards at the end.`,
       onChunk
@@ -3537,7 +3539,7 @@ async function aiAction(type) {
 
   if (type === 'arrange') {
     if (!currentText) { setAiStatus('⚠ Add some text first.'); btns.forEach(b => b.disabled = false); return; }
-    result = await callClaude(
+    result = await callAI(
       currentText,
       `${AI_SYSTEM_BASE_PROMPT}\n\nTASK: Reorganize and format the provided raw text into beautifully structured handwritten notes. Add a '# Main Title' heading, '## Section' subheadings, bullet lists, ==highlighted key terms==, and a '[callout:info] Key Note [callout]'.`,
       onChunk
@@ -3546,7 +3548,7 @@ async function aiAction(type) {
 
   if (type === 'grammar') {
     if (!currentText) { setAiStatus('⚠ Add some text first.'); btns.forEach(b => b.disabled = false); return; }
-    result = await callClaude(
+    result = await callAI(
       currentText,
       `${AI_SYSTEM_BASE_PROMPT}\n\nTASK: Fix all grammar, spelling, and phrasing errors in the provided text. Enhance sentence flow while keeping the original meaning intact. Format the polished text into clean notebook sections using '#' headers and bullet points where helpful.`,
       onChunk
@@ -3555,7 +3557,7 @@ async function aiAction(type) {
 
   if (type === 'lecture') {
     if (!currentText) { setAiStatus('⚠ Paste lecture text first.'); btns.forEach(b => b.disabled = false); return; }
-    result = await callClaude(
+    result = await callAI(
       currentText,
       `${AI_SYSTEM_BASE_PROMPT}\n\nTASK: Transform raw lecture transcripts or audio notes into an expert study note set. Include a '# Lecture Notes' title, '## Key Themes', '- ' bullet points, '[callout:formula] Core Concept [callout]', '[sticky:pink] Exam Tip [sticky]', and 'Q: / A:' revision flashcards.`,
       onChunk
@@ -3565,7 +3567,7 @@ async function aiAction(type) {
   if (type === 'assignment') {
     const topic = document.getElementById('ai-topic').value.trim() || currentText;
     if (!topic) { setAiStatus('⚠ Enter a topic first.'); btns.forEach(b => b.disabled = false); return; }
-    result = await callClaude(
+    result = await callAI(
       'Write a detailed, well-structured academic assignment on the topic: ' + topic,
       `${AI_SYSTEM_BASE_PROMPT}\n\nTASK: Write a complete, comprehensive academic assignment on the topic. Include an introduction, structured body sections ('## Section Title'), supporting bullet points, ==highlighted key terminology==, '[callout:info] Conclusion [callout]', and revision flashcards ('Q: / A:').`,
       onChunk
@@ -3953,6 +3955,7 @@ function autosave() {
       pageDates: S.pageDates,
       pageNos: S.pageNos,
       marginNotes: S.marginNotes,
+      textAlignment: S.textAlignment,
       showHeaderBox: S.showHeaderBox
     };
     localStorage.setItem('inkflow-state', JSON.stringify(state));
@@ -3980,6 +3983,7 @@ function autosave() {
           pageDates: S.pageDates,
           pageNos: S.pageNos,
           marginNotes: S.marginNotes,
+          textAlignment: S.textAlignment,
           showHeaderBox: S.showHeaderBox
         }
       };
@@ -4070,6 +4074,15 @@ async function restoreState() {
     if (state.pageDates) S.pageDates = state.pageDates;
     if (state.pageNos) S.pageNos = state.pageNos;
     if (state.marginNotes) S.marginNotes = state.marginNotes;
+    if (state.textAlignment) {
+      S.textAlignment = state.textAlignment;
+      document.querySelectorAll('.align-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.align === S.textAlignment);
+      });
+      const labels = { top: 'Upper', middle: 'Middle', bottom: 'Lower' };
+      const alignVal = document.getElementById('align-val');
+      if (alignVal) alignVal.textContent = labels[S.textAlignment] || 'Middle';
+    }
     if (state.showHeaderBox !== undefined) {
       S.showHeaderBox = state.showHeaderBox;
       const headerToggle = document.getElementById('header-toggle');
@@ -4434,6 +4447,10 @@ function resetToDefaults() {
   document.querySelectorAll('.worksheet-header').forEach(wh => {
     wh.style.display = 'flex';
   });
+
+  // Sync theme select dropdown to default
+  const themeSelect = document.getElementById('theme-select');
+  if (themeSelect) themeSelect.value = 'default';
 
   // Save & Render
   autosave();
@@ -6407,6 +6424,12 @@ async function deleteNotebookClicked(id, event) {
   renderNotebooksList();
 }
 
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
 function renderNotebooksList() {
   getAllNotebooks().then(notes => {
     const container = document.getElementById('notebook-list-container');
@@ -6443,9 +6466,9 @@ function renderNotebooksList() {
         item.onclick = () => loadNotebook(note.id);
         
         item.innerHTML = `
-          <span>📝 ${note.title}</span>
+          <span>📝 ${escapeHtml(note.title)}</span>
           <div class="notebook-item-actions">
-            <button onclick="deleteNotebookClicked('${note.id}', event)" title="Delete note"><i class="fa-solid fa-trash"></i></button>
+            <button onclick="deleteNotebookClicked('${escapeHtml(note.id)}', event)" title="Delete note"><i class="fa-solid fa-trash"></i></button>
           </div>
         `;
         container.appendChild(item);
