@@ -61,6 +61,25 @@ The `onChunk` callback updates the textarea and re-renders the canvas at most ev
 
 ---
 
+## Provider Routing (`callAI`)
+
+All AI actions route through `callAI(prompt, systemPrompt, onChunk)`, which checks the selected provider and dispatches to the appropriate backend:
+
+```javascript
+async function callAI(prompt, systemPrompt, onChunk) {
+  const provider = document.getElementById('ai-provider').value;
+  if (provider === 'ollama') {
+    const model = document.getElementById('ai-model').value;
+    return callOllama(prompt, systemPrompt, model, onChunk);
+  }
+  return callClaude(prompt, systemPrompt, onChunk);
+}
+```
+
+This ensures all five AI actions (Smart Arrange, Summarize, Grammar, Lecture, Assignment) work correctly with Ollama — previously they were hardcoded to `callClaude()` and silently ignored the Ollama provider selection.
+
+---
+
 ## Prompts & AI Workflows
 
 All AI actions utilize an upgraded master system prompt (`AI_SYSTEM_BASE_PROMPT`) tailored specifically for Inkflow's native handwritten notebook rendering engine.
@@ -129,10 +148,11 @@ TASK: Write a complete, comprehensive academic assignment on the topic. Include 
 
 1. User inputs API key and selects an AI feature
 2. Input text is validated (per-action "add some text first" checks)
-3. Request dispatched via `fetch` with `stream: true`
-4. `onChunk` incrementally updates the textarea and canvas (200ms throttle)
-5. Status line shows `✦ Generating…`, then `✓ Done — <model>`
-6. On completion, final text is synced and autosaved
+3. `callAI()` checks the selected provider and dispatches to `callClaude()` or `callOllama()`
+4. Request dispatched via `fetch` with `stream: true`
+5. `onChunk` incrementally updates the textarea and canvas (200ms throttle)
+6. Status line shows `✦ Generating…`, then `✓ Done — <model>`
+7. On completion, final text is synced and autosaved
 
 ---
 

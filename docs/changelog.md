@@ -8,6 +8,27 @@ All notable changes to Inkflow are documented in this file.
 
 ---
 
+## [1.6.2] — 2026-08-31
+
+### 🐛 Fixed
+- **Duplicate `getGlobalTextFromEditors`**: Removed the first (simpler) definition that was silently overwritten by the later, more correct version.
+- **Missing `S.isStudyMode` initialization**: Added `isStudyMode: false` to the state object initializer to prevent undefined on first access.
+- **`textAlignment` not persisted**: Text alignment setting is now saved to localStorage and per-note IndexedDB settings, and restored on load and notebook switch.
+- **Duplicate `@keyframes spin` in CSS**: Removed the duplicate animation definition.
+- **`setPaper()` missing autosave**: Paper style changes now trigger `autosave()` and sync the theme dropdown.
+- **Theme dropdown not syncing**: Theme select dropdown now syncs when paper style changes via grid clicks or `resetToDefaults()`.
+- **XSS in `renderNotebooksList`**: User-provided notebook titles are now escaped via `escapeHtml()` before innerHTML injection.
+- **AI actions bypass Ollama**: Created `callAI()` provider router; all five AI actions now correctly dispatch to Ollama when selected instead of being hardcoded to `callClaude()`.
+- **Duplicate Theme Packs section**: Removed the dropdown-based theme section from HTML, keeping only the one-click grid.
+
+### ♻️ Changed
+- **Inline styles moved to CSS**: Extracted ~12 inline styles from HTML into reusable CSS classes (`.notebook-actions-row`, `.flashcard-controls-row`, `.sketch-header-actions`, `.ollama-hint`, `.notebook-list-scroll`, `.template-actions-row`, `.flashcard-progress-label`).
+- **Improved textarea focus**: Added smooth focus ring transition to `#text-input`.
+- **Improved select focus**: Added hover state and focus ring to all `<select>` elements.
+- **Click-to-edit cursor placement**: Removed forced `setCursorAtLine` from `handleLineClick` so the browser places the cursor exactly where the user clicks.
+
+---
+
 ## [1.6.1] — 2026-08-29
 
 ### 🐛 Fixed

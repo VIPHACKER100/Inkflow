@@ -126,14 +126,16 @@ The viewport auto-scrolls to keep the pen cursor visible during animation.
 
 | Setting | Description |
 | :--- | :--- |
-| **AI Provider** | OpenRouter (100+ models) or Anthropic (direct) |
+| **AI Provider** | OpenRouter (100+ models), Anthropic (direct), or Ollama (local, no API key) |
 | **Model** | Selected from provider's model list (auto-fetched for OpenRouter) |
-| **API Key** | Your OpenRouter or Anthropic API key (entered at runtime, stored in browser only) |
+| **API Key** | Your OpenRouter or Anthropic API key (entered at runtime, stored in browser only). Not required for Ollama. |
 | **Smart Arrange** | Restructures text into organized, readable notes |
 | **Summarize** | Converts text to bullet-point notes |
 | **Fix Grammar** | Corrects spelling and phrasing |
 | **Lecture → Notes** | Transforms transcripts to study notes |
 | **Generate Assignment** | Creates essay-style assignments on a given topic |
+
+> All AI actions route through `callAI()`, which dispatches to the correct backend based on the selected provider.
 
 ---
 

@@ -30,6 +30,7 @@ This document records Inkflow's current accessibility state and identifies gaps.
 | Canvas content | The handwriting canvas is not screen-reader readable | Provide the textarea as the accessible source of truth |
 | Contenteditable overlays | `.page-editor` overlays lack `aria-label` / `role` | Add `role="textbox"` + `aria-label="Page N editor"` |
 | Color contrast | Emoji/`Font Awesome` glyphs rely on color alone for ink presets | Add text labels or `title` attributes (some already present) |
+| XSS protection | User-provided content (notebook titles, folder names) is now escaped via `escapeHtml()` before innerHTML injection | ✅ Resolved |
 
 ---
 

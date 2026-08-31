@@ -47,7 +47,7 @@ graph TD
     end
 
     subgraph External_Layer ["Integration & Export Services"]
-        M["OpenRouter / Anthropic Claude API (SSE Streaming)"]
+        M["callAI Router → OpenRouter / Anthropic Claude / Local Ollama (SSE Streaming)"]
         O["jsPDF Multi-Page Document Compiler"]
         P["Clipboard API — Copy as PNG"]
         Q["OS Print Spooler"]
@@ -101,7 +101,7 @@ A centralized global configuration object `S` acts as the single source of truth
 The rendering pipeline that transforms state into visual canvas output. The key innovation since v1.2.0 is the **unified `layoutText()` engine**, which performs all word-wrap, page-break, and character-queue computation in a single pass. It routes to three specialist engines — `layoutTextTwoColumn`, `layoutTextCornell`, and `layoutTextCleanStandard` — while the standard flowing engine handles the default case. Static rendering (`renderText`) and animation (`startAnimation`) consume the identical layout output.
 
 ### 4. Integration & Export Services
-External integrations for AI text generation (OpenRouter + Anthropic, SSE streaming), voice dictation (Web Speech API), native canvas image exports (2×-upscaled Blob-URL PNG/JPG/SVG), multi-page lossless PDF compilation (jsPDF), clipboard copy (Clipboard API), and native OS print dialog access.
+External integrations for AI text generation via the `callAI()` provider router (OpenRouter + Anthropic + local Ollama, SSE streaming), voice dictation (Web Speech API), native canvas image exports (2×-upscaled Blob-URL PNG/JPG/SVG), multi-page lossless PDF compilation (jsPDF), clipboard copy (Clipboard API), and native OS print dialog access. User-provided content (notebook titles, folder names) is escaped via `escapeHtml()` before innerHTML injection to prevent XSS.
 
 ---
 

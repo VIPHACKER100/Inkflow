@@ -26,14 +26,14 @@ The system state is governed by a central global configuration object `S` that a
 | `pressure` | `Float` | `0.12` | Scale of stroke thickness variation (0.0 to 0.3 range). |
 | `paperStyle` | `String` | `"ruled"` | Page pattern identifier (`ruled`, `clean`, `plain`, `grid`, `legal`, `vintage`, `dark`, `dot_grid`, `engineering`, `music`). |
 | `noteLayout` | `String` | `"standard"` | Page note template layout (`standard`, `twocolumn`, `cornell`). |
-| `textAlignment` | `String` | `"middle"` | Vertical alignment relative to grid lines (`top` / `middle` / `bottom`). |
+| `textAlignment` | `String` | `"middle"` | Vertical alignment relative to grid lines (`top` / `middle` / `bottom`). Persisted to localStorage and per-note settings. |
 | `animSpeed` | `Integer` | `8` | Characters written per animation frame (1 to 30 range). |
 | `currentPage` | `Integer` | `0` | 0-indexed integer identifying the active viewport page in focus. |
 | `pageDates` | `Object` | `{}` | Page-number → date string map for the printed header box. |
 | `pageNos` | `Object` | `{}` | Page-number → custom page-label string map for the printed header box. |
 | `showHeaderBox` | `Boolean` | `true` | Whether the Date & P. No. header box is drawn on `ruled`/`clean` pages. |
 
-Additional **runtime-only** (non-persisted) fields are set on `S`: `activeTheme` (active theme pack id), `_highlightColor` (highlight fill, theme-dependent), `isStudyMode`, and `shadowColor`.
+Additional **runtime-only** (non-persisted) fields are set on `S`: `activeTheme` (active theme pack id), `_highlightColor` (highlight fill, theme-dependent), `isStudyMode` (initialized to `false`), and `shadowColor`.
 
 > **Note**: Default values were tuned for cleaner, more realistic handwriting output at standard sizes. Custom glyph data (`draftedGlyphs`) is a module-level dictionary hydrated from IndexedDB, not a field of `S`.
 
@@ -144,7 +144,7 @@ function autosave() {
       font: S.font, fontSize: S.fontSize, lineHeight: S.lineHeight,
       wordSpacing: S.wordSpacing, margin: S.margin, rotationMax: S.rotationMax,
       inkColor: S.inkColor, bleed: S.bleed, pressure: S.pressure,
-      paperStyle: S.paperStyle, noteLayout: S.noteLayout,
+      paperStyle: S.paperStyle, noteLayout: S.noteLayout, textAlignment: S.textAlignment,
       activeNotebookId: activeNotebookId,
       pageDates: S.pageDates, pageNos: S.pageNos,
       showHeaderBox: S.showHeaderBox,

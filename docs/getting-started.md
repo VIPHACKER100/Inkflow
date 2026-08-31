@@ -4,7 +4,7 @@
 
 # 🚀 Getting Started with Inkflow
 
-Welcome to **Inkflow v1.6.1** — a single-file Progressive Web App (PWA) that turns plain text into beautiful, handwritten-style notes with built-in AI (OpenRouter, Anthropic, and local Ollama).
+Welcome to **Inkflow v1.6.2** — a single-file Progressive Web App (PWA) that turns plain text into beautiful, handwritten-style notes with built-in AI (OpenRouter, Anthropic, and local Ollama).
 
 ---
 

@@ -81,20 +81,20 @@ Three alignment buttons (**Upper**, **Middle**, **Lower**) call `setTextAlignmen
 - Ink presets (🔵⚫💙🟣🔴🟢) call `setInkPreset(hex, name)`; the custom color picker sets any color. Bleed and pressure sliders tune the writing effect.
 
 ### Theme Packs
-Two entry points — the **Notebook Theme** dropdown and the **One-click Note Themes** swatch grid — both call `applyTheme(themeId)` (Default / Vintage / Cute / Science / Minimal / Scrapbook), which reconfigures paper + ink + rotation + font size together.
+The **One-click Note Themes** swatch grid calls `applyTheme(themeId)` (Default / Vintage / Cute / Science / Minimal / Scrapbook), which reconfigures paper + ink + rotation + font size together.
 
 ---
 
 ## AI Workflows
 
-Five AI buttons (`aiAction(type)`) stream results onto the canvas:
+Five AI buttons (`aiAction(type)`) stream results onto the canvas via the `callAI()` provider router:
 - 🪄 **Smart Arrange** — restructures messy notes
 - 📋 **Summarize Notes** — condensed summary
 - ✏️ **Improve Grammar** — cleaned-up prose
 - 🎓 **Lecture → Notes** — transcript → study notes
 - 📝 **Generate Assignment** — creates an assignment sheet
 
-Configure provider, model, and API key in the **AI Features** section; a status line (`setAiStatus`) shows progress. See [AI Integration](./ai-integration.md).
+Configure provider (OpenRouter / Anthropic / Ollama), model, and API key in the **AI Features** section; a status line (`setAiStatus`) shows progress. All actions route through `callAI()` which dispatches to the correct backend. See [AI Integration](./ai-integration.md).
 
 ---
 

@@ -84,6 +84,9 @@ Returns a fully-decoded `<img>` for a drafted glyph (cached), or `null` while de
 ### `sanitizeText(str)`
 Strips non-printable control characters and Private Use Area codepoints. Returns cleaned string.
 
+### `escapeHtml(str)`
+Escapes HTML special characters (`&`, `<`, `>`, `"`, `'`) to prevent XSS when injecting user content into `innerHTML`. Returns escaped string.
+
 ### `getGraphemes(text)`
 Segments text into grapheme clusters via `Intl.Segmenter` with `Array.from()` fallback.
 
@@ -162,6 +165,11 @@ Returns the character queue for the given text (see above).
 ---
 
 ## AI Integration
+
+### `callAI(prompt, systemPrompt, onChunk)`
+Provider-aware AI router. Checks the selected provider and dispatches to `callClaude()` or `callOllama()`.
+- **Parameters**: `prompt` (String), `systemPrompt` (String), `onChunk` (Function)
+- **Returns**: Promise resolving to the full response text, or `null` on failure
 
 ### `callClaude(prompt, systemPrompt, onChunk)`
 Sends a streaming request to OpenRouter or Anthropic.

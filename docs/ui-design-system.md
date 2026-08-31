@@ -41,12 +41,14 @@ The visual foundations are centralized in a CSS Custom Property system, enabling
 Inkflow avoids inline styles. Layout, spacing, and component styling are abstracted into utility and component classes inside `index.css`.
 
 Key categories include:
-- **Component Modules**: `.toolbar-group`, `.sb-section`, `.paper-grid`, `.paper-btn`, `.ai-btn-group`, `.export-grid`, `.animation-buttons-row`, `.file-upload-wrapper`, `.action-buttons-row`
+- **Component Modules**: `.toolbar-group`, `.sb-section`, `.paper-grid`, `.paper-btn`, `.ai-btn-group`, `.export-grid`, `.animation-buttons-row`, `.file-upload-wrapper`, `.action-buttons-row`, `.notebook-actions-row`, `.template-actions-row`
 - **Typography Helpers**: `.font-caveat`, `.font-kalam`, `.font-roboto`, etc.
 - **Export Toast**: `.export-toast`, `.export-toast--success`, `.export-toast--error`
 - **Page Editor**: `.page-editor`, `.canvas-container`, `.margin-text-overlay`
 - **Worksheets**: `.worksheet-header`, `.worksheet-field-row`, `.worksheet-input-box`
-- **Flashcards**: `.flashcard-container`, `.flashcard-inner`, `.flashcard-front`, `.flashcard-back`, `.flashcard-badge`
+- **Flashcards**: `.flashcard-container`, `.flashcard-inner`, `.flashcard-front`, `.flashcard-back`, `.flashcard-badge`, `.flashcard-controls-row`, `.flashcard-progress-label`
+- **Sketchpad**: `.sketch-header`, `.sketch-header-actions`
+- **Misc**: `.ollama-hint`, `.notebook-list-scroll`
 - **Print Overrides**: `@media print` rules
 
 ---
@@ -113,9 +115,8 @@ Bottom pill-style navigation (`◀ Page X of Y ▶`) for multi-page A4 transitio
 
 ## Theme Packs
 
-Two sidebar sections apply the same `applyTheme(themeId)` engine:
-1. **`#sec-theme`** — a "Notebook Theme" dropdown (Default / Vintage / Cute / Science / Minimal / Scrapbook)
-2. **`#sec-themes`** — a "One-click Note Themes" grid of gradient swatch buttons
+A single sidebar section (`#sec-themes`) applies `applyTheme(themeId)` via a one-click grid of gradient swatch buttons:
+- **One-click Note Themes** — a grid of gradient swatch buttons (Default / Vintage / Cute / Science / Minimal / Scrapbook)
 
 Each preset sets paper style, ink color, rotation chaos, bleed, pressure, and font size together (see [Configuration Guide](./configuration-guide.md) for the full table). The `minimal` (dark) theme also switches the highlight color to a warm brown.
 
