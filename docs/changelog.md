@@ -6,6 +6,15 @@
 
 All notable changes to Inkflow are documented in this file.
 
+## [1.6.3] — 2026-09-02
+
+### 🐛 Fixed
+- **Right Margin Text Wrapping Parity**: Synchronized CSS `wordSpacing` on `.page-editor` and `.margin-text-overlay` elements with `S.wordSpacing`, removed double-counted word spacing in line-wrap checks (`layoutText`, `layoutTextCleanStandard`, `layoutTextTwoColumn`, `layoutTextCornell`), and added subpixel layout tolerance (`+2.5px`) matching browser DOM text bounds.
+- **Vertical Baseline Alignment**: Updated `updateEditorStyles()` so DOM editor top padding dynamically matches canvas first-line baselines (`S.margin + lineSpacingPx * 2` for standard/clean, `S.margin + S.fontSize + lineSpacingPx` for Cornell/Two-Column), eliminating vertical text jumping when focusing/blurring page editors.
+- **Line Click & Caret Positioning**: Corrected `handleLineClick()` line index calculation to map top padding accurately, and restricted `setCursorAtLine()` execution to newly appended unwritten lines so native character click placement inside existing words is preserved.
+- **Left Margin Text Bounding & Wrapping**: Updated `drawMarginTextOnCanvas()` to enforce strict word and character wrapping within `S.margin - 18px` (`62px`), preventing left margin notes from crossing red vertical lines or colliding with main page text.
+- **Auto-Fit Font Size Engine**: Updated `autoFitFontSize()` to fetch active editor text via `getGlobalTextFromEditors()`, binary-search optimum font size for target page count, call `syncAllEditorStyles()`, and update all DOM page editor overlays seamlessly.
+
 ---
 
 ## [1.6.2] — 2026-08-31

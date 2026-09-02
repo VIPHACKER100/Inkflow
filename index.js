@@ -175,37 +175,56 @@ document.getElementById('font-upload').addEventListener('change', async function
    PHASE 3.5 — AUTO-FIT FONT SIZE
 ─────────────────────────────────────────── */
 function autoFitFontSize() {
-  const text = S.text.trim();
+  // 1. Sync global text from active page editors if available
+  if (typeof getGlobalTextFromEditors === 'function') {
+    const editorText = getGlobalTextFromEditors();
+    if (editorText && editorText.trim()) {
+      S.text = editorText;
+      const textInput = document.getElementById('text-input');
+      if (textInput) textInput.value = editorText;
+    }
+  }
+
+  const text = (S.text || '').trim();
   if (!text) return;
 
-  let min = 14;
-  let max = 52;
-  let bestSize = S.fontSize;
+  const origFontSize = S.fontSize;
 
-  // Binary search for a font size that fits text within 1 or 2 pages optimally
-  // but let's target fitting the current text precisely into the first page if it's short,
-  // or just generally reducing it if it overflows.
-  
-  for (let i = 0; i < 6; i++) { // 6 iterations is enough for 14-52 range
+  // Determine target page count at current font size
+  S.fontSize = origFontSize;
+  const initialResult = layoutText(text);
+  const targetPages = initialResult.pageCount || 1;
+
+  let min = 12;
+  let max = 48;
+  let bestSize = origFontSize;
+
+  // Binary search for optimum font size that fits cleanly into targetPages
+  for (let i = 0; i < 7; i++) {
     const mid = Math.floor((min + max) / 2);
     S.fontSize = mid;
     const { pageCount } = layoutText(text);
-    
-    if (pageCount > 1) {
-      max = mid;
+
+    if (pageCount > targetPages) {
+      max = mid - 1;
     } else {
       bestSize = mid;
-      min = mid;
+      min = mid + 1;
     }
   }
 
   S.fontSize = bestSize;
-  
-  // Sync UI
+
+  // Sync UI slider & label
   const slider = document.getElementById('font-size-slider');
   if (slider) slider.value = S.fontSize;
   const disp = document.getElementById('fs-val');
   if (disp) disp.textContent = S.fontSize;
+
+  // Synchronize DOM page editors and margin overlays with the new font size & line spacing
+  if (typeof syncAllEditorStyles === 'function') {
+    syncAllEditorStyles();
+  }
 
   debounceRender();
   autosave();
@@ -396,7 +415,22 @@ function handleLineClick(e, targetElement, canvas) {
   const clickYInCanvas = (e.clientY - rect.top) * (PAGE_H / rect.height);
 
   const lineSpacingPx = S.fontSize * S.lineHeight;
-  let targetLineIndex = Math.floor((clickYInCanvas - S.margin) / lineSpacingPx);
+  const alignOff = typeof getAlignmentOffset === 'function' ? getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight) : 0;
+
+  let topPadding = 0;
+  if (targetElement.classList.contains('margin-text-overlay')) {
+    const marginFirstLineBaseline = S.margin + lineSpacingPx + alignOff;
+    topPadding = Math.max(0, marginFirstLineBaseline - S.fontSize * 0.82);
+  } else {
+    const isCornell = S.noteLayout === 'cornell';
+    const isTwoColumn = S.noteLayout === 'twocolumn';
+    const firstLineBaseline = (isCornell || isTwoColumn)
+      ? (S.margin + S.fontSize + lineSpacingPx + alignOff)
+      : (S.margin + lineSpacingPx * 2 + alignOff);
+    topPadding = Math.max(0, firstLineBaseline - S.fontSize * 0.82);
+  }
+
+  let targetLineIndex = Math.floor((clickYInCanvas - topPadding) / lineSpacingPx);
   if (targetLineIndex < 0) targetLineIndex = 0;
 
   const currentText = targetElement.innerText || '';
@@ -416,6 +450,8 @@ function handleLineClick(e, targetElement, canvas) {
       document.getElementById('text-input').value = globalText;
       autosave();
     }
+    // Only set explicit line cursor if new lines were appended to reach an unwritten line
+    setCursorAtLine(targetElement, targetLineIndex);
   }
 }
 
@@ -629,47 +665,92 @@ function drawMarginTextOnCanvas(ctx, pageNum) {
   const rawText = marginTextEl.innerText;
   if (!rawText || !rawText.trim()) return;
 
-  const lines = rawText.split('\n');
+  const isCornell = S.noteLayout === 'cornell';
+  const marginStartX = 8;
+  const maxMarginRight = isCornell ? 214 : (S.margin - 18);
+  const marginFontSize = Math.max(11, Math.min(S.fontSize, 16));
+
   const lineH = S.fontSize * S.lineHeight;
   const alignOff = typeof getAlignmentOffset === 'function' ? getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight) : 0;
 
+  const paragraphs = rawText.split('\n');
+  let currentYIdx = 0;
+
   ctx.save();
-  for (let li = 0; li < lines.length; li++) {
-    const lineStr = lines[li];
-    if (!lineStr) continue;
+  for (let pi = 0; pi < paragraphs.length; pi++) {
+    const para = paragraphs[pi];
+    if (pi > 0) {
+      currentYIdx++;
+    }
+    if (!para) continue;
 
-    const isIndic = containsDevanagari(lineStr);
-    const fontStack = getFontStack(isIndic);
-    const y = S.margin + (li + 1) * lineH + alignOff;
-    let x = 12;
+    const words = para.split(' ');
+    let x = marginStartX;
 
-    const graphemes = getGraphemes(lineStr);
-    for (let ci = 0; ci < graphemes.length; ci++) {
-      const ch = graphemes[ci];
-      const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
-
-      ctx.save();
-      ctx.translate(x, y + v.baselineOff);
-      ctx.rotate((v.tiltDeg * (isIndic ? 0.3 : 1) * Math.PI) / 180);
-      ctx.scale(v.scaleX, v.scaleY);
-
-      const pxSize = S.fontSize * v.pressureMod;
-      ctx.font = `${Math.max(10, pxSize)}px ${fontStack}`;
-      ctx.globalAlpha = v.opacity;
-      if (S.paperStyle !== 'clean' && S.bleed > 0.05) {
-        ctx.shadowColor = S.shadowColor || S.inkColor;
-        ctx.shadowBlur = S.bleed * 1.4;
-      } else {
-        ctx.shadowBlur = 0;
+    for (let wi = 0; wi < words.length; wi++) {
+      const word = words[wi];
+      if (!word) {
+        if (wi < words.length - 1) x += ctx.measureText(' ').width + S.wordSpacing;
+        continue;
       }
-      ctx.fillStyle = S.inkColor;
-      ctx.fillText(ch, 0, 0);
-      ctx.restore();
 
-      ctx.font = `${S.fontSize}px ${fontStack}`;
-      x += ctx.measureText(ch).width + v.spacingExtra;
+      const isIndic = containsDevanagari(word);
+      const fontStack = getFontStack(isIndic);
+
+      ctx.font = `${marginFontSize}px ${fontStack}`;
+      const wordWidth = ctx.measureText(word).width;
+
+      // Word wrap check if word exceeds margin bounds
+      if (x + wordWidth > maxMarginRight && x > marginStartX) {
+        x = marginStartX;
+        currentYIdx++;
+      }
+
+      const graphemes = getGraphemes(word);
+      const isUltraLongWord = ctx.measureText(word).width > (maxMarginRight - marginStartX);
+
+      for (let ci = 0; ci < graphemes.length; ci++) {
+        const ch = graphemes[ci];
+        const v = getCharVariation(S.rotationMax, S.pressure, marginFontSize);
+
+        ctx.font = `${marginFontSize}px ${fontStack}`;
+        const charWidth = ctx.measureText(ch).width + v.spacingExtra;
+
+        // Char wrap check if single word exceeds full margin width
+        if (isUltraLongWord && x + charWidth > maxMarginRight && x > marginStartX) {
+          x = marginStartX;
+          currentYIdx++;
+        }
+
+        const y = S.margin + (currentYIdx + 1) * lineH + alignOff;
+
+        ctx.save();
+        ctx.translate(x, y + v.baselineOff);
+        ctx.rotate((v.tiltDeg * (isIndic ? 0.3 : 1) * Math.PI) / 180);
+        ctx.scale(v.scaleX, v.scaleY);
+
+        const pxSize = marginFontSize * v.pressureMod;
+        ctx.font = `${Math.max(9, pxSize)}px ${fontStack}`;
+        ctx.globalAlpha = v.opacity;
+        if (S.paperStyle !== 'clean' && S.bleed > 0.05) {
+          ctx.shadowColor = S.shadowColor || S.inkColor;
+          ctx.shadowBlur = S.bleed * 1.4;
+        } else {
+          ctx.shadowBlur = 0;
+        }
+        ctx.fillStyle = S.inkColor;
+        ctx.fillText(ch, 0, 0);
+        ctx.restore();
+
+        x += charWidth;
+      }
+
+      // Add space after word
+      ctx.font = `${marginFontSize}px ${fontStack}`;
+      x += ctx.measureText(' ').width + S.wordSpacing;
     }
   }
+
   ctx.restore();
 }
 
@@ -761,11 +842,16 @@ function updateEditorStyles(editor, canvas) {
   const lineSpacingPx = S.fontSize * S.lineHeight;
   const alignOff = typeof getAlignmentOffset === 'function' ? getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight) : 0;
 
+  const isCornell = S.noteLayout === 'cornell';
+  const isTwoColumn = S.noteLayout === 'twocolumn';
+
   // Calculate top padding so DOM text baseline sits exactly on the paper ruled line / canvas render baseline
-  const firstLineBaseline = S.margin + lineSpacingPx + alignOff;
+  // Standard & clean standard start on line 2 baseline (S.margin + lineSpacingPx * 2)
+  const firstLineBaseline = (isCornell || isTwoColumn)
+    ? (S.margin + S.fontSize + lineSpacingPx + alignOff)
+    : (S.margin + lineSpacingPx * 2 + alignOff);
   const topPadding = Math.max(0, firstLineBaseline - S.fontSize * 0.82);
 
-  const isCornell = S.noteLayout === 'cornell';
   const leftPad = isCornell ? 230 : S.margin;
   const marginWidth = isCornell ? 220 : (S.margin - 10);
 
@@ -776,6 +862,7 @@ function updateEditorStyles(editor, canvas) {
   editor.style.paddingLeft = (leftPad * scale) + 'px';
   editor.style.paddingRight = (S.margin * scale) + 'px';
   editor.style.paddingBottom = (S.margin * scale) + 'px';
+  editor.style.wordSpacing = (S.wordSpacing * scale) + 'px';
   editor.style.fontStyle = 'normal';
 
   if (document.activeElement === editor) {
@@ -790,13 +877,19 @@ function updateEditorStyles(editor, canvas) {
   if (pageId) {
     const marginText = document.getElementById('margin-' + pageId);
     if (marginText) {
+      const marginFirstLineBaseline = S.margin + lineSpacingPx + alignOff;
+      const marginTopPadding = Math.max(0, marginFirstLineBaseline - S.fontSize * 0.82);
+      const marginWidth = isCornell ? 220 : (S.margin - 18);
+      const marginFontSize = Math.max(11, Math.min(S.fontSize, 16));
+
       marginText.style.fontFamily = getFontStack(containsDevanagari(marginText.innerText));
-      marginText.style.fontSize = (S.fontSize * scale) + 'px';
+      marginText.style.fontSize = (marginFontSize * scale) + 'px';
       marginText.style.lineHeight = (lineSpacingPx * scale) + 'px';
-      marginText.style.paddingTop = (topPadding * scale) + 'px';
-      marginText.style.paddingLeft = (10 * scale) + 'px';
-      marginText.style.paddingRight = '4px';
+      marginText.style.paddingTop = (marginTopPadding * scale) + 'px';
+      marginText.style.paddingLeft = (8 * scale) + 'px';
+      marginText.style.paddingRight = '2px';
       marginText.style.width = Math.max(20, marginWidth * scale) + 'px';
+      marginText.style.wordSpacing = (S.wordSpacing * scale) + 'px';
       marginText.style.fontStyle = 'normal';
       if (document.activeElement === marginText) {
         marginText.style.color = S.inkColor;
@@ -1691,13 +1784,13 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
 
       // Measure word width
       ctx.font = `${S.fontSize}px ${fontStack}`;
-      const wordWidth = ctx.measureText(lineWord).width + S.wordSpacing;
+      const wordWidth = ctx.measureText(lineWord).width;
 
       let rightBoundary = activeCol === 1 ? col1Right : col2Right;
       let leftBoundary = activeCol === 1 ? col1Left : col2Left;
 
       // Word wrap
-      if (x + wordWidth > rightBoundary && x > leftBoundary) {
+      if (x + wordWidth > (rightBoundary + 2.5) && x > leftBoundary) {
         x = leftBoundary;
         y += lineH;
         lineCharIndex = 0;
@@ -1756,6 +1849,7 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
         currentPageText += lineWord;
       } else {
         const graphemes = getGraphemes(lineWord);
+        const isUltraLongWord = ctx.measureText(lineWord).width > (rightBoundary - leftBoundary);
         for (let ci = 0; ci < graphemes.length; ci++) {
           const ch = graphemes[ci];
           const v = S.paperStyle === 'clean' ? {
@@ -1771,7 +1865,7 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
           ctx.font = `${S.fontSize}px ${fontStack}`;
           const charWidth = ctx.measureText(ch).width + v.spacingExtra;
 
-          if (x + charWidth > rightBoundary && x > leftBoundary) {
+          if (isUltraLongWord && x + charWidth > (rightBoundary + 2.5) && x > leftBoundary) {
             x = leftBoundary;
             y += lineH;
             lineCharIndex = 0;
@@ -1984,7 +2078,7 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
       const fontStack = getFontStack(wordIsIndic);
 
       ctx.font = `${S.fontSize}px ${fontStack}`;
-      const wordWidth = ctx.measureText(word).width + S.wordSpacing;
+      const wordWidth = ctx.measureText(word).width;
 
       let leftBoundary = margin;
       let rightBoundary = rightColRight;
@@ -2000,7 +2094,7 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
         rightBoundary = rightColRight;
       }
 
-      if (x + wordWidth > rightBoundary && x > leftBoundary) {
+      if (x + wordWidth > (rightBoundary + 2.5) && x > leftBoundary) {
         x = leftBoundary;
         y += lineH;
         lineCharIndex = 0;
@@ -2064,6 +2158,7 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
         currentPageText += word;
       } else {
         const graphemes = getGraphemes(word);
+        const isUltraLongWord = ctx.measureText(word).width > (rightBoundary - leftBoundary);
         for (let ci = 0; ci < graphemes.length; ci++) {
           const ch = graphemes[ci];
           const v = S.paperStyle === 'clean' ? {
@@ -2079,7 +2174,7 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
           ctx.font = `${S.fontSize}px ${fontStack}`;
           const charWidth = ctx.measureText(ch).width + v.spacingExtra;
 
-          if (x + charWidth > rightBoundary && x > leftBoundary) {
+          if (isUltraLongWord && x + charWidth > (rightBoundary + 2.5) && x > leftBoundary) {
             x = leftBoundary;
             y += lineH;
             lineCharIndex = 0;
@@ -2343,10 +2438,10 @@ function layoutTextCleanStandard(cleanText, S, PAGE_W, PAGE_H, ctx) {
       }
 
       ctx.font = `${isBold ? 'bold ' : ''}${blockFontSize}px ${fontStack}`;
-      const wordWidth = ctx.measureText(word).width + S.wordSpacing;
+      const wordWidth = ctx.measureText(word).width;
 
       // Word wrap check
-      if (x + wordWidth > rightMargin && x > leftBoundary) {
+      if (x + wordWidth > (rightMargin + 2.5) && x > leftBoundary) {
         x = leftBoundary;
         y += gridLineH;
         // Check page break
@@ -2360,14 +2455,15 @@ function layoutTextCleanStandard(cleanText, S, PAGE_W, PAGE_H, ctx) {
 
       // Lay out characters in the word
       const graphemes = getGraphemes(word);
+      const isUltraLongWord = ctx.measureText(word).width > (rightMargin - leftBoundary);
       for (let ci = 0; ci < graphemes.length; ci++) {
         const ch = graphemes[ci];
 
         ctx.font = `${isBold ? 'bold ' : ''}${blockFontSize}px ${fontStack}`;
         const charWidth = ctx.measureText(ch).width;
 
-        // Char-level wrap check
-        if (x + charWidth > rightMargin && x > leftBoundary) {
+        // Char-level wrap check (only for ultra long words exceeding a line)
+        if (isUltraLongWord && x + charWidth > (rightMargin + 2.5) && x > leftBoundary) {
           x = leftBoundary;
           y += gridLineH;
           if (y + gridLineH > PAGE_H - margin) {
@@ -2516,10 +2612,10 @@ function layoutText(text) {
 
       // Measure word width
       ctx.font = `${S.fontSize}px ${fontStack}`;
-      const wordWidth = ctx.measureText(lineWord).width + S.wordSpacing;
+      const wordWidth = ctx.measureText(lineWord).width;
 
       // Word wrap
-      if (x + wordWidth > rightMargin && x > margin) {
+      if (x + wordWidth > (rightMargin + 2.5) && x > margin) {
         x = margin;
         y += lineH;
         lineCharIndex = 0;
@@ -2558,6 +2654,7 @@ function layoutText(text) {
         currentPageText += lineWord;
       } else {
         const graphemes = getGraphemes(lineWord);
+        const isUltraLongWord = ctx.measureText(lineWord).width > (rightMargin - margin);
         for (let ci = 0; ci < graphemes.length; ci++) {
           const ch = graphemes[ci];
           const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
@@ -2565,7 +2662,7 @@ function layoutText(text) {
           ctx.font = `${S.fontSize}px ${fontStack}`;
           const charWidth = ctx.measureText(ch).width + v.spacingExtra;
 
-          if (x + charWidth > rightMargin && x > margin) {
+          if (isUltraLongWord && x + charWidth > (rightMargin + 2.5) && x > margin) {
             x = margin;
             y += lineH;
             lineCharIndex = 0;

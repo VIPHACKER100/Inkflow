@@ -27,8 +27,11 @@ The sidebar text area accepts typing, pasting, and drag-and-drop of `.txt`, `.md
 | ✕ (text area) | `clearText()` | Wipes the text area and canvas |
 | ✕ (toolbar) | `clearText()` | Same — toolbar clear button |
 
-### Inline Editing (Page Editor)
-Each A4 canvas carries a transparent `contenteditable` overlay. Click any page and type directly — edits sync back through `getGlobalTextFromEditors()` on blur and trigger a debounced re-render (280ms). The editor mirrors the canvas font, size, and alignment, so WYSIWYG stays intact.
+### Inline Editing & Margin Notes (Page Editor)
+Each A4 canvas carries transparent `contenteditable` overlays for main text (`.page-editor`) and left-margin notes (`.margin-text-overlay`). Click any line or margin area to type directly — line clicking positions the caret accurately using `handleLineClick()`, while clicking inside existing text preserves character click precision. Edits sync back through `getGlobalTextFromEditors()` on blur and trigger a debounced re-render (280ms). Editor overlays mirror the canvas font, size, line-height, top padding, and word spacing so WYSIWYG alignment stays 100% intact. Left margin notes strictly wrap within `62px` bounds (`S.margin - 18px`), keeping notes to the left of the vertical red margin lines.
+
+### Auto-Fit Font Size
+The **Auto-Fit** button (`autoFitFontSize()`) syncs in-page edits, binary-searches the optimum font size (`12px` – `48px`) to fit text perfectly into the target page count, synchronizes DOM page editor overlays (`syncAllEditorStyles()`), and re-renders canvas pages cleanly.
 
 ### Page Navigation
 The floating pill at the bottom shows `Page X of Y` with ◀ / ▶ buttons (`navigatePage(-1)` / `navigatePage(1)`). Page 1 hides the prev button; the last page hides next.
