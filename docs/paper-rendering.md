@@ -40,8 +40,9 @@ Inkflow features A4 aspect ratio rendering (794px × 1123px) inside standard `<c
 1. **Clear Frame**: Clear the canvas using `ctx.clearRect(0, 0, w, h)`.
 2. **Base Fill**: Select the theme background color and apply a solid fill.
 3. **Paper Grain Noise**: Run 2,200 iterations drawing micro-rectangles (1–4px, opacity 0.018) in warm organic tones. **Skipped** for `dark` and `clean` styles.
-4. **Ruled / Clean margins**: Draw **double** vertical red lines (`#ff4d6d`) at `x = margin − 10` and `x = margin − 14`, and **double** horizontal red lines at `y = margin` and `y = margin − 4`.
-5. **Legal margin**: A single vertical red margin guide (`#e07070`) at `x = margin − 10`.
+4. **Ruled / Clean margins**: Draw **double** vertical red lines (`#ff4d6d`) at `x = margin − 10` (70px) and `x = margin − 14` (66px), and **double** horizontal red lines at `y = margin` and `y = margin − 4`. Left margin notes (`.margin-text-overlay` / `drawMarginTextOnCanvas`) are strictly constrained to `0`–`62px` (`S.margin - 18px`), staying to the left of the vertical red lines.
+5. **Baseline Parity with DOM Editors**: Main page editors (`.page-editor`) start writing text on Line 2 baseline (`S.margin + lineSpacingPx * 2 = 146px` for standard/clean), with DOM top padding `topPadding = firstLineBaseline - fontSize * 0.82` ensuring 100% pixel-perfect alignment between DOM text and paper ruled lines without vertical text jumping.
+6. **Legal margin**: A single vertical red margin guide (`#e07070`) at `x = margin − 10`.
 6. **Date / Page No. header box** (ruled + clean, when `S.showHeaderBox !== false`): Draw a rounded red-bordered box in the top-right (145×42px at `w − 175, 20`), split horizontally, labelled `DATE:` and `P. NO.:`. The interactive overlay inputs (`#date-input-N`, `#page-input-N`) bake their values into the canvas in the active handwriting font with a small handwritten rotation, unless the matching input is focused.
 7. **Horizontal ruling lines**: Spaced by
    $$\Delta y = \text{S.fontSize} \times \text{S.lineHeight}$$

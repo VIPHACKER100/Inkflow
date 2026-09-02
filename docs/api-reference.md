@@ -74,6 +74,10 @@ Returns the vertical baseline shift for `top` (Upper: `-(lineH * 0.62)`), `middl
 ### `drawCursiveConnector(ctx, item1, item2, S)`
 *(Deprecated / No-op)* Preserved for backwards compatibility. Synthetic Bézier ligature drawing is disabled to prevent baseline artifacts in favor of native font vector connections.
 
+### `drawMarginTextOnCanvas(ctx, pageNum)`
+Renders left-margin notes onto canvas with strict word and character wrapping within `S.margin - 18px` (`62px`), maintaining vertical line-height alignment with ruled lines while preventing overflow past the vertical red margin lines (`X = 66px`).
+- **Parameters**: `ctx`, `pageNum` (Integer)
+
 ### `getCachedGlyphImage(char, src)`
 Returns a fully-decoded `<img>` for a drafted glyph (cached), or `null` while decoding; triggers `debounceRender()` when ready.
 
@@ -131,7 +135,13 @@ Creates a canvas page with a `contenteditable` editor overlay, Date/Page No. inp
 Re-paints a single page's background and character queue (used during date/page-number editing).
 
 ### `updateEditorStyles(editor, canvas)`
-Syncs the page editor overlay's font, size, padding, and caret color to canvas dimensions and settings.
+Syncs the page editor (`.page-editor`) and left-margin notes (`.margin-text-overlay`) font family, font size, line-height, top padding, left padding, width, and word spacing to canvas dimensions and settings. Dynamically calculates `firstLineBaseline` (`S.margin + lineSpacingPx * 2` for standard/clean; `S.margin + S.fontSize + lineSpacingPx` for Cornell/Two-Column) so DOM text baseline aligns perfectly with canvas paper ruled lines without vertical shifting.
+
+### `handleLineClick(e, targetElement, canvas)`
+Calculates the target line index `Math.floor((clickYInCanvas - topPadding) / lineSpacingPx)` when a user clicks on the page editor or margin overlay. Appends empty lines and calls `setCursorAtLine()` when clicking unwritten lines below existing text, while preserving native character click positioning when editing existing words.
+
+### `setCursorAtLine(element, targetLineIndex)`
+Positions the contentEditable caret at the target line index using DOM `Selection` and `Range` APIs.
 
 ### `getGlobalTextFromEditors()`
 Concatenates all `.page-editor` `innerText` values. Returns String.
@@ -317,7 +327,7 @@ Sets the ink color from a preset button and updates the label.
 Sets `S.textAlignment` (`top` / `middle` / `bottom`), updates the alignment UI, and re-renders.
 
 ### `autoFitFontSize()`
-Binary-searches (6 iterations) the largest font size in 14–52 that keeps text on one page, then re-renders.
+Synchronizes in-page edits via `getGlobalTextFromEditors()`, performs a 7-step binary search (`12px` – `48px`) to find the optimum font size for the target page count, synchronizes DOM page editor overlays via `syncAllEditorStyles()`, updates the font size UI slider (`#font-size-slider`), and re-renders canvas pages cleanly.
 
 ### `toggleSection(id)`
 Toggles a collapsible sidebar section.

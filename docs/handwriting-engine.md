@@ -199,10 +199,11 @@ flowchart TD
 4. **Script Detection**: Each word is tested for Indic script characters.
 5. **Font Stack**: The correct CSS font-family string is built, including Devanagari fallbacks if needed.
 6. **Width Measurement**: Each word's pixel width is measured using an offscreen canvas context with the active font settings.
-7. **Wrap Check**: If adding the word would exceed `PageWidth - margin`, the cursor resets to the left margin, advances vertically by `fontSize × lineHeight`, and `lineCharIndex` resets to 0.
+7. **Wrap Check**: If adding the word would exceed `PageWidth - margin + 2.5px` (subpixel layout tolerance), the cursor resets to the left margin, advances vertically by `fontSize × lineHeight`, and `lineCharIndex` resets to 0. Word width is measured cleanly without double-adding word spacing at line ends.
 8. **Page Break**: If the vertical cursor exceeds `PageHeight - margin`, `pageIdx` increments and the cursor resets to start on the **second line** of the new page (skipping the first ruled line).
-9. **Character Render & Character Wrap**: Non-Indic words are rendered character-by-character with unique randomized tilt, scale, baseline offset, and pressure variation. If a single character exceeds the right boundary, a **character-level soft wrap** to the next line occurs. Indic words are rendered as single blocks with reduced tilt.
-10. **Cursor Advance**: After each character/word, the horizontal cursor advances by the measured width plus a randomized spacing adjustment.
+9. **Character Render & Ultra-Long Word Character Wrap**: Non-Indic words are rendered character-by-character with unique randomized tilt, scale, baseline offset, and pressure variation. If a single word is wider than the full printable line width (`wordWidth > rightMargin - leftBoundary`), character-level soft wrapping breaks the ultra-long word cleanly; normal words remain intact. Indic words are rendered as single blocks with reduced tilt.
+10. **Left Margin Notes Engine (`drawMarginTextOnCanvas`)**: Left margin text is laid out within a strict `62px` bound (`S.margin - 18px`), with word and character wrapping at a proportional font size (`Math.max(11, Math.min(S.fontSize, 16))`), keeping margin notes to the left of the double vertical red lines (`X = 66px`).
+11. **Cursor Advance**: After each character/word, the horizontal cursor advances by the measured width plus a randomized spacing adjustment.
 
 ---
 
