@@ -113,6 +113,34 @@ body {
   transition: var(--transition);
 }
 
+.autosave-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-border);
+  border-radius: 12px;
+  transition: all 0.25s ease;
+  user-select: none;
+  margin-right: 4px;
+}
+
+.autosave-badge.saving {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+.autosave-badge.saved {
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.08);
+}
+
 .logo {
   display: flex;
   align-items: center;

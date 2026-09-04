@@ -4033,6 +4033,11 @@ async function pruneBlankGlyphs() {
 
 let autosaveTimeout;
 function autosave() {
+  const indicator = document.getElementById('autosave-indicator');
+  if (indicator) {
+    indicator.className = 'autosave-badge saving';
+    indicator.innerHTML = '<span class="autosave-icon">⏳</span> <span class="autosave-text">Saving...</span>';
+  }
   clearTimeout(autosaveTimeout);
   autosaveTimeout = setTimeout(() => {
     const state = {
@@ -4103,6 +4108,11 @@ function autosave() {
           });
         };
       }).catch(err => console.error("Error autosaving notebook in DB:", err));
+    }
+
+    if (indicator) {
+      indicator.className = 'autosave-badge saved';
+      indicator.innerHTML = '<span class="autosave-icon">☁️</span> <span class="autosave-text">Saved</span>';
     }
   }, 1000);
 }
