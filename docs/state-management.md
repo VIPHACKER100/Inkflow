@@ -32,6 +32,7 @@ The system state is governed by a central global configuration object `S` that a
 | `pageDates` | `Object` | `{}` | Page-number → date string map for the printed header box. |
 | `pageNos` | `Object` | `{}` | Page-number → custom page-label string map for the printed header box. |
 | `showHeaderBox` | `Boolean` | `true` | Whether the Date & P. No. header box is drawn on `ruled`/`clean` pages. |
+| `showMarginLabels` | `Boolean` | `true` | Whether **Q1…Qn** / **Ans** labels are drawn in the left margin (standard layout). When on, bare `Answer:` lines are hidden on canvas and represented by the margin **Ans** label. Persisted to localStorage and per-note settings. |
 
 Additional **runtime-only** (non-persisted) fields are set on `S`: `activeTheme` (active theme pack id), `_highlightColor` (highlight fill, theme-dependent), `isStudyMode` (initialized to `false`), and `shadowColor`.
 
@@ -148,6 +149,7 @@ function autosave() {
       activeNotebookId: activeNotebookId,
       pageDates: S.pageDates, pageNos: S.pageNos,
       showHeaderBox: S.showHeaderBox,
+      showMarginLabels: S.showMarginLabels,
     };
     localStorage.setItem('inkflow-state', JSON.stringify(state));
 

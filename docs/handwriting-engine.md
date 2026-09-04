@@ -46,7 +46,7 @@ The parser returns `{ cleanText, flashcards }`; `cleanText` is what actually flo
 2. Parses rich syntax via `parseRichSyntax()`
 3. Routes to the engine matching the active `paperStyle` / `noteLayout`
 4. Measures word/character widths on an offscreen canvas context
-5. Applies word-wrap, character-wrap, and page-break logic
+5. Applies word-wrap, character-wrap, and page-break logic — a row is refused only when its baseline plus half a font size (`y + S.fontSize * 0.5`) would cross the bottom margin (v1.6.5: previously required the full next line box, wasting 1–2 bottom lines per page)
 6. Calls `getCharVariation()` for each character (unless suppressed)
 7. Returns a `queue[]` of character render items and `pageTexts[]`
 

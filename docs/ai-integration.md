@@ -76,7 +76,9 @@ async function callAI(prompt, systemPrompt, onChunk) {
 }
 ```
 
-This ensures all five AI actions (Smart Arrange, Summarize, Grammar, Lecture, Assignment) work correctly with Ollama — previously they were hardcoded to `callClaude()` and silently ignored the Ollama provider selection.
+This ensures all four AI actions (Summarize, Grammar, Lecture, Assignment) work correctly with Ollama — previously they were hardcoded to `callClaude()` and silently ignored the Ollama provider selection.
+
+> **Note (v1.6.7+):** Smart Arrange is no longer an AI action — it runs fully offline via the deterministic `smartArrangeLocal()` tidy-up and needs no provider or API key.
 
 ---
 
@@ -105,10 +107,18 @@ GUIDELINES:
 
 ### Workflow Prompts
 
-### 1. 🪄 Smart Arrange
+### 1. 🪄 Smart Arrange — *offline since v1.6.7*
 ```
-TASK: Reorganize and format the provided raw text into beautifully structured handwritten notes. Add a '# Main Title' heading, '## Section' subheadings, bullet lists, ==highlighted key terms==, and a '[callout:info] Key Note [callout]'.
+Smart Arrange does NOT call any AI provider. It applies the deterministic
+smartArrangeLocal() tidy-up directly in the browser:
+- normalize bullet markers (*, •, ‣ → "- ")
+- trim trailing whitespace
+- collapse double spaces and runs of 3+ blank lines
+- remove spaces before punctuation (fill-in lines with underscores are preserved)
+- insert a blank line before numbered questions ("12. How does … ?")
+- end the document with a single newline
 ```
+It needs no provider selection and no API key, and reports the number of fixes via a toast plus the AI status line.
 
 ### 2. 📋 Summarize Notes
 ```
@@ -165,6 +175,7 @@ Status feedback is rendered in the `#ai-status` element via `setAiStatus()`:
 | Missing API key | `⚠ Enter your OpenRouter/Anthropic API key first.` |
 | HTTP error from API | `✕ API Error: <message or status>` |
 | Network / fetch failure | `✕ Network error: <message>` |
-| Empty text for summarize/arrange/grammar | `⚠ Add some text first.` |
+| Empty text for summarize/grammar | `⚠ Add some text first.` |
+| Empty text for arrange | `⚠ Add some text first.` (offline tidy-up still applies once text exists) |
 | Empty text for lecture | `⚠ Paste lecture text first.` |
 | Empty topic for assignment | `⚠ Enter a topic first.` |

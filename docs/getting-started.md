@@ -4,7 +4,7 @@
 
 # 🚀 Getting Started with Inkflow
 
-Welcome to **Inkflow v1.6.2** — a single-file Progressive Web App (PWA) that turns plain text into beautiful, handwritten-style notes with built-in AI (OpenRouter, Anthropic, and local Ollama).
+Welcome to **Inkflow v1.6.11** — a single-file Progressive Web App (PWA) that turns plain text into beautiful, handwritten-style notes with built-in AI (OpenRouter, Anthropic, and local Ollama) plus offline helpers like the no-key Smart Arrange.
 
 ---
 
@@ -42,9 +42,13 @@ See [Deployment](./deployment.md) for details, including the AI proxy caveat.
 
 ```
 Inkflow/
-├── index.html          # App shell + CDN library loads (html2canvas, jsPDF, Font Awesome)
-├── index.css           # ~2,400 lines: design tokens, themes, paper styles, modals
-├── index.js            # ~5,600 lines: the entire application logic
+├── index.html          # App shell + CDN library loads (html2canvas, jsPDF, opentype.js, Font Awesome — SRI-pinned)
+├── index.css           # ~2,650 lines: design tokens, themes, paper styles, modals
+├── index.js            # ~6,800 lines: the entire application logic
+├── sw.js               # Service worker: PWA offline support (cache-first assets)
+├── scripts/
+│   └── check-versions.mjs  # npm run check-versions — enforces version parity across files
+├── eslint.config.mjs   # ESLint flat config (correctness rules) — npm run lint
 ├── docs/               # Full documentation suite (this site)
 │   ├── README.md
 │   ├── getting-started.md
@@ -90,8 +94,8 @@ Inkflow/
 | :--- | :--- |
 | **Handwriting** | 14 fonts (English + Devanagari handwriting, 2 clean fallbacks) + custom uploads, 10 paper styles, ink presets, bleed/pressure, auto-fit, alignment |
 | **Layouts** | Standard, Two-Column, Cornell Study Notes |
-| **Study Tools** | Study Mode, Flashcards (auto-extracted), Voice-to-Notes, Notebooks & Folders |
-| **AI** | Smart Arrange, Summarize, Grammar Fix, Lecture→Notes, Assignment Generator (OpenRouter/Anthropic) |
+| **Study Tools** | Study Mode, Flashcards (auto-extracted), Voice-to-Notes, Notebooks & Folders, margin Q/Ans labels |
+| **AI & Offline** | Smart Arrange (offline, no key), Summarize, Grammar Fix, Lecture→Notes, Assignment Generator (OpenRouter/Anthropic/Ollama) |
 | **Custom Fonts** | Upload `.ttf`/`.otf`, or build your own with the HandFonted Studio |
 | **Export** | PNG, JPG, PDF (lossless), SVG, Clipboard, Print — all 2× upscaled |
 

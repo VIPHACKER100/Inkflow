@@ -46,7 +46,7 @@ Structured-content layout for `clean` paper + Standard layout. Parses `#`/`##` h
 ### `renderText(text)`
 Renders text onto canvas pages with full handwriting simulation.
 - **Parameters**: `text` (String)
-- **Side Effects**: Sanitizes + parses rich syntax, calls `layoutText()`, clears/recreates pages, draws characters, runs sticky/callout post-passes, syncs page editors
+- **Side Effects**: Sanitizes + parses rich syntax, calls `layoutText()`, clears/recreates pages, draws characters (skipping bare `Answer:` lines when margin labels are on), runs sticky/callout post-passes, draws margin question/answer labels, syncs page editors
 
 ### `buildCharQueue(text)`
 Thin wrapper around `layoutText()` returning only the character queue.
@@ -105,6 +105,7 @@ Extracts stickies, callouts, highlights, and flashcards from raw text.
 - **Parameters**: `rawText` (String)
 - **Returns**: `{ cleanText, flashcards }`
 - **Side Effects**: Populates `parsedStickies[]`, `parsedCallouts[]`, `highlightRanges[]`, `activeFlashcards[]`, and updates the flashcards button indicator
+- **Guard (v1.6.4+)**: When the input already contains `\uFFF0`/`\uFFF1` placeholders (i.e. it was pre-processed), the parser returns immediately without resetting the parsed arrays — `layoutText()` re-invokes this parser internally, and a second pass would wipe the first pass's entities.
 
 ### `parseStructuredContent(text)`
 Splits text into blocks: `heading`, `subheading`, `bullet` (levels 1/2), `question` (auto-numbered), and `paragraph`.
@@ -118,6 +119,17 @@ Post-pass that draws sticky notes into the right margin from `parsedStickies`.
 
 ### `paintCallouts(queue, targetPageIdx)`
 Post-pass that draws callout boxes into the left margin from `parsedCallouts`.
+
+### `clusterQueueLines(queue)`
+Groups queue items into visual lines (clusters per page, split when the y gap exceeds half a line height). Shared helper for the margin-label pass and the answer-line detection.
+- **Returns**: Array of `{ pageIdx, items }`
+
+### `collectAnswerLineItems(queue)`
+Returns a `Set` of queue items belonging to lines whose text is just `Answer:` (standard layout). Those items are skipped by canvas drawing so the margin **Ans** label carries the meaning, while the word remains visible in the editors.
+
+### `drawMarginQuestionLabels(queue, onlyPageIdx)`
+Post-pass that draws **Q1…Qn** labels next to numbered question lines (ending with `?`) and **Ans** labels next to bare `Answer:` lines, right-aligned in the left margin. Standard layout only; respects `S.showMarginLabels`.
+- **Parameters**: `queue` (Array), `onlyPageIdx` (Integer or `null` for all pages — used by `redrawPageCanvas()` to avoid stamping other pages)
 
 ### `drawWrappedText(ctx, text, x, y, maxWidth, lineHeight, maxLines)`
 Word-wraps and fills short text (used inside stickies/callouts).
@@ -199,6 +211,14 @@ Wires `input` and `change` event listeners to `#api-key` and `#remember-api-key`
 ### `aiAction(type)`
 Dispatches an AI workflow and streams the result onto the canvas.
 - **Parameters**: `type` (String — `arrange | summarize | grammar | lecture | assignment`)
+- **Note (v1.6.7+)**: `arrange` does **not** call any AI provider — it runs the offline `smartArrangeLocal()` tidy-up and reports the number of fixes via toast and `#ai-status`.
+
+### `smartArrangeLocal(text)`
+Offline deterministic text tidy-up used by Smart Arrange (v1.6.7+). Normalizes bullet markers (`*`/`•`/`‣` → `- `), trims trailing whitespace, collapses double spaces and runs of 3+ blank lines, removes spaces before punctuation (preserving fill-in lines containing underscores), inserts a blank line before numbered questions, and ends with a single newline.
+- **Returns**: `{ text, fixes }`
+
+### `bindUIActions()`
+Wires every click/input handler for the toolbar, sidebar sections, paper/ink presets, AI actions, export grid, animation, theme packs, page navigation, and both modals via `addEventListener` (v1.6.4+ — replaced all inline `onclick`/`onchange`/`oninput` HTML attributes). Called first thing in `initApp()`.
 
 ### `fetchOpenRouterModels()`
 Asynchronously fetches the OpenRouter model catalog and replaces the fallback list (free models first, then alphabetical).

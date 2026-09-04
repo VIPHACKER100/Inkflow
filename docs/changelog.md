@@ -6,6 +6,65 @@
 
 All notable changes to Inkflow are documented in this file.
 
+## [1.6.11] — 2026-09-05
+
+### ✨ Changed
+- **Bare "Answer:" Lines No Longer Draw On Canvas**: When margin labels are enabled, a line that is just `Answer:` is represented by the margin **Ans** label alone — the literal text no longer renders on the page, in full render, single-page blur redraw, and the writing animation. The word remains visible everywhere it is editable (textarea and per-page editors). Line clustering was extracted into `clusterQueueLines()` shared by the label pass and the new `collectAnswerLineItems()`; `redrawPageCanvas` also now draws margin question labels (previously lost on blur) via the new `onlyPageIdx` filter, which prevents double-drawing labels on other pages.
+
+---
+
+## [1.6.10] — 2026-09-05
+
+### 🐛 Fixed
+- **Margin Labels Too Small And Cramped Against The Margin Rule**: Labels rendered at 0.6× font size at 0.8 alpha, right-aligned 10px from the red margin rule, so Q/Ans marks looked clipped into the rule and were hard to read. Labels now render at 0.78× font size (min 13px), full opacity, right-aligned 14px clear of the rule, with the baseline nudged down (0.35× font) to sit optically on the line's handwriting.
+
+## [1.6.9] — 2026-09-05
+
+### 🐛 Fixed
+- **Margin Q Labels Never Matched**: The layout queue contains no space characters (spaces only advance x), so joined line text is squashed (`"1.Whatare…"`) and the question regex requiring `\s+` never matched — only "Ans" labels appeared. The regex now tolerates missing spaces and requires the line to end with `?`, so numbered sub-points (e.g. "1. Cardinality Constraint") are not mislabeled.
+
+## [1.6.8] — 2026-09-05
+
+### ✨ Added
+- **Question & Answer Numbers in the Left Margin**: New `drawMarginQuestionLabels()` post-pass clusters the layout queue into visual lines and, for lines that start at the left margin, draws **Q1…Qn** next to numbered question lines and **Ans** next to `Answer:` lines — right-aligned against the red margin rule, vertically aligned with the line's handwriting. Standard layout only. Toggled by a new "Question & answer numbers in left margin" checkbox in the Page Layout section (`S.showMarginLabels`, default on), persisted in autosave state and per-note settings, and included in Reset Defaults.
+
+---
+
+## [1.6.7] — 2026-09-05
+
+### ✨ Added
+- **Smart Arrange Works Without AI**: The 🪄 Smart Arrange button no longer requires an AI provider or API key. A new deterministic offline arranger (`smartArrangeLocal()`) tidies the document directly in the browser: normalizes bullet markers (`*`/`•`/`‣` → `- `), trims trailing whitespace, collapses double spaces and runs of 3+ blank lines, removes spaces before punctuation (while preserving fill-in lines with underscores), inserts a blank line before numbered questions, and ensures a single trailing newline. Reports the number of fixes via toast and the AI status line. The other AI actions (Summarize, Grammar, Lecture → Notes, Generate Assignment) still use their AI providers.
+
+---
+
+## [1.6.6] — 2026-09-04
+
+### 🐛 Fixed
+- **Editor Text Feedback Loop Inflated Blank Lines**: `getGlobalTextFromEditors()` read `editor.innerText`, which emits an extra newline per block boundary — each round-trip of editor text back into `S.text` (via Auto-Fit or editor sync) doubled blank-line runs, so documents gained pages and pages broke early with growing gaps (observed: 8 → 9 pages with a 9-newline run at a page boundary). It now reads the exact per-page text stored in `canvas.dataset.text` during render, falling back to `innerText` only when unavailable.
+
+---
+
+## [1.6.5] — 2026-09-04
+
+### 🐛 Fixed
+- **Pages Break Too Early (Wasted Bottom Lines)**: The page-break check required the full next line box (`y + lineHeight`) to fit above the bottom margin, refusing lines whose baseline was still well inside the bound and leaving 1–2 empty ruled lines at the bottom of nearly every page. All three layout engines (`layoutText`, `layoutTextTwoColumn`, `layoutTextCornell`) now break only when the baseline plus a half-font descender allowance (`y + S.fontSize * 0.5`) would cross the bottom margin, so ink stays inside the margin while the remaining lines are used. Verified in-browser: page 7's text now extends ~50px deeper (969 → ~1020), pulling overflow lines back from the following page.
+
+---
+
+## [1.6.4] — 2026-09-04
+
+### 🐛 Fixed
+- **Sticky Notes, Callouts & Highlights Never Rendered**: `layoutText()` re-invoked `parseRichSyntax()` on already-processed text, and the parser's first action reset `parsedStickies`, `parsedCallouts`, and `highlightRanges` — so `paintStickyNotes()`/`paintCallouts()` always received empty arrays and highlight ranges were always empty. `parseRichSyntax()` now detects placeholder characters (`\uFFF0`/`\uFFF1`) and skips re-processing, preserving the first pass's parsed entities. Verified in-browser: sticky boxes, callout boxes, and yellow highlights now paint on the canvas.
+- **UI Event Wiring**: Replaced all ~80 inline `onclick`/`onchange`/`oninput` HTML attributes with `addEventListener` bindings in a new `bindUIActions()` (called from `initApp()`); the notebook delete button is now built via DOM APIs instead of string-interpolated inline handlers.
+- **Version Drift**: `package.json`, `sw.js CACHE_VERSION`, and the `index.html` cache-bust query now share one version, enforced by the new `npm run check-versions` script.
+- **Offline Font Cache Miss**: The service worker's pre-cached Google Fonts URL now matches the stylesheet URL actually requested by `index.html` (adds the `Reey` family).
+- **CDN Integrity**: Added SRI `integrity`/`crossorigin` attributes to the opentype.js and Font Awesome CDN resources (jsPDF and html2canvas already had valid hashes — verified).
+
+### 🧰 Tooling
+- Added ESLint flat config (`eslint.config.mjs`) targeting correctness classes (`no-undef`, `no-redeclare`, `no-dupe-*`, `no-unreachable`) — `npm run lint` passes with 0 errors.
+
+---
+
 ## [1.6.3] — 2026-09-02
 
 ### 🐛 Fixed

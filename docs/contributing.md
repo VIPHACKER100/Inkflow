@@ -67,6 +67,8 @@ Do NOT split JS/CSS into additional files without discussion. The single-file ar
 
 ### PR Checklist
 - [ ] Code follows existing style conventions
+- [ ] `npm run lint` passes with 0 errors (style warnings are acceptable)
+- [ ] `npm run check-versions` passes (`package.json`, `sw.js`, and the `index.html` cache-bust agree)
 - [ ] All existing features still work (no regressions)
 - [ ] Tested on desktop and mobile viewports
 - [ ] Tested in at least 2 browsers

@@ -3,7 +3,7 @@
    v1.5.0 | Cache-First for assets, Network-First for shell
 ═══════════════════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'inkflow-v1.5.3';
+const CACHE_VERSION = 'inkflow-v1.6.11';
 const SHELL_CACHE   = `${CACHE_VERSION}-shell`;
 const ASSET_CACHE   = `${CACHE_VERSION}-assets`;
 
@@ -27,7 +27,7 @@ const CDN_URLS = [
   /* Font Awesome CSS + primary webfont */
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
   /* Google Fonts stylesheet */
-  'https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Delius&family=Homemade+Apple&family=Shadows+Into+Light&family=Architects+Daughter&family=Gochi+Hand&family=Just+Another+Hand&family=Nanum+Pen+Script&family=Pangolin&family=Indie+Flower&family=Patrick+Hand&family=Kalam:wght@300;400;700&family=Amita:wght@400;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Serif+Devanagari:wght@400;500;600;700&family=Hind:wght@300;400;500;600;700&family=Tiro+Devanagari+Hindi:ital@0;1&family=Baloo+2:wght@400;500;600;700;800&family=Martel:wght@200;300;400;600;700;800;900&display=swap',
+  'https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Delius&family=Homemade+Apple&family=Shadows+Into+Light&family=Architects+Daughter&family=Gochi+Hand&family=Just+Another+Hand&family=Nanum+Pen+Script&family=Pangolin&family=Reey:wght@400&family=Indie+Flower&family=Patrick+Hand&family=Kalam:wght@300;400;700&family=Amita:wght@400;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Serif+Devanagari:wght@400;500;600;700&family=Hind:wght@300;400;500;600;700&family=Tiro+Devanagari+Hindi:ital@0;1&family=Baloo+2:wght@400;500;600;700;800&family=Martel:wght@200;300;400;600;700;800;900&display=swap',
 ];
 
 /* ════════════════════════════════════════════════

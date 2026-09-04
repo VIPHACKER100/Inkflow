@@ -38,7 +38,7 @@ When animation finishes, the canvas is finalized through the normal `renderText(
 ## Animation Pipeline
 
 ### 1. Queue Construction
-The text is sanitized, run through `parseRichSyntax()` to strip study syntax and extract sticky notes, callouts, highlights, and flashcards, then passed to `layoutText()`. The result is a `queue` array of character render items — each carrying the character, coordinates, font, and per-character variation.
+The text is sanitized, run through `parseRichSyntax()` to strip study syntax and extract sticky notes, callouts, highlights, and flashcards, then passed to `layoutText()`. The result is a `queue` array of character render items — each carrying the character, coordinates, font, and per-character variation. Sticky/callout placeholder items and bare `Answer:` lines (v1.6.11, when margin labels are on) are skipped by the pen — they appear via their margin decorations in the final `renderText()` pass.
 
 ### 2. Page Setup
 `clearPages()` removes existing pages; then each page is created with `createPage(pageNum)` — a full A4 canvas plus a `contenteditable` editor overlay for live editing. All pages are drawn with their paper background before animation begins.

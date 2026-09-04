@@ -90,14 +90,22 @@ The **One-click Note Themes** swatch grid calls `applyTheme(themeId)` (Default /
 
 ## AI Workflows
 
-Five AI buttons (`aiAction(type)`) stream results onto the canvas via the `callAI()` provider router:
-- 🪄 **Smart Arrange** — restructures messy notes
+Four AI buttons stream results onto the canvas via the `callAI()` provider router:
 - 📋 **Summarize Notes** — condensed summary
 - ✏️ **Improve Grammar** — cleaned-up prose
 - 🎓 **Lecture → Notes** — transcript → study notes
 - 📝 **Generate Assignment** — creates an assignment sheet
 
-Configure provider (OpenRouter / Anthropic / Ollama), model, and API key in the **AI Features** section; a status line (`setAiStatus`) shows progress. All actions route through `callAI()` which dispatches to the correct backend. See [AI Integration](./ai-integration.md).
+A fifth button needs no AI at all:
+- 🪄 **Smart Arrange** — offline deterministic tidy-up (v1.6.7+): normalizes bullets, spacing, blank-line runs and question gaps via `smartArrangeLocal()`; works with no provider and no API key, reporting the number of fixes in a toast.
+
+Configure provider (OpenRouter / Anthropic / Ollama), model, and API key in the **AI Features** section; a status line (`setAiStatus`) shows progress. The four AI actions route through `callAI()` which dispatches to the correct backend. See [AI Integration](./ai-integration.md).
+
+---
+
+## Margin Labels
+
+When **Question & answer numbers in left margin** is checked (Page Layout section, on by default), the render post-pass `drawMarginQuestionLabels()` draws **Q1…Qn** beside numbered question lines and **Ans** beside bare `Answer:` lines, right-aligned in the left margin. A line containing only `Answer:` is hidden on the canvas — the margin label carries the meaning — while the word remains in the textarea and page editors. Toggle it to re-render instantly; the choice persists with your state.
 
 ---
 

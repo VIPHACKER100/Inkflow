@@ -6,7 +6,7 @@
 
 Welcome to the **Inkflow** documentation hub. This folder contains all technical, design, and operational documentation for the project.
 
-**Current Version**: 1.6.3 — Right Margin Text Wrapping Parity, Vertical Baseline Alignment, Caret Line Click Positioning, Left Margin Notes Bounding Engine, Upgraded Auto-Fit Font Size Pipeline, HandFonted Studio TTF Font Exporter, PWA Offline Support, Local Ollama AI Integration.
+**Current Version**: 1.6.11 — Offline Smart Arrange (no AI key needed), Question & Answer numbers in the left margin (toggleable, with bare "Answer:" lines hidden on canvas in favor of the margin **Ans** label), Page-Bottom Space Utilization (baseline-based page breaks), Editor Text Feedback Loop Fix, Safe UI Event Wiring (`bindUIActions`), Version Drift Guard (`npm run check-versions`), CDN Integrity (SRI), PWA Offline Support, Local Ollama AI Integration.
 
 ---
 

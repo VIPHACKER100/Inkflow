@@ -120,9 +120,12 @@ graph LR
     QUEUE --> ANIM["startAnimation — RAF loop"]
     QUEUE --> STICKY["paintStickyNotes"]
     QUEUE --> CALLOUT["paintCallouts"]
+    QUEUE --> LABELS["drawMarginQuestionLabels — Q/Ans margin labels (+ hides bare Answer: lines)"]
     PAGETEXTS --> EDITORS["Page Editor innerText sync"]
     PAGECOUNT --> PAGES["createPage — canvas allocation"]
 ```
+
+> **Event wiring note (v1.6.4+):** all UI handlers are attached by `bindUIActions()` via `addEventListener` — HTML contains no inline `onclick`/`onchange` attributes. Version parity across `package.json`, `sw.js`, and the `index.html` cache-bust is enforced by `npm run check-versions`.
 
 ---
 

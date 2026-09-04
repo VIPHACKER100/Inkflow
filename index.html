@@ -34,10 +34,15 @@
     crossorigin="anonymous"></script>
 
   <!-- opentype.js for TTF font generation -->
-  <script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"
+    integrity="sha384-3TaxGqyHrMuRIWY5Z5WHNIzgNRqGIUJE+mk6tm+g1wkm9Ux2kUyOLfy9AsNWXA6u"
+    crossorigin="anonymous"></script>
 
   <!-- Font Awesome for icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0"
+    crossorigin="anonymous" />
 
   <!-- Custom Stylesheet -->
   <link rel="stylesheet" href="index.css" />
@@ -67,8 +72,8 @@
     <div class="toolbar-group">
       <span id="autosave-indicator" class="autosave-badge saved" title="Auto-save status"><span class="autosave-icon">☁️</span> <span class="autosave-text">Saved</span></span>
       <span id="page-indicator-toolbar">Page 1 of 1</span>
-      <button class="btn sm" id="btn-study-mode" onclick="toggleStudyMode()" title="Toggle Study Mode">📖 Study Mode</button>
-      <button class="btn sm" id="btn-open-flashcards" onclick="openFlashcardsModal()" title="Review Flashcards" style="display:none; margin-left: 5px;">🃏 Flashcards (<span id="flashcard-count-indicator">0</span>)</button>
+      <button class="btn sm" id="btn-study-mode" title="Toggle Study Mode">📖 Study Mode</button>
+      <button class="btn sm" id="btn-open-flashcards" title="Review Flashcards" style="display:none; margin-left: 5px;">🃏 Flashcards (<span id="flashcard-count-indicator">0</span>)</button>
       <button class="dark-toggle" id="dark-toggle" aria-label="Toggle dark mode" style="margin-left: 8px;">
         <span id="dark-icon">☀️</span>
       </button>
@@ -85,14 +90,14 @@
 
       <!-- ── NOTEBOOK EXPLORER SECTION ── -->
       <div class="sb-section collapsed" id="sec-notebooks">
-        <div class="sb-section-header" onclick="toggleSection('sec-notebooks')">
+        <div class="sb-section-header">
           📁 &nbsp;Notebooks &amp; Folders
           <span class="sb-arrow">▾</span>
         </div>
         <div class="sb-body">
           <div class="notebook-actions-row">
-            <button class="btn sm primary" onclick="createNewNotebook()" title="Create New Notebook">＋ New Note</button>
-            <button class="btn sm" onclick="createNewFolder()" title="Create New Folder">＋ Folder</button>
+            <button class="btn sm primary" id="btn-new-notebook" title="Create New Notebook">＋ New Note</button>
+            <button class="btn sm" id="btn-new-folder" title="Create New Folder">＋ Folder</button>
           </div>
           <!-- Notebook Folder Tree view -->
           <div class="notebook-list notebook-list-scroll" id="notebook-list-container">
@@ -104,7 +109,7 @@
 
       <!-- ── TEXT INPUT SECTION ── -->
       <div class="sb-section" id="sec-text">
-        <div class="sb-section-header" onclick="toggleSection('sec-text')">
+        <div class="sb-section-header">
           ✏️ &nbsp;Text Input
           <span class="sb-arrow">▾</span>
         </div>
@@ -115,9 +120,9 @@ The handwriting engine will render each character with natural variation, baseli
 
 Try pasting a paragraph of lecture notes!"></textarea>
           <div class="action-buttons-row">
-            <button class="btn accent btn-render" onclick="triggerRender()">✦ Render</button>
-            <button class="btn" id="btn-voice" onclick="toggleVoiceInput()" title="Voice to Notes"><i class="fa-solid fa-microphone"></i></button>
-            <button class="btn" onclick="clearText()" title="Clear text">✕</button>
+            <button class="btn accent btn-render" id="btn-render">✦ Render</button>
+            <button class="btn" id="btn-voice" title="Voice to Notes"><i class="fa-solid fa-microphone"></i></button>
+            <button class="btn" id="btn-clear-text" title="Clear text">✕</button>
           </div>
 
           <div class="file-upload-wrapper">
@@ -141,7 +146,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
 
       <!-- ── FONT SETTINGS SECTION ── -->
       <div class="sb-section" id="sec-font">
-        <div class="sb-section-header" onclick="toggleSection('sec-font')">
+        <div class="sb-section-header">
           𝒜 &nbsp;Font &amp; Style
           <span class="sb-arrow">▾</span>
         </div>
@@ -183,7 +188,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
           <!-- Phase 5.1 — Font size -->
           <div class="sb-label">
             Font Size <span class="val" id="fs-val">22</span>
-            <button class="btn sm link-btn" onclick="autoFitFontSize()" title="Auto-scale font to fit current text on page">Auto-Fit</button>
+            <button class="btn sm link-btn" id="btn-autofit" title="Auto-scale font to fit current text on page">Auto-Fit</button>
           </div>
           <input type="range" id="font-size-slider" min="14" max="52" value="22" step="1" title="Font Size" />
 
@@ -206,7 +211,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
           <!-- Vertical Alignment Control -->
           <div class="sb-label">Text Alignment <span class="val" id="align-val">Middle</span></div>
           <div class="alignment-selector">
-            <button class="align-btn" data-align="top" onclick="setTextAlignment('top')" title="Text touches upper line">
+            <button class="align-btn" data-align="top" title="Text touches upper line">
               <div class="align-preview">
                 <div class="align-line"></div>
                 <div class="align-text align-top">Aa</div>
@@ -214,7 +219,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
               </div>
               <span>Upper</span>
             </button>
-            <button class="align-btn active" data-align="middle" onclick="setTextAlignment('middle')" title="Text centered between lines">
+            <button class="align-btn active" data-align="middle" title="Text centered between lines">
               <div class="align-preview">
                 <div class="align-line"></div>
                 <div class="align-text align-middle">Aa</div>
@@ -222,7 +227,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
               </div>
               <span>Middle</span>
             </button>
-            <button class="align-btn" data-align="bottom" onclick="setTextAlignment('bottom')" title="Text sits on lower line">
+            <button class="align-btn" data-align="bottom" title="Text sits on lower line">
               <div class="align-preview">
                 <div class="align-line"></div>
                 <div class="align-text align-bottom">Aa</div>
@@ -233,7 +238,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
           </div>
 
           <!-- Reset Defaults Button -->
-          <button class="btn sm" id="btn-reset-defaults" onclick="resetToDefaults()">
+          <button class="btn sm" id="btn-reset-defaults">
             <i class="fa-solid fa-rotate-left"></i> &nbsp;Reset Defaults
           </button>
         </div>
@@ -241,22 +246,22 @@ Try pasting a paragraph of lecture notes!"></textarea>
 
       <!-- ── PAPER STYLE SECTION ── -->
       <div class="sb-section" id="sec-paper">
-        <div class="sb-section-header" onclick="toggleSection('sec-paper')">
+        <div class="sb-section-header">
           📄 &nbsp;Paper Style
           <span class="sb-arrow">▾</span>
         </div>
         <div class="sb-body">
           <div class="paper-grid">
-            <button class="paper-btn active" data-style="ruled" onclick="setPaper(this)">📏 Ruled</button>
-            <button class="paper-btn" data-style="plain" onclick="setPaper(this)">⬜ Plain</button>
-            <button class="paper-btn" data-style="grid" onclick="setPaper(this)">⊞ Grid</button>
-            <button class="paper-btn" data-style="legal" onclick="setPaper(this)">🟡 Legal Pad</button>
-            <button class="paper-btn" data-style="vintage" onclick="setPaper(this)">📜 Vintage</button>
-            <button class="paper-btn" data-style="dark" onclick="setPaper(this)">🌙 Dark</button>
-            <button class="paper-btn" data-style="dot_grid" onclick="setPaper(this)">🟢 Dot Grid</button>
-            <button class="paper-btn" data-style="engineering" onclick="setPaper(this)">📐 Engineering</button>
-            <button class="paper-btn" data-style="music" onclick="setPaper(this)">🎼 Music Staff</button>
-            <button class="paper-btn" data-style="clean" onclick="setPaper(this)">✨ Clean Notes</button>
+            <button class="paper-btn active" data-style="ruled">📏 Ruled</button>
+            <button class="paper-btn" data-style="plain">⬜ Plain</button>
+            <button class="paper-btn" data-style="grid">⊞ Grid</button>
+            <button class="paper-btn" data-style="legal">🟡 Legal Pad</button>
+            <button class="paper-btn" data-style="vintage">📜 Vintage</button>
+            <button class="paper-btn" data-style="dark">🌙 Dark</button>
+            <button class="paper-btn" data-style="dot_grid">🟢 Dot Grid</button>
+            <button class="paper-btn" data-style="engineering">📐 Engineering</button>
+            <button class="paper-btn" data-style="music">🎼 Music Staff</button>
+            <button class="paper-btn" data-style="clean">✨ Clean Notes</button>
           </div>
           <label id="header-toggle-container" style="display: none; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; color: var(--text-primary); cursor: pointer;">
             <input type="checkbox" id="header-toggle" checked style="cursor: pointer;" />
@@ -267,7 +272,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
 
       <!-- ── NOTE LAYOUT SECTION ── -->
       <div class="sb-section" id="sec-layout">
-        <div class="sb-section-header" onclick="toggleSection('sec-layout')">
+        <div class="sb-section-header">
           📋 &nbsp;Page Layout
           <span class="sb-arrow">▾</span>
         </div>
@@ -278,12 +283,16 @@ Try pasting a paragraph of lecture notes!"></textarea>
             <option value="twocolumn">Two-Column Grid</option>
             <option value="cornell">Cornell Study Notes</option>
           </select>
+          <label class="sb-checkbox-label" id="margin-labels-label" style="margin-top:8px;">
+            <input type="checkbox" id="margin-labels-toggle" checked />
+            <span>Question &amp; answer numbers in left margin</span>
+          </label>
         </div>
       </div>
 
       <!-- ── EFFECTS SECTION ── -->
       <div class="sb-section" id="sec-effects">
-        <div class="sb-section-header" onclick="toggleSection('sec-effects')">
+        <div class="sb-section-header">
           🎨 &nbsp;Ink Effects
           <span class="sb-arrow">▾</span>
         </div>
@@ -295,12 +304,12 @@ Try pasting a paragraph of lecture notes!"></textarea>
             <span id="ink-color-label">#1c2340 — Navy</span>
           </div>
           <div class="ink-presets-row">
-            <button class="btn sm" onclick="setInkPreset('#1c2340','Navy')" title="Navy">🔵</button>
-            <button class="btn sm" onclick="setInkPreset('#1a1a1a','Black')" title="Black">⚫</button>
-            <button class="btn sm" onclick="setInkPreset('#0a3d62','Blue')" title="Blue Ink">💙</button>
-            <button class="btn sm" onclick="setInkPreset('#6d2177','Purple')" title="Purple">🟣</button>
-            <button class="btn sm" onclick="setInkPreset('#8b0000','Red')" title="Red">🔴</button>
-            <button class="btn sm" onclick="setInkPreset('#2d6a4f','Green')" title="Green">🟢</button>
+            <button class="btn sm" data-ink="#1c2340" data-ink-name="Navy" title="Navy">🔵</button>
+            <button class="btn sm" data-ink="#1a1a1a" data-ink-name="Black" title="Black">⚫</button>
+            <button class="btn sm" data-ink="#0a3d62" data-ink-name="Blue" title="Blue Ink">💙</button>
+            <button class="btn sm" data-ink="#6d2177" data-ink-name="Purple" title="Purple">🟣</button>
+            <button class="btn sm" data-ink="#8b0000" data-ink-name="Red" title="Red">🔴</button>
+            <button class="btn sm" data-ink="#2d6a4f" data-ink-name="Green" title="Green">🟢</button>
           </div>
 
           <div class="sb-label sb-label-mt">Ink Bleed <span class="val" id="bleed-val">0.5</span></div>
@@ -313,14 +322,14 @@ Try pasting a paragraph of lecture notes!"></textarea>
 
       <!-- ── AI TOOLS SECTION ── -->
       <div class="sb-section" id="sec-ai">
-        <div class="sb-section-header" onclick="toggleSection('sec-ai')">
+        <div class="sb-section-header">
           ✦ &nbsp;AI Features
           <span class="sb-arrow">▾</span>
         </div>
         <div class="sb-body">
           <!-- Provider selector -->
           <div class="sb-label">AI Provider</div>
-          <select id="ai-provider" onchange="onProviderChange()" title="AI Provider">
+          <select id="ai-provider" title="AI Provider">
             <option value="openrouter" selected>🌐 OpenRouter</option>
             <option value="anthropic">🔑 Anthropic (Direct)</option>
             <option value="ollama">🦙 Ollama (Local — Private)</option>
@@ -336,7 +345,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
           <!-- Model selector -->
           <div class="sb-label sb-label-sm" style="display: flex; justify-content: space-between; align-items: center;">
             <span>Model</span>
-            <span id="model-sync-status" onclick="refreshCurrentProviderModels(true)" title="Click to auto-update model list from provider" style="cursor: pointer; font-size: 11px; color: var(--accent); font-weight: normal; display: flex; align-items: center; gap: 4px; opacity: 0.9; transition: opacity 0.2s ease;">
+            <span id="model-sync-status" title="Click to auto-update model list from provider" style="cursor: pointer; font-size: 11px; color: var(--accent); font-weight: normal; display: flex; align-items: center; gap: 4px; opacity: 0.9; transition: opacity 0.2s ease;">
               <i class="fa-solid fa-rotate" id="model-sync-icon"></i>
               <span id="model-sync-text">Auto-updated</span>
             </span>
@@ -360,35 +369,35 @@ Try pasting a paragraph of lecture notes!"></textarea>
 
           <!-- AI action buttons -->
           <div class="ai-btn-group">
-            <button class="btn" onclick="aiAction('arrange')">🪄 Smart Arrange</button>
-            <button class="btn" onclick="aiAction('summarize')">📋 Summarize Notes</button>
-            <button class="btn" onclick="aiAction('grammar')">✏️ Improve Grammar</button>
-            <button class="btn" onclick="aiAction('lecture')">🎓 Lecture → Notes</button>
-            <button class="btn" onclick="aiAction('assignment')">📝 Generate Assignment</button>
+            <button class="btn" data-ai-action="arrange">🪄 Smart Arrange</button>
+            <button class="btn" data-ai-action="summarize">📋 Summarize Notes</button>
+            <button class="btn" data-ai-action="grammar">✏️ Improve Grammar</button>
+            <button class="btn" data-ai-action="lecture">🎓 Lecture → Notes</button>
+            <button class="btn" data-ai-action="assignment">📝 Generate Assignment</button>
           </div>
         </div>
       </div>
 
       <!-- ── EXPORT SECTION ── -->
       <div class="sb-section" id="sec-export">
-        <div class="sb-section-header" onclick="toggleSection('sec-export')">
+        <div class="sb-section-header">
           ⬇ &nbsp;Export
           <span class="sb-arrow">▾</span>
         </div>
         <div class="sb-body">
           <div class="export-grid">
             <!-- Phase 8.1 — PNG -->
-            <button class="btn" onclick="exportImage('png')" aria-label="Export as PNG image">🖼 PNG</button>
+            <button class="btn" data-export="png" aria-label="Export as PNG image">🖼 PNG</button>
             <!-- Phase 8.2 — JPG -->
-            <button class="btn" onclick="exportImage('jpg')" aria-label="Export as JPG image">📷 JPG</button>
+            <button class="btn" data-export="jpg" aria-label="Export as JPG image">📷 JPG</button>
             <!-- Phase 8.3/8.4 — PDF -->
-            <button class="btn" onclick="exportPDF()" aria-label="Export as PDF document">📄 PDF</button>
+            <button class="btn" id="btn-export-pdf" aria-label="Export as PDF document">📄 PDF</button>
             <!-- Phase 8.5 — SVG -->
-            <button class="btn" onclick="exportSVG()" aria-label="Export as SVG vector">🎨 SVG</button>
+            <button class="btn" id="btn-export-svg" aria-label="Export as SVG vector">🎨 SVG</button>
             <!-- Phase 8.6 — Copy -->
-            <button class="btn" onclick="copyToClipboard()" aria-label="Copy current page to clipboard">📋 Copy</button>
+            <button class="btn" id="btn-copy-clipboard" aria-label="Copy current page to clipboard">📋 Copy</button>
             <!-- Phase 8.7 — Print -->
-            <button class="btn" onclick="window.print()" aria-label="Print notes">🖨 Print</button>
+            <button class="btn" id="btn-print" aria-label="Print notes">🖨 Print</button>
           </div>
         </div>
       </div>
@@ -396,7 +405,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
 
       <!-- ── ANIMATION SECTION ── -->
       <div class="sb-section" id="sec-anim">
-        <div class="sb-section-header" onclick="toggleSection('sec-anim')">
+        <div class="sb-section-header">
           ▶ &nbsp;Animation
           <span class="sb-arrow">▾</span>
         </div>
@@ -404,41 +413,41 @@ Try pasting a paragraph of lecture notes!"></textarea>
           <div class="sb-label">Writing Speed <span class="val" id="spd-val">8</span></div>
           <input type="range" id="speed-slider" min="1" max="30" step="1" value="8" title="Writing Speed" />
           <div class="animation-buttons-row">
-            <button class="btn accent btn-start" onclick="startAnimation()">▶ Start</button>
-            <button class="btn" onclick="stopAnimation()">■ Stop</button>
+            <button class="btn accent btn-start" id="btn-anim-start">▶ Start</button>
+            <button class="btn" id="btn-anim-stop">■ Stop</button>
           </div>
         </div>
       </div>
       <!-- ── THEME PACKS SECTION ── -->
       <div class="sb-section collapsed" id="sec-themes">
-        <div class="sb-section-header" onclick="toggleSection('sec-themes')">
+        <div class="sb-section-header">
           🎨 &nbsp;Theme Packs
           <span class="sb-arrow">▾</span>
         </div>
         <div class="sb-body">
           <div class="sb-label" style="margin-bottom:10px;">One-click Note Themes</div>
           <div class="theme-pack-grid">
-            <button class="theme-pack-btn" onclick="applyTheme('default')" title="Default">
+            <button class="theme-pack-btn" data-theme="default" title="Default">
               <span class="theme-swatch" style="background: linear-gradient(135deg, #faf9f5, #1c2340 80%);"></span>
               <span>Default</span>
             </button>
-            <button class="theme-pack-btn" onclick="applyTheme('vintage')" title="Vintage Diary">
+            <button class="theme-pack-btn" data-theme="vintage" title="Vintage Diary">
               <span class="theme-swatch" style="background: linear-gradient(135deg, #f2e8ce, #3c2f2f 80%);"></span>
               <span>Vintage</span>
             </button>
-            <button class="theme-pack-btn" onclick="applyTheme('cute')" title="Cute Pastel">
+            <button class="theme-pack-btn" data-theme="cute" title="Cute Pastel">
               <span class="theme-swatch" style="background: linear-gradient(135deg, #faf7f0, #5d3f6a 80%);"></span>
               <span>Pastel</span>
             </button>
-            <button class="theme-pack-btn" onclick="applyTheme('science')" title="Science Lab">
+            <button class="theme-pack-btn" data-theme="science" title="Science Lab">
               <span class="theme-swatch" style="background: linear-gradient(135deg, #eef6ed, #1a331e 80%);"></span>
               <span>Science</span>
             </button>
-            <button class="theme-pack-btn" onclick="applyTheme('minimal')" title="Minimal Dark">
+            <button class="theme-pack-btn" data-theme="minimal" title="Minimal Dark">
               <span class="theme-swatch" style="background: linear-gradient(135deg, #1a1a2e, #e0e0e0 80%);"></span>
               <span>Dark</span>
             </button>
-            <button class="theme-pack-btn" onclick="applyTheme('scrapbook')" title="Scrapbook">
+            <button class="theme-pack-btn" data-theme="scrapbook" title="Scrapbook">
               <span class="theme-swatch" style="background: linear-gradient(135deg, #f6f2ec, #1c3144 80%);"></span>
               <span>Scrapbook</span>
             </button>
@@ -465,9 +474,9 @@ Try pasting a paragraph of lecture notes!"></textarea>
      PHASE 8.8 — PAGE NAVIGATION BAR
 ════════════════════════════════════════ -->
   <div id="page-nav">
-    <button class="btn sm icon-btn" id="nav-prev" onclick="navigatePage(-1)">◀</button>
+    <button class="btn sm icon-btn" id="nav-prev">◀</button>
     <span id="page-indicator">Page 1 of 1</span>
-    <button class="btn sm icon-btn" id="nav-next" onclick="navigatePage(1)">▶</button>
+    <button class="btn sm icon-btn" id="nav-next">▶</button>
   </div>
 
   <!-- ════════════════════════════════════════
@@ -477,12 +486,12 @@ Try pasting a paragraph of lecture notes!"></textarea>
     <div class="modal-card">
       <div class="modal-header">
         <h3>✨ HandFonted Studio</h3>
-        <button class="modal-close" onclick="closeHandFontedModal()">✕</button>
+        <button class="modal-close" id="handfonted-modal-close">✕</button>
       </div>
       
       <div class="modal-tabs">
-        <button class="tab-btn active" id="tab-btn-sketchpad" onclick="switchFontTab('sketchpad')">🎨 Live Sketchpad</button>
-        <button class="tab-btn" id="tab-btn-template" onclick="switchFontTab('template')">📸 Upload Template</button>
+        <button class="tab-btn active" id="tab-btn-sketchpad" data-font-tab="sketchpad">🎨 Live Sketchpad</button>
+        <button class="tab-btn" id="tab-btn-template" data-font-tab="template">📸 Upload Template</button>
       </div>
 
       <!-- Live Sketchpad Panel -->
@@ -504,8 +513,8 @@ Try pasting a paragraph of lecture notes!"></textarea>
           <div class="sketch-sidebar">
             <div class="sb-label">Select Character</div>
             <div class="sheet-tabs">
-              <button class="sheet-tab active" id="sheet-tab-letters" onclick="switchSheet('letters')">Letters</button>
-              <button class="sheet-tab" id="sheet-tab-symbols" onclick="switchSheet('symbols')">Symbols</button>
+              <button class="sheet-tab active" id="sheet-tab-letters" data-sheet="letters">Letters</button>
+              <button class="sheet-tab" id="sheet-tab-symbols" data-sheet="symbols">Symbols</button>
             </div>
             <div class="char-grid" id="sketch-char-grid"></div>
           </div>
@@ -513,15 +522,15 @@ Try pasting a paragraph of lecture notes!"></textarea>
             <div class="sketch-header">
               <span class="active-char-label">Current: <strong id="current-char-display">A</strong></span>
               <div class="sketch-header-actions">
-                <button class="btn sm" onclick="undoSketchStroke()" title="Undo last stroke">↶ Undo</button>
-                <button class="btn sm" onclick="clearSketchCanvas()" title="Clear canvas">🗑️ Clear</button>
+                <button class="btn sm" id="btn-sketch-undo" title="Undo last stroke">↶ Undo</button>
+                <button class="btn sm" id="btn-sketch-clear" title="Clear canvas">🗑️ Clear</button>
               </div>
             </div>
             
             <!-- Brush Size Control -->
             <div class="brush-control">
               <label class="brush-label">Brush Size: <span id="brush-size-val">3</span>px</label>
-              <input type="range" id="brush-size-slider" min="1" max="8" value="3" step="0.5" oninput="updateBrushSize()" title="Brush Size" />
+              <input type="range" id="brush-size-slider" min="1" max="8" value="3" step="0.5" title="Brush Size" />
             </div>
             
             <div class="canvas-wrapper">
@@ -530,10 +539,10 @@ Try pasting a paragraph of lecture notes!"></textarea>
               <div id="canvas-guide-letter">A</div>
             </div>
             <div class="sketch-actions">
-              <button class="btn primary" id="btn-save-char" onclick="saveActiveCharacter()">
+              <button class="btn primary" id="btn-save-char">
                 💾 Save Character
               </button>
-              <button class="btn secondary" id="btn-next-char" onclick="advanceActiveCharacter()">
+              <button class="btn secondary" id="btn-next-char">
                 Next ➡️
               </button>
             </div>
@@ -548,9 +557,9 @@ Try pasting a paragraph of lecture notes!"></textarea>
         
         <!-- Save/Load Project -->
         <div class="project-actions">
-          <button class="btn sm" onclick="exportFontProject()">💾 Save Progress (JSON)</button>
-          <button class="btn sm" onclick="document.getElementById('import-font-project').click()">📂 Load Progress</button>
-          <input type="file" id="import-font-project" accept=".json" style="display: none;" onchange="importFontProject(event)" title="Import Font Project" />
+          <button class="btn sm" id="btn-export-font-project">💾 Save Progress (JSON)</button>
+          <button class="btn sm" id="btn-import-font-project-trigger">📂 Load Progress</button>
+          <input type="file" id="import-font-project" accept=".json" style="display: none;" title="Import Font Project" />
         </div>
       </div>
 
@@ -558,7 +567,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
       <div id="panel-template" class="tab-panel hidden">
         <p class="modal-desc">Download the template package (instructions + 2 sheets), write your letters clearly, scan/photo them, and align the grid overlay below.</p>
         <div class="template-actions template-actions-row">
-          <button class="btn sm primary" onclick="generateDownloadTemplate()">📦 Download Template Package (3 sheets)</button>
+          <button class="btn sm primary" id="btn-generate-template">📦 Download Template Package (3 sheets)</button>
           <div class="template-actions-row">
             <span class="sb-label" style="margin: 0; font-size: 12px; color: var(--text-secondary);">Upload Sheet:</span>
             <select id="upload-template-sheet-select" style="font-size: 12px; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--btn-border); background: var(--btn-bg); color: var(--text-primary); outline: none;" title="Select template sheet type">
@@ -583,22 +592,22 @@ Try pasting a paragraph of lecture notes!"></textarea>
               
               <div class="control-group">
                 <label>Grid X Offset <span class="val" id="val-grid-x">22</span>px</label>
-                <input type="range" id="slider-grid-x" min="-100" max="200" value="22" oninput="updateAlignerGrid()" title="Grid X Offset" />
+                <input type="range" id="slider-grid-x" min="-100" max="200" value="22" title="Grid X Offset" />
               </div>
 
               <div class="control-group">
                 <label>Grid Y Offset <span class="val" id="val-grid-y">36</span>px</label>
-                <input type="range" id="slider-grid-y" min="-100" max="200" value="36" oninput="updateAlignerGrid()" title="Grid Y Offset" />
+                <input type="range" id="slider-grid-y" min="-100" max="200" value="36" title="Grid Y Offset" />
               </div>
 
               <div class="control-group">
                 <label>Grid Width <span class="val" id="val-grid-w">315</span>px</label>
-                <input type="range" id="slider-grid-w" min="100" max="800" value="315" oninput="updateAlignerGrid()" title="Grid Width" />
+                <input type="range" id="slider-grid-w" min="100" max="800" value="315" title="Grid Width" />
               </div>
 
               <div class="control-group">
                 <label>Grid Height <span class="val" id="val-grid-h">315</span>px</label>
-                <input type="range" id="slider-grid-h" min="100" max="800" value="315" oninput="updateAlignerGrid()" title="Grid Height" />
+                <input type="range" id="slider-grid-h" min="100" max="800" value="315" title="Grid Height" />
               </div>
             </div>
           </div>
@@ -611,10 +620,10 @@ Try pasting a paragraph of lecture notes!"></textarea>
           <span class="font-name-label">Font Name:</span>
           <input type="text" id="custom-font-name" value="MyHandwriting" title="Custom Font Name" />
         </div>
-        <button class="btn secondary" id="btn-download-font" onclick="exportCustomFontTTF()">
+        <button class="btn secondary" id="btn-download-font">
           📥 Download TTF Font
         </button>
-        <button class="btn primary" id="btn-build-font" onclick="buildCustomFont()">
+        <button class="btn primary" id="btn-build-font">
           🚀 Generate & Apply Font
         </button>
       </div>
@@ -633,13 +642,13 @@ Try pasting a paragraph of lecture notes!"></textarea>
     <div class="modal-card flashcard-modal-card" style="max-width: 480px;">
       <div class="modal-header">
         <h3>🃏 Study Flashcards</h3>
-        <button class="modal-close" onclick="closeFlashcardsModal()">✕</button>
+        <button class="modal-close" id="flashcards-modal-close">✕</button>
       </div>
       
       <div class="modal-body flashcard-modal-body">
         <p class="modal-desc" style="text-align: center; margin-bottom: 20px;">Click the card to flip between Question and Answer.</p>
         
-        <div class="flashcard-container" onclick="flipFlashcard()">
+        <div class="flashcard-container" id="flashcard-container">
           <div class="flashcard-inner" id="flashcard-inner">
             <div class="flashcard-front">
               <div class="flashcard-badge">QUESTION</div>
@@ -653,16 +662,16 @@ Try pasting a paragraph of lecture notes!"></textarea>
         </div>
         
         <div class="flashcard-controls-row">
-          <button class="btn" onclick="prevFlashcard()">◀ Prev</button>
+          <button class="btn" id="btn-flashcard-prev">◀ Prev</button>
           <span id="flashcard-progress" class="flashcard-progress-label">Card 1 of 1</span>
-          <button class="btn" onclick="nextFlashcard()">Next ▶</button>
+          <button class="btn" id="btn-flashcard-next">Next ▶</button>
         </div>
       </div>
     </div>
   </div>
 
   <!-- Floating exit study mode button -->
-  <button id="btn-exit-study-mode" class="btn" onclick="toggleStudyMode()">🚪 Exit Study Mode</button>
+  <button id="btn-exit-study-mode" class="btn">🚪 Exit Study Mode</button>
 
   <!-- Vercel Web Analytics -->
   <script>
@@ -671,7 +680,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
   <script defer src="/_vercel/insights/script.js"></script>
 
   <!-- Custom Script -->
-  <script src="index.js?v=1.5.3"></script>
+  <script src="index.js?v=1.6.11"></script>
 
   <!-- Phase 1 PWA — Service Worker Registration -->
   <script>

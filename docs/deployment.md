@@ -21,6 +21,15 @@ Inkflow is a fully static, client-side web application. There is no build step, 
 
 ---
 
+## Versioning & Cache-Busting
+
+Inkflow pins its version in three places that must agree: `package.json` (`version`), `sw.js` (`CACHE_VERSION`), and the `index.html` script tag (`index.js?v=…`, which busts the service worker's cache-first asset cache).
+
+- Run `npm run check-versions` to verify parity (exit code 1 on drift).
+- When you change `index.js` or `index.css`, bump **all three** and add a `docs/changelog.md` entry — skipping the bump risks clients being served stale code from the service worker's cache.
+
+---
+
 ## CDN Dependencies (Loaded Automatically)
 
 All third-party libraries load from CDNs at runtime — nothing is vendored:

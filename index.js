@@ -22,6 +22,7 @@ const S = {
   pageNos: {},
   marginNotes: {},
   showHeaderBox: true,
+  showMarginLabels: true,
 };
 
 /* Canvas pages array */
@@ -772,9 +773,13 @@ function redrawPageCanvas(pageNum) {
     const { queue } = layoutText(cleanText || textInputVal);
 
     // 3. Draw characters for this specific page
+    const answerLineItems = (S.showMarginLabels !== false && S.noteLayout === 'standard')
+      ? collectAnswerLineItems(queue)
+      : null;
     queue.forEach((item) => {
       if (item.pageIdx !== pageNum - 1) return;
       if (item.isSticky || item.isCallout) return;
+      if (answerLineItems && answerLineItems.has(item)) return;
 
       // Draw highlight
       if (item.highlight) {
@@ -832,6 +837,9 @@ function redrawPageCanvas(pageNum) {
     // 4. Draw stickies and callouts for this page
     paintStickyNotes(queue, pageNum - 1);
     paintCallouts(queue, pageNum - 1);
+    if (S.showMarginLabels !== false && S.noteLayout === 'standard') {
+      drawMarginQuestionLabels(queue, pageNum - 1);
+    }
   }
 
   // 5. Draw left margin text for this page
@@ -907,9 +915,14 @@ function updateEditorStyles(editor, canvas) {
 
 function getGlobalTextFromEditors() {
   const editors = document.querySelectorAll('.page-editor');
+  const canvases = document.querySelectorAll('#page-container canvas');
   const parts = [];
-  editors.forEach((editor) => {
-    let t = editor.innerText;
+  editors.forEach((editor, i) => {
+    // Prefer the authoritative page text stored on the canvas during render:
+    // reading editor.innerText multiplies newlines (one per block boundary),
+    // inflating blank lines every time editor text flows back into S.text.
+    const stored = canvases[i]?.dataset.text;
+    let t = (stored !== undefined && stored !== '') ? stored : editor.innerText;
     if (t.endsWith('\n')) {
       t = t.slice(0, -1);
     }
@@ -1419,6 +1432,14 @@ function sanitizeText(str) {
    SYNTAX PARSING & PREPROCESSING FOR STUDY TOOLS
 ─────────────────────────────────────────── */
 function parseRichSyntax(rawText) {
+  // When handed already-processed text (it contains \uFFF0/\uFFF1 placeholders),
+  // a second pass would reset parsedStickies/parsedCallouts/highlightRanges that
+  // the first pass populated — layoutText() re-invokes this parser internally, so
+  // without this guard sticky notes, callouts, and highlights would never render.
+  if (rawText && (rawText.includes('\uFFF0') || rawText.includes('\uFFF1'))) {
+    return { cleanText: rawText, flashcards: activeFlashcards };
+  }
+
   parsedStickies = [];
   parsedCallouts = [];
   highlightRanges = [];
@@ -1675,6 +1696,82 @@ function paintCallouts(queue, targetPageIdx = null) {
   });
 }
 
+/* ───────────────────────────────────────────
+   MARGIN LABELS — question numbers and
+   "Ans" markers drawn in the left margin,
+   aligned with their lines on the page.
+─────────────────────────────────────────── */
+function clusterQueueLines(queue) {
+  const byPage = new Map();
+  for (const it of queue) {
+    if (!byPage.has(it.pageIdx)) byPage.set(it.pageIdx, []);
+    byPage.get(it.pageIdx).push(it);
+  }
+
+  const lineTol = S.fontSize * S.lineHeight * 0.5;
+  const clusters = [];
+  for (const [pageIdx, items] of byPage) {
+    items.sort((a, b) => a.y - b.y || a.x - b.x);
+    let cluster = [];
+    for (const it of items) {
+      // Wobble keeps same-line y within ~1px, so half a line separates rows
+      if (cluster.length > 0 && it.y - cluster[cluster.length - 1].y > lineTol) {
+        clusters.push({ pageIdx, items: cluster });
+        cluster = [];
+      }
+      cluster.push(it);
+    }
+    if (cluster.length > 0) clusters.push({ pageIdx, items: cluster });
+  }
+  return clusters;
+}
+
+const ANSWER_LINE_RE = /^answer:?$/i;
+
+function collectAnswerLineItems(queue) {
+  // "Answer:" lines are represented on canvas by the margin "Ans" label;
+  // the text itself stays visible in the editors.
+  const hidden = new Set();
+  if (S.noteLayout !== 'standard') return hidden;
+  for (const { items } of clusterQueueLines(queue)) {
+    items.sort((a, b) => a.x - b.x);
+    if (Math.abs(items[0].x - S.margin) > 2) continue;
+    const lineText = items.map(i => i.ch).join('');
+    if (ANSWER_LINE_RE.test(lineText)) items.forEach(i => hidden.add(i));
+  }
+  return hidden;
+}
+
+function drawMarginQuestionLabels(queue, onlyPageIdx = null) {
+  for (const { pageIdx, items } of clusterQueueLines(queue)) {
+    if (onlyPageIdx !== null && pageIdx !== onlyPageIdx) continue;
+    items.sort((a, b) => a.x - b.x);
+    // Only lines that START at the left margin (not wrapped continuations)
+    if (Math.abs(items[0].x - S.margin) > 2) continue;
+
+    // The queue holds no space characters, so joined line text is squashed
+    // ("1.Whatare…"). Questions end with '?' — numbered sub-points don't.
+    const lineText = items.map(i => i.ch).join('');
+    const qMatch = lineText.match(/^(\d+)\.\s*\S.*\?\s*$/);
+    const isAnswer = ANSWER_LINE_RE.test(lineText);
+    if (!qMatch && !isAnswer) continue;
+
+    const canvas = pages[pageIdx];
+    if (!canvas) continue;
+    const ctx = canvas.getContext('2d');
+    const label = qMatch ? 'Q' + qMatch[1] : 'Ans';
+    const labelFont = Math.max(13, Math.round(S.fontSize * 0.78));
+    ctx.save();
+    ctx.font = `bold ${labelFont}px ${items[0].fontStack || S.font}`;
+    ctx.fillStyle = S.inkColor;
+    ctx.globalAlpha = 0.95;
+    ctx.textAlign = 'right';
+    // Keep clear of the red margin rule and the page edge
+    ctx.fillText(label, S.margin - 14, items[0].y + S.fontSize * 0.35);
+    ctx.restore();
+  }
+}
+
 function drawWrappedText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
   const words = text.split(' ');
   let line = '';
@@ -1762,7 +1859,7 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
         x = activeCol === 1 ? col1Left : col2Left;
         y += lineH;
         lineCharIndex = 0;
-        if (y + lineH > PAGE_H - margin) {
+        if (y + S.fontSize * 0.5 > PAGE_H - margin) {
           if (activeCol === 1) {
             activeCol = 2;
             x = col2Left;
@@ -1798,7 +1895,7 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
         x = leftBoundary;
         y += lineH;
         lineCharIndex = 0;
-        if (y + lineH > PAGE_H - margin) {
+        if (y + S.fontSize * 0.5 > PAGE_H - margin) {
           if (activeCol === 1) {
             activeCol = 2;
             x = col2Left;
@@ -1873,7 +1970,7 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
             x = leftBoundary;
             y += lineH;
             lineCharIndex = 0;
-            if (y + lineH > PAGE_H - margin) {
+            if (y + S.fontSize * 0.5 > PAGE_H - margin) {
               if (activeCol === 1) {
                 activeCol = 2;
                 x = col2Left;
@@ -2041,7 +2138,7 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
       x = margin;
     } else if (type === 'summary') {
       y = ySummary;
-      if (y + lineH > PAGE_H - margin) {
+      if (y + S.fontSize * 0.5 > PAGE_H - margin) {
         pageTexts.push(currentPageText);
         currentPageText = '';
         pageIdx++;
@@ -2104,7 +2201,7 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
         lineCharIndex = 0;
         
         if (type === 'summary') {
-          if (y + lineH > PAGE_H - margin) {
+          if (y + S.fontSize * 0.5 > PAGE_H - margin) {
             pageTexts.push(currentPageText);
             currentPageText = '';
             pageIdx++;
@@ -2184,7 +2281,7 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
             lineCharIndex = 0;
             
             if (type === 'summary') {
-              if (y + lineH > PAGE_H - margin) {
+              if (y + S.fontSize * 0.5 > PAGE_H - margin) {
                 pageTexts.push(currentPageText);
                 currentPageText = '';
                 pageIdx++;
@@ -2598,7 +2695,7 @@ function layoutText(text) {
         x = margin;
         y += lineH;
         lineCharIndex = 0;
-        if (y + lineH > PAGE_H - margin) {
+        if (y + S.fontSize * 0.5 > PAGE_H - margin) {
           pageTexts.push(currentPageText);
           currentPageText = '';
           pageIdx++;
@@ -2623,7 +2720,7 @@ function layoutText(text) {
         x = margin;
         y += lineH;
         lineCharIndex = 0;
-        if (y + lineH > PAGE_H - margin) {
+        if (y + S.fontSize * 0.5 > PAGE_H - margin) {
           pageTexts.push(currentPageText);
           currentPageText = '';
           pageIdx++;
@@ -2670,7 +2767,7 @@ function layoutText(text) {
             x = margin;
             y += lineH;
             lineCharIndex = 0;
-            if (y + lineH > PAGE_H - margin) {
+            if (y + S.fontSize * 0.5 > PAGE_H - margin) {
               pageTexts.push(currentPageText);
               currentPageText = '';
               pageIdx++;
@@ -2800,6 +2897,11 @@ function renderText(text) {
     drawPaperBackground(ctx, S.paperStyle, i + 1);
   }
 
+  // "Answer:" lines collapse to the margin "Ans" label when labels are shown
+  const answerLineItems = (S.showMarginLabels !== false && S.noteLayout === 'standard')
+    ? collectAnswerLineItems(queue)
+    : null;
+
   queue.forEach((item) => {
     const canvas = pages[item.pageIdx];
     if (!canvas) return;
@@ -2809,8 +2911,10 @@ function renderText(text) {
     const activeEditor = document.getElementById('editor-' + (item.pageIdx + 1));
     if (document.activeElement === activeEditor) return;
 
-    // Skip rendering placeholder chars for stickies/callouts
+    // Skip rendering placeholder chars for stickies/callouts, and the bare
+    // "Answer:" marker lines (their margin "Ans" label carries the meaning)
     if (item.isSticky || item.isCallout) return;
+    if (answerLineItems && answerLineItems.has(item)) return;
 
     // Draw highlight background BEFORE character
     if (item.highlight) {
@@ -2873,6 +2977,10 @@ function renderText(text) {
   paintStickyNotes(queue);
   // ── POST-PASS: Draw Callout Boxes ──
   paintCallouts(queue);
+  // ── POST-PASS: Question / answer labels in the left margin ──
+  if (S.showMarginLabels !== false && S.noteLayout === 'standard') {
+    drawMarginQuestionLabels(queue);
+  }
 
   pages.forEach((c, idx) => {
     const editor = document.getElementById('editor-' + (idx + 1));
@@ -2928,6 +3036,9 @@ function startAnimation() {
   // Clear and recreate pages with backgrounds
   clearPages();
   const { queue, pageTexts, pageCount } = layoutText(layoutInput);
+  const answerLineItems = (S.showMarginLabels !== false && S.noteLayout === 'standard')
+    ? collectAnswerLineItems(queue)
+    : null;
   for (let i = 0; i < pageCount; i++) {
     const c = createPage(i + 1);
     drawPaperBackground(c.getContext('2d'), S.paperStyle, i + 1);
@@ -2952,8 +3063,9 @@ function startAnimation() {
       const ctx = canvas.getContext('2d');
       const v = item.v;
 
-      // Skip sticky/callout placeholders in animation
+      // Skip sticky/callout placeholders in animation, and bare "Answer:" lines
       if (item.isSticky || item.isCallout) continue;
+      if (answerLineItems && answerLineItems.has(item)) continue;
 
       // Draw highlight BEFORE character
       if (item.highlight) {
@@ -3609,6 +3721,73 @@ async function callAI(prompt, systemPrompt, onChunk) {
   return callClaude(prompt, systemPrompt, onChunk);
 }
 
+/* ───────────────────────────────────────────
+   SMART ARRANGE — offline text tidy-up
+   Deterministic structuring used by the
+   Smart Arrange button so it works with no
+   AI provider or API key.
+─────────────────────────────────────────── */
+function smartArrangeLocal(text) {
+  let fixes = 0;
+  const isFillIn = (l) => /_{2,}/.test(l);
+  const out = [];
+
+  for (let line of text.split('\n')) {
+    // Trim trailing whitespace
+    const trimmed = line.replace(/[ \t]+$/, '');
+    if (trimmed !== line) { fixes++; line = trimmed; }
+
+    // Normalize bullet markers (*, •, ‣ → "- ")
+    const bullet = line.match(/^\s*([*•‣]|-(?!\s*-))\s+(.*)$/);
+    if (bullet) {
+      const normalized = '- ' + bullet[2];
+      if (normalized !== line) fixes++;
+      line = normalized;
+    }
+
+    // Spacing cleanup — fill-in lines (Runs of underscores) are preserved as-is
+    if (!isFillIn(line)) {
+      const noSpaceBeforePunct = line.replace(/[ \t]+([,.;:!?])/g, '$1');
+      let spaced = noSpaceBeforePunct;
+      let prev;
+      do {
+        prev = spaced;
+        spaced = spaced.replace(/(^|[^_]) {2,}(?=[^_]|$)/g, '$1 ');
+      } while (spaced !== prev);
+      if (spaced !== line) fixes++;
+      line = spaced;
+    }
+
+    out.push(line);
+  }
+
+  let result = out.join('\n');
+
+  // Collapse 3+ consecutive newlines to one blank line
+  const collapsed = result.replace(/\n{3,}/g, '\n\n');
+  if (collapsed !== result) fixes++;
+  result = collapsed;
+
+  // Add a blank line before numbered questions ("12. How does ... ?")
+  const structured = [];
+  for (const l of result.split('\n')) {
+    const prev = structured[structured.length - 1];
+    if (/^\d+\.\s+.*\?\s*$/.test(l) && prev !== undefined && prev !== '' && !/^\d+\./.test(prev)) {
+      structured.push('');
+      fixes++;
+    }
+    structured.push(l);
+  }
+  result = structured.join('\n');
+
+  // End with exactly one newline
+  const finalText = result.replace(/\s+$/, '') + '\n';
+  if (finalText !== result) fixes++;
+  result = finalText;
+
+  return { text: result, fixes };
+}
+
 async function aiAction(type) {
   const textarea = document.getElementById('text-input');
   const currentText = textarea.value.trim();
@@ -3640,11 +3819,11 @@ async function aiAction(type) {
 
   if (type === 'arrange') {
     if (!currentText) { setAiStatus('⚠ Add some text first.'); btns.forEach(b => b.disabled = false); return; }
-    result = await callAI(
-      currentText,
-      `${AI_SYSTEM_BASE_PROMPT}\n\nTASK: Reorganize and format the provided raw text into beautifully structured handwritten notes. Add a '# Main Title' heading, '## Section' subheadings, bullet lists, ==highlighted key terms==, and a '[callout:info] Key Note [callout]'.`,
-      onChunk
-    );
+    // Smart Arrange runs fully offline — deterministic structuring, no API key needed.
+    const arranged = smartArrangeLocal(textarea.value);
+    result = arranged.text;
+    setAiStatus('✦ Smart Arrange applied offline — ' + arranged.fixes + ' tidy-up' + (arranged.fixes === 1 ? '' : 's') + ', no AI needed.');
+    showToast('✓ Smart Arrange: ' + arranged.fixes + ' fixes (no AI needed)', 'success');
   }
 
   if (type === 'grammar') {
@@ -4062,7 +4241,8 @@ function autosave() {
       pageNos: S.pageNos,
       marginNotes: S.marginNotes,
       textAlignment: S.textAlignment,
-      showHeaderBox: S.showHeaderBox
+      showHeaderBox: S.showHeaderBox,
+      showMarginLabels: S.showMarginLabels
     };
     localStorage.setItem('inkflow-state', JSON.stringify(state));
 
@@ -4090,7 +4270,8 @@ function autosave() {
           pageNos: S.pageNos,
           marginNotes: S.marginNotes,
           textAlignment: S.textAlignment,
-          showHeaderBox: S.showHeaderBox
+          showHeaderBox: S.showHeaderBox,
+          showMarginLabels: S.showMarginLabels
         }
       };
       
@@ -4199,6 +4380,11 @@ async function restoreState() {
       const headerToggle = document.getElementById('header-toggle');
       if (headerToggle) headerToggle.checked = S.showHeaderBox;
     }
+    if (state.showMarginLabels !== undefined) {
+      S.showMarginLabels = state.showMarginLabels;
+      const marginLabelsToggle = document.getElementById('margin-labels-toggle');
+      if (marginLabelsToggle) marginLabelsToggle.checked = S.showMarginLabels;
+    }
 
     // 2. Migrate draftedGlyphs if they exist in localStorage state
     if (state.draftedGlyphs && Object.keys(state.draftedGlyphs).length > 0) {
@@ -4246,7 +4432,7 @@ async function restoreState() {
   }
 
   // Optionally redraw if studio is open
-  if (typeof drawStudioCanvas === 'function') drawStudioCanvas();
+  if (typeof drawStudioCanvas === 'function') drawStudioCanvas(); // eslint-disable-line no-undef -- optional studio hook
 }
 
 
@@ -4275,7 +4461,119 @@ function navigatePage(dir) {
 /* ───────────────────────────────────────────
    PHASE 8.7 + INIT — APP BOOT
 ─────────────────────────────────────────── */
+/* ───────────────────────────────────────────
+   UI ACTION BINDING — all click/input handlers
+   are attached here instead of inline HTML
+   onclick attributes, so markup never embeds
+   global function calls.
+─────────────────────────────────────────── */
+function bindUIActions() {
+  const $ = (id) => document.getElementById(id);
+
+  /* Toolbar */
+  $('btn-study-mode').addEventListener('click', () => toggleStudyMode());
+  $('btn-open-flashcards').addEventListener('click', () => openFlashcardsModal());
+
+  /* Sidebar collapsible sections */
+  document.querySelectorAll('.sb-section-header').forEach((header) => {
+    header.addEventListener('click', () => toggleSection(header.closest('.sb-section').id));
+  });
+
+  /* Notebooks */
+  $('btn-new-notebook').addEventListener('click', () => createNewNotebook());
+  $('btn-new-folder').addEventListener('click', () => createNewFolder());
+
+  /* Text input */
+  $('btn-render').addEventListener('click', () => triggerRender());
+  $('btn-voice').addEventListener('click', () => toggleVoiceInput());
+  $('btn-clear-text').addEventListener('click', () => clearText());
+
+  /* Font & style */
+  $('btn-autofit').addEventListener('click', () => autoFitFontSize());
+  $('margin-labels-toggle').addEventListener('change', (e) => {
+    S.showMarginLabels = e.target.checked;
+    debounceRender();
+    autosave();
+  });
+  document.querySelectorAll('.align-btn').forEach((btn) => {
+    btn.addEventListener('click', () => setTextAlignment(btn.dataset.align));
+  });
+  $('btn-reset-defaults').addEventListener('click', () => resetToDefaults());
+
+  /* Paper style */
+  document.querySelectorAll('.paper-btn').forEach((btn) => {
+    btn.addEventListener('click', () => setPaper(btn));
+  });
+
+  /* Ink presets */
+  document.querySelectorAll('button[data-ink]').forEach((btn) => {
+    btn.addEventListener('click', () => setInkPreset(btn.dataset.ink, btn.dataset.inkName));
+  });
+
+  /* AI tools */
+  $('ai-provider').addEventListener('change', () => onProviderChange());
+  $('model-sync-status').addEventListener('click', () => refreshCurrentProviderModels(true));
+  document.querySelectorAll('[data-ai-action]').forEach((btn) => {
+    btn.addEventListener('click', () => aiAction(btn.dataset.aiAction));
+  });
+
+  /* Export */
+  document.querySelectorAll('[data-export]').forEach((btn) => {
+    btn.addEventListener('click', () => exportImage(btn.dataset.export));
+  });
+  $('btn-export-pdf').addEventListener('click', () => exportPDF());
+  $('btn-export-svg').addEventListener('click', () => exportSVG());
+  $('btn-copy-clipboard').addEventListener('click', () => copyToClipboard());
+  $('btn-print').addEventListener('click', () => window.print());
+
+  /* Animation */
+  $('btn-anim-start').addEventListener('click', () => startAnimation());
+  $('btn-anim-stop').addEventListener('click', () => stopAnimation());
+
+  /* Theme packs */
+  document.querySelectorAll('.theme-pack-btn').forEach((btn) => {
+    btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
+  });
+
+  /* Page navigation */
+  $('nav-prev').addEventListener('click', () => navigatePage(-1));
+  $('nav-next').addEventListener('click', () => navigatePage(1));
+
+  /* HandFonted Studio modal */
+  $('handfonted-modal-close').addEventListener('click', () => closeHandFontedModal());
+  document.querySelectorAll('.tab-btn[data-font-tab]').forEach((btn) => {
+    btn.addEventListener('click', () => switchFontTab(btn.dataset.fontTab));
+  });
+  document.querySelectorAll('.sheet-tab[data-sheet]').forEach((btn) => {
+    btn.addEventListener('click', () => switchSheet(btn.dataset.sheet));
+  });
+  $('btn-sketch-undo').addEventListener('click', () => window.undoSketchStroke());
+  $('btn-sketch-clear').addEventListener('click', () => clearSketchCanvas());
+  $('brush-size-slider').addEventListener('input', () => window.updateBrushSize());
+  $('btn-save-char').addEventListener('click', () => saveActiveCharacter());
+  $('btn-next-char').addEventListener('click', () => advanceActiveCharacter());
+  $('btn-export-font-project').addEventListener('click', () => exportFontProject());
+  $('btn-import-font-project-trigger').addEventListener('click', () => $('import-font-project').click());
+  $('import-font-project').addEventListener('change', (e) => importFontProject(e));
+  $('btn-generate-template').addEventListener('click', () => generateDownloadTemplate());
+  ['slider-grid-x', 'slider-grid-y', 'slider-grid-w', 'slider-grid-h'].forEach((id) => {
+    $(id).addEventListener('input', () => updateAlignerGrid());
+  });
+  $('btn-download-font').addEventListener('click', () => exportCustomFontTTF());
+  $('btn-build-font').addEventListener('click', () => buildCustomFont());
+
+  /* Flashcards modal */
+  $('flashcards-modal-close').addEventListener('click', () => closeFlashcardsModal());
+  $('flashcard-container').addEventListener('click', () => flipFlashcard());
+  $('btn-flashcard-prev').addEventListener('click', () => prevFlashcard());
+  $('btn-flashcard-next').addEventListener('click', () => nextFlashcard());
+
+  /* Study mode */
+  $('btn-exit-study-mode').addEventListener('click', () => toggleStudyMode());
+}
+
 async function initApp() {
+  bindUIActions();
   await restoreState();
   setupFileUpload();
   initHandFontedStudio();
@@ -4493,6 +4791,7 @@ function resetToDefaults() {
     paperStyle: 'ruled',
     textAlignment: 'middle',
     showHeaderBox: true,
+    showMarginLabels: true,
   };
 
   // Apply state
@@ -6575,13 +6874,16 @@ function renderNotebooksList() {
         }
         
         item.onclick = () => loadNotebook(note.id);
-        
-        item.innerHTML = `
-          <span>📝 ${escapeHtml(note.title)}</span>
-          <div class="notebook-item-actions">
-            <button onclick="deleteNotebookClicked('${escapeHtml(note.id)}', event)" title="Delete note"><i class="fa-solid fa-trash"></i></button>
-          </div>
-        `;
+
+        item.innerHTML = `<span>📝 ${escapeHtml(note.title)}</span>`;
+        const actions = document.createElement('div');
+        actions.className = 'notebook-item-actions';
+        const deleteBtn = document.createElement('button');
+        deleteBtn.title = 'Delete note';
+        deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+        deleteBtn.addEventListener('click', (e) => deleteNotebookClicked(note.id, e));
+        actions.appendChild(deleteBtn);
+        item.appendChild(actions);
         container.appendChild(item);
       });
     });

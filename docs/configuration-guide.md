@@ -53,6 +53,13 @@ Complete reference for all user-configurable controls in Inkflow.
 
 > **Clean style** additionally parses structured content: `#` headings, `##` subheadings, `-` / `*` bullets (nested levels), and `Q1.` / `Q.` auto-numbered questions.
 
+### Margin Labels (Standard layout, v1.6.8+)
+
+The **Question & answer numbers in left margin** checkbox (below the layout selector) draws **Q1…Qn** next to numbered question lines and **Ans** next to bare `Answer:` lines, right-aligned against the red margin rule in the current ink color.
+
+- When enabled, a line containing only `Answer:` is *not* drawn on the page — the margin label carries the meaning — while the word stays visible and editable in the textarea and the per-page editors.
+- The setting is saved with your state and per-note settings, included in Reset Defaults, and honored by exports and print (labels are drawn on the canvas).
+
 ---
 
 ## Study Syntax (rich note markup)
@@ -129,7 +136,7 @@ The viewport auto-scrolls to keep the pen cursor visible during animation.
 | **AI Provider** | OpenRouter (100+ models), Anthropic (direct), or Ollama (local, no API key) |
 | **Model** | Selected from provider's model list (auto-fetched for OpenRouter) |
 | **API Key** | Your OpenRouter or Anthropic API key (entered at runtime, stored in browser only). Not required for Ollama. |
-| **Smart Arrange** | Restructures text into organized, readable notes |
+| **Smart Arrange** | Tidies and structures text — **works fully offline, no API key required** (deterministic tidy-up, v1.6.7+) |
 | **Summarize** | Converts text to bullet-point notes |
 | **Fix Grammar** | Corrects spelling and phrasing |
 | **Lecture → Notes** | Transforms transcripts to study notes |
