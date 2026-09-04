@@ -1766,8 +1766,8 @@ function drawMarginQuestionLabels(queue, onlyPageIdx = null) {
     ctx.fillStyle = S.inkColor;
     ctx.globalAlpha = 0.95;
     ctx.textAlign = 'right';
-    // Keep clear of the red margin rule and the page edge
-    ctx.fillText(label, S.margin - 14, items[0].y + S.fontSize * 0.35);
+            // Keep clear of both red margin rules (x = margin−10 and margin−14)
+            ctx.fillText(label, S.margin - 24, items[0].y + S.fontSize * 0.35);
     ctx.restore();
   }
 }

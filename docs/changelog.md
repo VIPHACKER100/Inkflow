@@ -6,6 +6,11 @@
 
 All notable changes to Inkflow are documented in this file.
 
+## [1.6.12] — 2026-09-05
+
+### 🐛 Fixed
+- **Margin Labels Touching The Red Rule**: Q/Ans labels right-aligned at `x = margin − 14` sat exactly on the inner red margin line. They now right-align at `x = margin − 24`, leaving ~10px of clear space between the label and both red rules (and staying inside the 0–62px margin-note strip).
+
 ## [1.6.11] — 2026-09-05
 
 ### ✨ Changed
