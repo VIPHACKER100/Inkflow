@@ -418,15 +418,16 @@ function handleLineClick(e, targetElement, canvas) {
   const alignOff = typeof getAlignmentOffset === 'function' ? getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight) : 0;
 
   let topPadding = 0;
+  const isCornell = S.noteLayout === 'cornell';
+  const isTwoColumn = S.noteLayout === 'twocolumn';
+  const firstLineBaseline = (isCornell || isTwoColumn)
+    ? (S.margin + S.fontSize + lineSpacingPx + alignOff)
+    : (S.margin + lineSpacingPx * 2 + alignOff);
+
   if (targetElement.classList.contains('margin-text-overlay')) {
-    const marginFirstLineBaseline = S.margin + lineSpacingPx + alignOff;
-    topPadding = Math.max(0, marginFirstLineBaseline - S.fontSize * 0.82);
+    const marginFontSize = Math.max(11, Math.min(S.fontSize, 16));
+    topPadding = Math.max(0, firstLineBaseline - marginFontSize * 0.82);
   } else {
-    const isCornell = S.noteLayout === 'cornell';
-    const isTwoColumn = S.noteLayout === 'twocolumn';
-    const firstLineBaseline = (isCornell || isTwoColumn)
-      ? (S.margin + S.fontSize + lineSpacingPx + alignOff)
-      : (S.margin + lineSpacingPx * 2 + alignOff);
     topPadding = Math.max(0, firstLineBaseline - S.fontSize * 0.82);
   }
 
@@ -722,7 +723,9 @@ function drawMarginTextOnCanvas(ctx, pageNum) {
           currentYIdx++;
         }
 
-        const y = S.margin + (currentYIdx + 1) * lineH + alignOff;
+        const isTwoColumn = S.noteLayout === 'twocolumn';
+        const marginFirstLineOffset = (isCornell || isTwoColumn) ? (S.margin + S.fontSize + lineH) : (S.margin + 2 * lineH);
+        const y = marginFirstLineOffset + currentYIdx * lineH + alignOff;
 
         ctx.save();
         ctx.translate(x, y + v.baselineOff);
@@ -877,10 +880,11 @@ function updateEditorStyles(editor, canvas) {
   if (pageId) {
     const marginText = document.getElementById('margin-' + pageId);
     if (marginText) {
-      const marginFirstLineBaseline = S.margin + lineSpacingPx + alignOff;
-      const marginTopPadding = Math.max(0, marginFirstLineBaseline - S.fontSize * 0.82);
-      const marginWidth = isCornell ? 220 : (S.margin - 18);
       const marginFontSize = Math.max(11, Math.min(S.fontSize, 16));
+      const marginFirstLineBaseline = (isCornell || isTwoColumn)
+        ? (S.margin + S.fontSize + lineSpacingPx + alignOff)
+        : (S.margin + lineSpacingPx * 2 + alignOff);
+      const marginTopPadding = Math.max(0, marginFirstLineBaseline - marginFontSize * 0.82);
 
       marginText.style.fontFamily = getFontStack(containsDevanagari(marginText.innerText));
       marginText.style.fontSize = (marginFontSize * scale) + 'px';

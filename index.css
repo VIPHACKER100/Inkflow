@@ -666,6 +666,7 @@ html.dark .export-toast--error   { color: #f07070; }
   gap: 24px;
   position: relative;
   z-index: 1;
+  padding-bottom: 90px;
 }
 
 .page-wrapper {
