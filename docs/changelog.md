@@ -6,6 +6,36 @@
 
 All notable changes to Inkflow are documented in this file.
 
+## [1.6.18] — 2026-09-05
+
+### 🐛 Fixed
+- **Clean Notes: Numbered Lines Fused With The Following Text**: "1. Cardinality Constraint" opened a paragraph that the next line ("It specifies the number of entities …") merged into, rendering "1. Cardinality Constraint It specifies …" as one run-on line. Numbered lines are now self-contained blocks — the line after them always starts a fresh paragraph.
+
+## [1.6.17] — 2026-09-05
+
+### 🐛 Fixed
+- **Margin Labels Vertically Misaligned**: Labels were drawn with their baseline 0.35× below the line's character position, putting their ink center ~10px below the text they annotate (measured on canvas). The label baseline is now raised to `anchorY − 0.15 × fontSize`, optically centering the label on its line — verified by pixel measurement (Δ ≈ 0).
+
+## [1.6.16] — 2026-09-05
+
+### ✨ Changed
+- **One Empty Line After Every Answer (Clean Notes)**: The clean-style engine dropped all source blank lines, so an answer ran straight into the next question. `layoutTextCleanStandard` now inserts one empty row before each question block (except at the top of a page), with the row mirrored into `pageTexts` so the editor overlay stays pixel-aligned with the canvas. The Standard layout already renders source blank lines and is unchanged.
+
+## [1.6.15] — 2026-09-05
+
+### 🎨 Changed
+- **Ans Label Aligned With The Answer Content**: The margin **Ans** label sat next to the hidden `Answer:` row, one line above the actual answer text. It now shifts down one line so it aligns with the first line of the answer content.
+
+## [1.6.14] — 2026-09-05
+
+### 🐛 Fixed
+- **Clean Notes Questions Lost Their Trailing "?"**: The numbered-question capture group excluded the final `?`, so question headings rendered without it and the margin **Q** label (which requires the trailing `?` to distinguish questions from numbered sub-points) never matched. The `?` is now part of the captured text.
+
+## [1.6.13] — 2026-09-05
+
+### 🐛 Fixed
+- **Clean Notes Style Mangled Q&A Structure**: `parseStructuredContent()` merged consecutive non-empty lines into one paragraph, fusing bare `Answer:` lines onto the question line ("…ER model? Answer:") — which also broke the margin **Q** labels, since the merged line no longer matched the question pattern. It also only recognized `Q`-prefixed questions, so `1. …?` numbered questions rendered as plain merged paragraphs. Now: numbered lines ending with `?` become proper bold question blocks that keep their original number style (`3.` stays `3.`, `Q3.` stays `Q3.`), bare `Answer:` lines become their own block (hidden on canvas, represented by the margin **Ans** label, still editable in the textarea/editors), and other numbered lines start a fresh paragraph instead of fusing with preceding text.
+
 ## [1.6.12] — 2026-09-05
 
 ### 🐛 Fixed

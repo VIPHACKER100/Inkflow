@@ -105,7 +105,7 @@ Configure provider (OpenRouter / Anthropic / Ollama), model, and API key in the 
 
 ## Margin Labels
 
-When **Question & answer numbers in left margin** is checked (Page Layout section, on by default), the render post-pass `drawMarginQuestionLabels()` draws **Q1…Qn** beside numbered question lines and **Ans** beside bare `Answer:` lines, right-aligned in the left margin. A line containing only `Answer:` is hidden on the canvas — the margin label carries the meaning — while the word remains in the textarea and page editors. Toggle it to re-render instantly; the choice persists with your state.
+When **Question & answer numbers in left margin** is checked (Page Layout section, on by default), the render post-pass `drawMarginQuestionLabels()` draws **Q1…Qn** beside numbered question lines and **Ans** beside bare `Answer:` lines, right-aligned in the left margin with clear space before the red rules. A line containing only `Answer:` is hidden on the canvas — the margin label carries the meaning — while the word remains in the textarea and page editors. The **Ans** label anchors one line down, aligned with the first line of the answer content, and both label types are optically centered on their line's handwriting. Toggle it to re-render instantly; the choice persists with your state.
 
 ---
 

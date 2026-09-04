@@ -1760,14 +1760,21 @@ function drawMarginQuestionLabels(queue, onlyPageIdx = null) {
     if (!canvas) continue;
     const ctx = canvas.getContext('2d');
     const label = qMatch ? 'Q' + qMatch[1] : 'Ans';
+    // "Ans" sits one line down: its own row (the hidden "Answer:" slot) is
+    // blank, so the label aligns with the first line of the answer content
+    const anchorY = qMatch
+      ? items[0].y
+      : items[0].y + S.fontSize * S.lineHeight;
+    // Optical centering: a text line's ink center sits slightly ABOVE its
+    // baseline, so the label baseline is raised a touch (−0.15 × font size)
     const labelFont = Math.max(13, Math.round(S.fontSize * 0.78));
     ctx.save();
     ctx.font = `bold ${labelFont}px ${items[0].fontStack || S.font}`;
     ctx.fillStyle = S.inkColor;
     ctx.globalAlpha = 0.95;
     ctx.textAlign = 'right';
-            // Keep clear of both red margin rules (x = margin−10 and margin−14)
-            ctx.fillText(label, S.margin - 24, items[0].y + S.fontSize * 0.35);
+    // Keep clear of both red margin rules (x = margin−10 and margin−14)
+    ctx.fillText(label, S.margin - 24, anchorY - S.fontSize * 0.15);
     ctx.restore();
   }
 }
@@ -2411,7 +2418,7 @@ function parseStructuredContent(text) {
       continue;
     }
 
-    // 4. Check for questions
+    // 4. Check for questions: "Q3. text" style
     const questionMatch = trimmed.match(/^Q(\d+)?[\.:\-\s]+(.*)/i);
     if (questionMatch) {
       commitParagraph();
@@ -2421,7 +2428,34 @@ function parseStructuredContent(text) {
       if (explicitNum) {
         questionCounter = Math.max(questionCounter, num + 1);
       }
-      blocks.push({ type: 'question', text: content, questionNum: num });
+      blocks.push({ type: 'question', text: content, questionNum: num, numStyle: 'Q' });
+      continue;
+    }
+
+    // 4b. Numbered questions: "3. What are the two types … ?" (ends with '?')
+    const numberedQuestionMatch = trimmed.match(/^(\d+)[.):]\s+(.+\?)\s*$/);
+    if (numberedQuestionMatch) {
+      commitParagraph();
+      const num = parseInt(numberedQuestionMatch[1], 10);
+      questionCounter = Math.max(questionCounter, num + 1);
+      blocks.push({ type: 'question', text: numberedQuestionMatch[2].trim(), questionNum: num, numStyle: 'digit' });
+      continue;
+    }
+
+    // 4c. Bare "Answer:" marker lines become their own block (hidden on canvas,
+    // represented by the margin "Ans" label; editors keep the word)
+    if (/^answer\s*:?$/i.test(trimmed)) {
+      commitParagraph();
+      blocks.push({ type: 'paragraph', text: 'Answer:' });
+      continue;
+    }
+
+    // 4d. Other numbered lines are self-contained blocks — the following
+    // line starts a fresh paragraph instead of fusing into them
+    // ("1. Cardinality Constraint" stays separate from "It specifies …")
+    if (/^\d+[.):]\s+\S/.test(trimmed)) {
+      commitParagraph();
+      blocks.push({ type: 'paragraph', text: trimmed });
       continue;
     }
 
@@ -2460,6 +2494,20 @@ function layoutTextCleanStandard(cleanText, S, PAGE_W, PAGE_H, ctx) {
 
   for (let bi = 0; bi < blocks.length; bi++) {
     const block = blocks[bi];
+
+    // One empty line of breathing room after a finished answer — inserted
+    // before each new question block (except at the top of a page). The row
+    // is also appended to pageTexts so the editor overlay stays aligned.
+    if (block.type === 'question' && y > margin + gridLineH * 2) {
+      y += gridLineH;
+      currentPageText += '\n';
+      if (y + gridLineH > PAGE_H - margin) {
+        pageTexts.push(currentPageText);
+        currentPageText = '';
+        pageIdx++;
+        y = margin + gridLineH * 2;
+      }
+    }
 
     // Determine block style
     let blockFontSize = S.fontSize;
@@ -2520,7 +2568,7 @@ function layoutTextCleanStandard(cleanText, S, PAGE_W, PAGE_H, ctx) {
     // If it's a question block, let's prepend the question number if not already present
     let textToLayout = block.text;
     if (block.type === 'question') {
-      const numPrefix = `Q${block.questionNum}. `;
+      const numPrefix = block.numStyle === 'digit' ? `${block.questionNum}. ` : `Q${block.questionNum}. `;
       if (!textToLayout.startsWith(numPrefix) && !/^\s*Q\d+/i.test(textToLayout)) {
         textToLayout = numPrefix + textToLayout;
       }

@@ -51,12 +51,13 @@ Complete reference for all user-configurable controls in Inkflow.
 | **Two-Column Grid** | Splits the page into two equal-width columns. Text fills the left column first, then the right column, before breaking to the next page. | Standard text |
 | **Cornell Study Notes** | Divides the page into "Cues / Questions" (left column), "Main Notes" (right column), and "Summary" (bottom footer). | Prefix a line with `? ` or `cue:` → Cues column.<br>Prefix a line with `== ` or `summary:` → Summary area.<br>Other lines flow into Main Notes. |
 
-> **Clean style** additionally parses structured content: `#` headings, `##` subheadings, `-` / `*` bullets (nested levels), and `Q1.` / `Q.` auto-numbered questions.
+> **Clean style** additionally parses structured content: `#` headings, `##` subheadings, `-` / `*` bullets (nested levels), `Q1.` / `Q.` auto-numbered questions **and numbered questions ending with `?`** (e.g. `3. What are … ?` — rendered bold, keeping their original number style), and bare `Answer:` lines (own block; hidden on canvas, represented by the margin **Ans** label). One empty line is also rendered after every finished answer, before the next question.
 
 ### Margin Labels (Standard layout, v1.6.8+)
 
-The **Question & answer numbers in left margin** checkbox (below the layout selector) draws **Q1…Qn** next to numbered question lines and **Ans** next to bare `Answer:` lines, right-aligned against the red margin rule in the current ink color.
+The **Question & answer numbers in left margin** checkbox (below the layout selector) draws **Q1…Qn** next to numbered question lines and **Ans** next to bare `Answer:` lines, right-aligned in the left margin with clear space before the red margin rules, in the current ink color.
 
+- The **Ans** label sits one line down from the hidden `Answer:` row, aligned with the first line of the answer content; both label types are optically centered on their line's handwriting.
 - When enabled, a line containing only `Answer:` is *not* drawn on the page — the margin label carries the meaning — while the word stays visible and editable in the textarea and the per-page editors.
 - The setting is saved with your state and per-note settings, included in Reset Defaults, and honored by exports and print (labels are drawn on the canvas).
 

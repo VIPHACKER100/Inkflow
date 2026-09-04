@@ -84,7 +84,7 @@ return `"${S.font}", "Noto Sans Devanagari", "Hind", sans-serif`;
 Returns the vertical baseline offset for the text alignment control relative to notebook line baselines: `bottom` ("Lower") returns `0` (text baseline sits directly on the line), `middle` ("Middle") returns `-(lineH * 0.32)` (text centered vertically between lines), and `top` ("Upper") returns `-(lineH * 0.62)` (text touches the upper line). Integrated into all engines including `layoutTextCleanStandard`.
 
 ### `parseStructuredContent(text)`
-Used by the Clean layout engine. Splits text into blocks: `#` headings, `##` subheadings, `-`/`*` bullets (two indent levels), `Q1.`/`Q.` questions (auto-numbered), and paragraphs. Blocks get proportional font sizes, spacing, and vertical text alignment (`getAlignmentOffset`).
+Used by the Clean layout engine. Splits text into blocks: `#` headings, `##` subheadings, `-`/`*` bullets (two indent levels), `Q1.`/`Q.` questions (auto-numbered), numbered questions ending with `?` (keep their original number style), bare `Answer:` marker paragraphs, and paragraphs (consecutive plain lines merge; numbered lines always start a fresh block). Blocks get proportional font sizes, spacing, and vertical text alignment (`getAlignmentOffset`); one empty row is laid out after every finished answer (before the next question).
 
 ---
 

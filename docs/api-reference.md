@@ -40,7 +40,7 @@ Computes Cornell Study Notes coordinates. Lines prefixed `? ` / `cue:` → cues 
 - **Returns**: `{ queue, pageTexts, pageCount }`
 
 ### `layoutTextCleanStandard(cleanText, S, PAGE_W, PAGE_H, ctx)`
-Structured-content layout for `clean` paper + Standard layout. Parses `#`/`##` headings, bullets, and questions via `parseStructuredContent()`, with proportional font sizes, block spacing, and vertical text alignment offsets (`getAlignmentOffset`).
+Structured-content layout for `clean` paper + Standard layout. Parses `#`/`##` headings, bullets, and questions via `parseStructuredContent()`, with proportional font sizes, block spacing, and vertical text alignment offsets (`getAlignmentOffset`). Since v1.6.16, one empty row is inserted before each question block (except at page top) so a finished answer is followed by breathing room; the row is mirrored into `pageTexts` to keep the editor overlay aligned.
 - **Returns**: `{ queue, pageTexts, pageCount }`
 
 ### `renderText(text)`
@@ -108,7 +108,7 @@ Extracts stickies, callouts, highlights, and flashcards from raw text.
 - **Guard (v1.6.4+)**: When the input already contains `\uFFF0`/`\uFFF1` placeholders (i.e. it was pre-processed), the parser returns immediately without resetting the parsed arrays — `layoutText()` re-invokes this parser internally, and a second pass would wipe the first pass's entities.
 
 ### `parseStructuredContent(text)`
-Splits text into blocks: `heading`, `subheading`, `bullet` (levels 1/2), `question` (auto-numbered), and `paragraph`.
+Splits text into blocks: `heading`, `subheading`, `bullet` (levels 1/2), `question` (from `Q1.`/`Q.` lines, or numbered lines ending with `?` — keeping their original number style), `paragraph`, and standalone `Answer:` marker paragraphs. Consecutive plain lines merge into one paragraph, but `Answer:` lines and other numbered lines always start a new block.
 
 ### `splitRawTextIntoPages(rawText, cleanPageTexts)`
 Maps cleaned per-page text back to raw (un-sanitized) page slices.
@@ -128,7 +128,7 @@ Groups queue items into visual lines (clusters per page, split when the y gap ex
 Returns a `Set` of queue items belonging to lines whose text is just `Answer:` (standard layout). Those items are skipped by canvas drawing so the margin **Ans** label carries the meaning, while the word remains visible in the editors.
 
 ### `drawMarginQuestionLabels(queue, onlyPageIdx)`
-Post-pass that draws **Q1…Qn** labels next to numbered question lines (ending with `?`) and **Ans** labels next to bare `Answer:` lines, right-aligned in the left margin. Standard layout only; respects `S.showMarginLabels`.
+Post-pass that draws **Q1…Qn** labels next to numbered question lines (ending with `?`) and **Ans** labels next to bare `Answer:` lines, right-aligned in the left margin (clear of both red rules). The **Ans** label anchors one line down, aligned with the first line of the answer content, and labels are optically centered on their line's handwriting (`baseline − 0.15 × fontSize`). Standard layout only; respects `S.showMarginLabels`.
 - **Parameters**: `queue` (Array), `onlyPageIdx` (Integer or `null` for all pages — used by `redrawPageCanvas()` to avoid stamping other pages)
 
 ### `drawWrappedText(ctx, text, x, y, maxWidth, lineHeight, maxLines)`
