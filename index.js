@@ -445,7 +445,7 @@ function handleLineClick(e, targetElement, canvas) {
   }
 
   if (textChanged) {
-    targetElement.innerText = lines.join('\n');
+    targetElement.textContent = lines.join('\n');
     if (targetElement.classList.contains('page-editor')) {
       const globalText = getGlobalTextFromEditors();
       S.text = globalText;
@@ -610,7 +610,7 @@ function createPage(pageNum) {
   marginText.contentEditable = 'true';
   marginText.setAttribute('aria-label', 'Margin notes for Page ' + pageNum);
   marginText.setAttribute('placeholder', '📝');
-  marginText.innerText = (S.marginNotes && S.marginNotes[pageNum]) ? S.marginNotes[pageNum] : '';
+  marginText.textContent = (S.marginNotes && S.marginNotes[pageNum]) ? S.marginNotes[pageNum] : '';
   marginText.style.fontFamily = getFontStack(containsDevanagari(marginText.innerText));
 
   // Focus: show editable overlay in inkColor; canvas keeps main text visible
@@ -915,14 +915,12 @@ function updateEditorStyles(editor, canvas) {
 
 function getGlobalTextFromEditors() {
   const editors = document.querySelectorAll('.page-editor');
-  const canvases = document.querySelectorAll('#page-container canvas');
   const parts = [];
-  editors.forEach((editor, i) => {
-    // Prefer the authoritative page text stored on the canvas during render:
-    // reading editor.innerText multiplies newlines (one per block boundary),
-    // inflating blank lines every time editor text flows back into S.text.
-    const stored = canvases[i]?.dataset.text;
-    let t = (stored !== undefined && stored !== '') ? stored : editor.innerText;
+  editors.forEach((editor) => {
+    // Editors are written via textContent and rendered with pre-wrap, so
+    // innerText round-trips 1:1 — reading it live keeps in-flight user edits
+    // (typing, deletions) in sync instead of reverting to the last render.
+    let t = editor.innerText;
     if (t.endsWith('\n')) {
       t = t.slice(0, -1);
     }
@@ -1410,12 +1408,12 @@ function clearText() {
   drawPaperBackground(canvas.getContext('2d'), S.paperStyle, 1);
   const editor = document.getElementById('editor-1');
   if (editor) {
-    editor.innerText = '';
+    editor.textContent = '';
     updateEditorStyles(editor, canvas);
   }
   const marginText = document.getElementById('margin-1');
   if (marginText) {
-    marginText.innerText = '';
+    marginText.textContent = '';
   }
   autosave();
 }
@@ -2927,7 +2925,7 @@ function renderText(text) {
     drawPaperBackground(canvas.getContext('2d'), S.paperStyle, 1);
     const editor = document.getElementById('editor-1');
     if (editor) {
-      editor.innerText = '';
+      editor.textContent = '';
       updateEditorStyles(editor, canvas);
     }
     return;
@@ -3034,7 +3032,7 @@ function renderText(text) {
     const editor = document.getElementById('editor-' + (idx + 1));
     if (editor) {
       if (document.activeElement !== editor) {
-        editor.innerText = pageTexts[idx] || '';
+        editor.textContent = pageTexts[idx] || '';
       }
       c.dataset.text = pageTexts[idx] || '';
       updateEditorStyles(editor, c);

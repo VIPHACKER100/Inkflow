@@ -1,6 +1,6 @@
 {
   "name": "inkflow",
-  "version": "1.6.18",
+  "version": "1.6.19",
   "description": "AI Handwritten Notes Generator",
   "main": "index.js",
   "directories": {

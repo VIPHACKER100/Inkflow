@@ -6,6 +6,11 @@
 
 All notable changes to Inkflow are documented in this file.
 
+## [1.6.19] — 2026-09-05
+
+### 🐛 Fixed
+- **Editing In The Page Editor Discarded Or Corrupted The Deletion/Typing Sync**: `getGlobalTextFromEditors()` read the canvas `dataset.text` snapshot, which only updates during a render — so real edits made in the page editors (Main Editor Mode) were thrown away, and the sidebar textarea could even *grow* while the user deleted text (a stale newline turning into a space). Editor content is now written via `textContent` (deterministic — no `<br>` conversion) with the existing `pre-wrap` CSS making `innerText` round-trip 1:1, and the sync reads the **live** editor text again. Deleting or typing in a page editor now propagates exactly to the sidebar textarea, canvas redraw, and autosave.
+
 ## [1.6.18] — 2026-09-05
 
 ### 🐛 Fixed
