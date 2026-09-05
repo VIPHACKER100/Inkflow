@@ -149,6 +149,10 @@ The viewport auto-scrolls to keep the pen cursor visible during animation.
 
 ## Export Options
 
+| Control | Description |
+| :--- | :--- |
+| **PDF Output Size** | Preset for the PDF export: **Compact** (1× render, JPEG 75% — smallest file, good for sharing), **Standard** (2× render, JPEG 92% — balanced, default), **High** (2× render, lossless PNG — print/archive, largest file). Persisted per browser. |
+
 | Format | Quality | Use Case |
 | :--- | :--- | :--- |
 | **PNG** | Lossless, 2× upscaled (~150 DPI) | Digital sharing, presentations |

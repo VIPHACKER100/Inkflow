@@ -3986,6 +3986,13 @@ async function exportImage(format) {
   }
 }
 
+/* PDF output presets — selected via the "PDF Output Size" dropdown */
+const PDF_SIZE_PRESETS = {
+  compact:  { scale: 1, format: 'JPEG', quality: 0.75, compress: true,  tag: 'FAST', label: 'Compact' },
+  standard: { scale: 2, format: 'JPEG', quality: 0.92, compress: true,  tag: 'FAST', label: 'Standard' },
+  high:     { scale: 2, format: 'PNG',  quality: 1.0,  compress: false, tag: 'NONE', label: 'High (lossless)' }
+};
+
 async function exportPDF() {
   if (!pages || pages.length === 0) {
     showExportToast('Nothing to export — add some text first.', 'warn');
@@ -4004,29 +4011,29 @@ async function exportPDF() {
 
   try {
     const { jsPDF } = window.jspdf;
-    // Use high-quality PNG (lossless) embedded in the PDF with no re-compression
-    // for the sharpest possible output. Pages are upscaled 2× before encoding.
-    const PDF_SCALE = 2;
+    const presetId = document.getElementById('pdf-size-select')?.value || 'standard';
+    const preset = PDF_SIZE_PRESETS[presetId] || PDF_SIZE_PRESETS.standard;
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
       format: 'a4',
-      compress: false, // avoid double-compression on top of PNG
+      compress: preset.compress
     });
 
     for (let i = 0; i < pages.length; i++) {
-      showExportToast(`Building PDF (Page ${i + 1}/${pages.length})…`, 'info');
+      showExportToast(`Building ${preset.label} PDF (Page ${i + 1}/${pages.length})…`, 'info');
       await new Promise(r => setTimeout(r, 60));
       if (i > 0) doc.addPage();
-      const hq = _upscaleCanvas(pages[i], PDF_SCALE);
-      const imgData = hq.toDataURL('image/png', 1.0);
-      // 'NONE' compression preserves pixel-perfect quality at the cost of a
-      // slightly larger file, which is ideal for print/archive use.
-      doc.addImage(imgData, 'PNG', 0, 0, 210, 297, undefined, 'NONE');
+      const hq = _upscaleCanvas(pages[i], preset.scale);
+      const mime = preset.format === 'PNG' ? 'image/png' : 'image/jpeg';
+      const imgData = hq.toDataURL(mime, preset.quality);
+      // 'NONE' preserves pixel-perfect quality (High preset); JPEG presets
+      // embed pre-compressed JPEG data and skip extra PDF-level compression.
+      doc.addImage(imgData, preset.format, 0, 0, 210, 297, undefined, preset.tag);
     }
 
     doc.save('inkflow-notes.pdf');
-    showExportToast('✓ PDF saved!', 'success');
+    showExportToast(`✓ PDF saved (${preset.label})!`, 'success');
   } catch (e) {
     showExportToast('PDF export failed: ' + e.message, 'error');
     console.error('[Inkflow] exportPDF error:', e);
@@ -4566,6 +4573,11 @@ function bindUIActions() {
   /* Export */
   document.querySelectorAll('[data-export]').forEach((btn) => {
     btn.addEventListener('click', () => exportImage(btn.dataset.export));
+  });
+  const pdfSizeSelect = $('pdf-size-select');
+  pdfSizeSelect.value = localStorage.getItem('inkflow-pdf-size') || 'standard';
+  pdfSizeSelect.addEventListener('change', (e) => {
+    localStorage.setItem('inkflow-pdf-size', e.target.value);
   });
   $('btn-export-pdf').addEventListener('click', () => exportPDF());
   $('btn-export-svg').addEventListener('click', () => exportSVG());

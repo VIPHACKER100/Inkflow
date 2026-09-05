@@ -6,6 +6,11 @@
 
 All notable changes to Inkflow are documented in this file.
 
+## [1.6.20] — 2026-09-05
+
+### ✨ Added
+- **PDF Output Size Control**: New "PDF Output Size" dropdown in the Export section with three presets — **Compact** (1×, JPEG 75%, smallest file), **Standard** (2×, JPEG 92%, balanced, the previous default was lossless 2× PNG) and **High** (2×, lossless PNG — the old behavior, ideal for print/archive). The choice persists per browser via `localStorage` and is shown in the build toast.
+
 ## [1.6.19] — 2026-09-05
 
 ### 🐛 Fixed

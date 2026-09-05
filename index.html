@@ -385,6 +385,12 @@ Try pasting a paragraph of lecture notes!"></textarea>
           <span class="sb-arrow">▾</span>
         </div>
         <div class="sb-body">
+          <div class="sb-label">PDF Output Size</div>
+          <select id="pdf-size-select" title="Controls PDF file size and quality">
+            <option value="compact">Compact — smallest file (1×)</option>
+            <option value="standard" selected>Standard — balanced (2×)</option>
+            <option value="high">High — print quality, lossless (2×)</option>
+          </select>
           <div class="export-grid">
             <!-- Phase 8.1 — PNG -->
             <button class="btn" data-export="png" aria-label="Export as PNG image">🖼 PNG</button>
@@ -680,7 +686,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
   <script defer src="/_vercel/insights/script.js"></script>
 
   <!-- Custom Script -->
-  <script src="index.js?v=1.6.19"></script>
+  <script src="index.js?v=1.6.20"></script>
 
   <!-- Phase 1 PWA — Service Worker Registration -->
   <script>
