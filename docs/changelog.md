@@ -6,6 +6,11 @@
 
 All notable changes to Inkflow are documented in this file.
 
+## [1.6.21] — 2026-09-05
+
+### 🐛 Fixed
+- **Editing In A Page Editor Consumed [sticky]/[callout] Markers**: The editors render sticky/callout blocks as invisible placeholder characters (`\uFFF0`/`\uFFF1`), and the editor→textarea sync wrote those placeholders back — permanently replacing the marker syntax in the source text (Auto-Fit's sync had the same effect). `getGlobalTextFromEditors()` now re-materializes the original `[sticky:color] … [sticky]` / `[callout:type] … [callout]` syntax from `parsedStickies`/`parsedCallouts` (placeholders map sequentially in document order), so markers survive editor edits and Auto-Fit round-trips.
+
 ## [1.6.20] — 2026-09-05
 
 ### ✨ Added

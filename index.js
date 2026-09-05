@@ -926,9 +926,24 @@ function getGlobalTextFromEditors() {
     }
     parts.push(t);
   });
+  let joined = parts.join('\n');
+  // Editors render [sticky]/[callout] blocks as invisible placeholder chars
+  // (\uFFF0/\uFFF1) — re-materialize the original marker syntax so editing in
+  // a page editor (or Auto-Fit syncing editor text back) doesn't consume the
+  // markers from the source. Placeholders map sequentially onto
+  // parsedStickies/parsedCallouts, which the last parse populated in order.
+  let stickyI = 0, calloutI = 0;
+  joined = joined.replace(/[\uFFF0\uFFF1]/g, (ph) => {
+    if (ph === '\uFFF0') {
+      const s = parsedStickies[stickyI++];
+      return s ? `[sticky:${s.color}] ${s.text} [sticky]` : ph;
+    }
+    const c = parsedCallouts[calloutI++];
+    return c ? `[callout:${c.type}] ${c.text} [callout]` : ph;
+  });
   // Pages must be joined with a newline, otherwise the last word of one
   // page fuses with the first word of the next when syncing editor text.
-  return parts.join('\n');
+  return joined;
 }
 
 window.addEventListener('resize', () => {

@@ -97,7 +97,7 @@ Inkflow/
 | **Study Tools** | Study Mode, Flashcards (auto-extracted), Voice-to-Notes, Notebooks & Folders, margin Q/Ans labels |
 | **AI & Offline** | Smart Arrange (offline, no key), Summarize, Grammar Fix, Lecture→Notes, Assignment Generator (OpenRouter/Anthropic/Ollama) |
 | **Custom Fonts** | Upload `.ttf`/`.otf`, or build your own with the HandFonted Studio |
-| **Export** | PNG, JPG, PDF (lossless), SVG, Clipboard, Print — all 2× upscaled |
+| **Export** | PNG, JPG, PDF (3 size presets: Compact / Standard / High), SVG, Clipboard, Print — all 2× upscaled |
 
 ---
 

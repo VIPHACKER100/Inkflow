@@ -49,6 +49,7 @@ Inkflow uses two browser storage backends:
 | `localStorage` | `inkflow-state` | Serialized settings object `S` (minus runtime fields). |
 | `localStorage` | `inkflow-dark` | `"1"` / `"0"` dark-mode flag. |
 | `localStorage` | `inkflow-fonts` | Array of uploaded custom font family names. |
+| `localStorage` | `inkflow-pdf-size` | Selected PDF Output Size preset (`compact` / `standard` / `high`, v1.6.20+). |
 | IndexedDB | `InkflowDB` → `draftedGlyphs` | Per-character data-URL images for the custom font (keys are characters). |
 | IndexedDB | `InkflowDB` → `notebooks` | Notebook records keyed by `id` (title, content, folder, tags, timestamps, per-note settings). |
 

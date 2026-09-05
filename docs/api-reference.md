@@ -156,7 +156,7 @@ Calculates the target line index `Math.floor((clickYInCanvas - topPadding) / lin
 Positions the contentEditable caret at the target line index using DOM `Selection` and `Range` APIs.
 
 ### `getGlobalTextFromEditors()`
-Concatenates all `.page-editor` `innerText` values. Returns String.
+Concatenates all `.page-editor` `innerText` values and returns String. Editors are written via `textContent` and rendered with `pre-wrap`, so the read is a 1:1 lossless round-trip (v1.6.19) — live edits in the page editors (typing, deletions) propagate exactly to `S.text`, the sidebar textarea, and autosave.
 
 ### `clearPages()`
 Removes all canvas pages from the DOM and resets the `pages[]` array.
@@ -240,7 +240,12 @@ Renders a canvas onto a `scale`× higher-resolution off-screen canvas with high-
 Exports pages as PNG or JPG, 2× upscaled, via `canvas.toBlob()` and Blob URLs. Multi-page documents download one file per page.
 
 ### `exportPDF()`
-Compiles all pages into a multi-page A4 PDF, embedding 2×-upscaled lossless PNGs with `NONE` compression. Output: `inkflow-notes.pdf`.
+Compiles all pages into a multi-page A4 PDF via `PDF_SIZE_PRESETS`, selected by the `#pdf-size-select` dropdown (persisted in `localStorage`):
+- **Compact** — 1× render, JPEG 75%, `FAST` — smallest file
+- **Standard** (default) — 2× render, JPEG 92%, `FAST` — balanced
+- **High** — 2× render, lossless PNG, `NONE` — print/archive
+
+Output: `inkflow-notes.pdf`; progress and the chosen preset are shown in toasts.
 
 ### `exportSVG()`
 Generates SVG files wrapping full-resolution PNG images, one file per page.

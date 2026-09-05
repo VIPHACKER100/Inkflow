@@ -4,7 +4,7 @@
 
 # 📤 Export Pipelines
 
-This document describes Inkflow's multi-format export system — 2×-upscaled PNG/JPG image export, SVG vector wrapper, lossless multi-page PDF, clipboard copy, and native print support.
+This document describes Inkflow's multi-format export system — 2×-upscaled PNG/JPG image export, SVG vector wrapper, multi-page PDF with selectable output size, clipboard copy, and native print support.
 
 ---
 
@@ -42,7 +42,7 @@ function _upscaleCanvas(src, scale) {
 }
 ```
 
-The `EXPORT_SCALE` / `PDF_SCALE` factor is **2**, producing ~150 DPI output from the 794×1123 native canvas.
+The image-export `EXPORT_SCALE` factor is **2**, producing ~150 DPI output from the 794×1123 native canvas; the PDF render scale is preset-dependent (see §3).
 
 ---
 
@@ -89,24 +89,33 @@ For multi-page documents: `inkflow-notes-page1.svg`, `inkflow-notes-page2.svg`, 
 
 ## 3. Multi-Page PDF Export
 
-Maps 2×-upscaled lossless PNG pages into jsPDF A4 blocks (210mm × 297mm) with progress toasts:
+Maps upscaled page images into jsPDF A4 blocks (210mm × 297mm) with progress toasts. Since **v1.6.20**, the render scale, image format, and compression come from the **PDF Output Size** dropdown (`#pdf-size-select`, persisted in `localStorage`):
+
+| Preset | Scale | Format / Quality | jsPDF compress | Typical size/page |
+| :--- | :--- | :--- | :--- | :--- |
+| `compact` | 1× | JPEG 0.75 | `FAST` | ~142 KB |
+| `standard` (default) | 2× | JPEG 0.92 | `FAST` | ~465 KB |
+| `high` | 2× | PNG 1.0 (lossless) | `NONE` | ~1.8 MB |
 
 ```javascript
-const PDF_SCALE = 2;
-const doc = new jsPDF({
-  orientation: 'portrait', unit: 'mm', format: 'a4',
-  compress: false, // avoid double-compression on top of PNG
-});
+const PDF_SIZE_PRESETS = {
+  compact:  { scale: 1, format: 'JPEG', quality: 0.75, compress: true,  tag: 'FAST', label: 'Compact' },
+  standard: { scale: 2, format: 'JPEG', quality: 0.92, compress: true,  tag: 'FAST', label: 'Standard' },
+  high:     { scale: 2, format: 'PNG',  quality: 1.0,  compress: false, tag: 'NONE', label: 'High (lossless)' }
+};
+
+const preset = PDF_SIZE_PRESETS[document.getElementById('pdf-size-select').value] || PDF_SIZE_PRESETS.standard;
+const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: preset.compress });
 for (let i = 0; i < pages.length; i++) {
   if (i > 0) doc.addPage();
-  const hq = _upscaleCanvas(pages[i], PDF_SCALE);
-  const imgData = hq.toDataURL('image/png', 1.0);
-  doc.addImage(imgData, 'PNG', 0, 0, 210, 297, undefined, 'NONE');
+  const hq = _upscaleCanvas(pages[i], preset.scale);
+  const mime = preset.format === 'PNG' ? 'image/png' : 'image/jpeg';
+  doc.addImage(hq.toDataURL(mime, preset.quality), preset.format, 0, 0, 210, 297, undefined, preset.tag);
 }
 doc.save('inkflow-notes.pdf');
 ```
 
-> **v1.4.0 Change**: PDFs now embed lossless PNG with `NONE` compression instead of JPEG/`FAST`, giving pixel-perfect print/archive quality at a slightly larger file size.
+> **v1.4.0**: switched to lossless PNG with `NONE` compression for pixel-perfect print quality. **v1.6.20**: made it selectable — the default became **Standard** (2× JPEG 92%, ~4× smaller), with `high` preserving the old lossless behavior.
 
 ---
 

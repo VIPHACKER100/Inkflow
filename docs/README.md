@@ -6,7 +6,7 @@
 
 Welcome to the **Inkflow** documentation hub. This folder contains all technical, design, and operational documentation for the project.
 
-**Current Version**: 1.6.17 — Offline Smart Arrange (no AI key needed), Question & Answer numbers in the left margin (toggleable, optically aligned, with bare "Answer:" lines hidden on canvas in favor of the margin **Ans** label), Clean Notes Q&A structure (numbered questions, `Answer:` blocks, one empty line after every answer), Page-Bottom Space Utilization (baseline-based page breaks), Editor Text Feedback Loop Fix, Safe UI Event Wiring (`bindUIActions`), Version Drift Guard (`npm run check-versions`), CDN Integrity (SRI), PWA Offline Support, Local Ollama AI Integration.
+**Current Version**: 1.6.20 — PDF Output Size presets (Compact / Standard / High, persisted), Lossless Page-Editor Sync (v1.6.19 `textContent` + `pre-wrap` round-trip: edits in the page editors propagate exactly), Clean Notes Q&A structure (numbered question blocks, `Answer:` blocks, one empty line after every answer), Offline Smart Arrange (no AI key needed), Question & Answer numbers in the left margin (toggleable, optically aligned), Page-Bottom Space Utilization (baseline-based page breaks), Safe UI Event Wiring (`bindUIActions`), Version Drift Guard (`npm run check-versions`), CDN Integrity (SRI), PWA Offline Support, Local Ollama AI Integration.
 
 ---
 
