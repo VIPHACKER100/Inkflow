@@ -6,7 +6,7 @@
 
 Welcome to the **Inkflow** documentation hub. This folder contains all technical, design, and operational documentation for the project.
 
-**Current Version**: 1.6.21 — Editor Marker Round-Trip fixes (`[sticky]`/`[callout]` syntax survives page-editor edits), PDF Output Size presets (Compact / Standard / High, persisted), Lossless Page-Editor Sync (v1.6.19 `textContent` + `pre-wrap` round-trip: edits in the page editors propagate exactly), Clean Notes Q&A structure (numbered question blocks, `Answer:` blocks, one empty line after every answer), Offline Smart Arrange (no AI key needed), Question & Answer numbers in the left margin (toggleable, optically aligned), Page-Bottom Space Utilization (baseline-based page breaks), Safe UI Event Wiring (`bindUIActions`), Version Drift Guard (`npm run check-versions`), CDN Integrity (SRI), PWA Offline Support, Local Ollama AI Integration.
+**Current Version**: 1.6.22 — Human Handwriting Realism Engine (seeded `mulberry32` PRNG for 100% deterministic layout & exports, per-glyph jitter with script-aware Devanagari protection, random-walk baseline drift, pen pressure variations, variable letter & word spacing, rare retrace double-strokes and margin compression, toggleable `#realism-slider` and `#rare-imperfections-toggle`), Editor Marker Round-Trip fixes (`[sticky]`/`[callout]` syntax survives page-editor edits), PDF Output Size presets (Compact / Standard / High, persisted), Lossless Page-Editor Sync (`textContent` + `pre-wrap`), Clean Notes Q&A structure, Question & Answer numbers in left margin, Offline Smart Arrange.
 
 ---
 
