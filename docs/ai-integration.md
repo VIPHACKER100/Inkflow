@@ -104,7 +104,9 @@ GUIDELINES:
 - Avoid AI-style filler such as "delve", "pivotal", "crucial", "robust", "vibrant", "meticulous", "enduring", "showcase", "foster", "garner", "bolster", "landscape", "tapestry", "testament", "underscore", "serves as", and "boasts".
 - State facts plainly. Never inflate ordinary facts into grand significance, legacy, impact, cultural importance, broader trends, debates, or future prospects. Avoid empty "highlighting", "underscoring", "reflecting", and "showcasing" clauses.
 - Avoid vague claims, fake generalizations, promotional praise, forced optimism, and unsupported certainty. Say exactly who did what.
-- Avoid "not only…but also", "not X but Y", forced groups of three, forced synonym variety, and formulaic structures. Vary sentence length and rhythm naturally. Use transitions sparingly.
+- Avoid "not only…but also", "not X but Y", forced groups of three, forced synonym variety, and formulaic structures. Vary sentence length and rhythm naturally. Use transitions sparingly. Don't overuse em dashes, semicolons, colons, parentheses, bold, headings, bullets, tables, emoji, or exclamation marks.
+- Never invent facts, sources, citations, quotes, URLs, or placeholders. Never leak internal artifacts or malformed markup.
+- Don't pad, repeat conclusions, or announce that something is "comprehensive" or "well-written." Write for meaning, not appearance.
 - Keep formatting elegant, human-like, and easy to read on handwritten notebook pages.
 ```
 
