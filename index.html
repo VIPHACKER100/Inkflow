@@ -4,6 +4,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!--
+    Defense-in-depth CSP: scripts/styles/fonts are locked to the pinned CDNs,
+    and outbound network calls to the three AI endpoints (+ Vercel Analytics).
+    'unsafe-inline' script is required by the two small bootstrap scripts at
+    the bottom of <body>; 'unsafe-inline' style by the app's runtime styling.
+    Ollama is reachable on any localhost port. NOTE: a REMOTE (non-localhost)
+    Ollama endpoint would be blocked by connect-src — extend it if that is
+    ever needed.
+  -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob:; connect-src 'self' https://openrouter.ai https://api.anthropic.com http://localhost:* http://127.0.0.1:* https://va.vercel-insights.com; object-src 'none'; base-uri 'self'; form-action 'none'" />
   <title>Inkflow — AI Handwritten Notes Generator</title>
 
   <!-- Favicon & PWA Manifest & Theme -->

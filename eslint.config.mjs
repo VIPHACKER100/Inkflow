@@ -39,6 +39,8 @@ const serviceWorkerGlobals = {
 const nodeGlobals = {
   process: 'readonly', console: 'readonly', Buffer: 'readonly',
   __dirname: 'readonly', __filename: 'readonly',
+  URL: 'readonly', URLSearchParams: 'readonly',
+  performance: 'readonly', fetch: 'readonly',
 };
 
 const correctnessRules = {
