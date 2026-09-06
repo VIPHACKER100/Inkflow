@@ -4037,11 +4037,12 @@ function smartArrangeLocal(text) {
     const trimmed = line.replace(/[ \t]+$/, '');
     if (trimmed !== line) { line = trimmed; }
 
-    // 2. Normalize headers (#Title -> # Title, ##Heading -> ## Heading)
-    line = line.replace(/^([#]{1,6})([^\s#])/g, '$1 $2');
+    // 2. Normalize headers (#Title -> # Title, ##   Heading -> ## Heading)
+    line = line.replace(/^(\s*)([#]{1,6})([^\s#])/g, '$1$2 $3');
+    line = line.replace(/^(\s*)([#]{1,6})[ \t]{2,}/g, '$1$2 ');
 
-    // 5. Normalize bullets (*, •, ‣ -> "- ") while preserving leading indent spaces and capitalizing first char
-    const bulletMatch = line.match(/^(\s*)([*•‣]|-(?!\s*-))\s+(.*)$/);
+    // 3. Normalize bullets (*, •, ‣, +, ⁃, ◦, ▪, ▫, –, — -> "- ") while preserving leading indent spaces and capitalizing first char
+    const bulletMatch = line.match(/^(\s*)([*•‣+⁃◦▪▫–—]|-(?!\s*-))\s*(.*)$/);
     if (bulletMatch) {
       const indent = bulletMatch[1];
       const content = bulletMatch[3];
@@ -4049,12 +4050,13 @@ function smartArrangeLocal(text) {
       line = indent + '- ' + capContent;
     }
 
-    // 6. Normalize Q&A flashcards (q: / Q : / q1. / Q1 : -> Q1: or Q:)
-    line = line.replace(/^(\s*)([qQ])\s*(\d+)\s*[:.]\s*/g, '$1Q$3: ');
-    line = line.replace(/^(\s*)([qQ])\s*[:]\s*/g, '$1Q: ');
-    line = line.replace(/^(\s*)([aA])\s*[:]\s*/g, '$1A: ');
+    // 4. Normalize Q&A flashcards (q: / Q : / q1. / Q1 : / question 1: -> Q1: or Q:; a1: / ans 1: -> A1: or A:)
+    line = line.replace(/^(\s*)(question|[qQ])\s*(\d+)\s*[:.]\s*/gi, '$1Q$3: ');
+    line = line.replace(/^(\s*)(question|[qQ])\s*[:]\s*/gi, '$1Q: ');
+    line = line.replace(/^(\s*)(answer|ans|[aA])\s*(\d+)\s*[:.]\s*/gi, '$1A$3: ');
+    line = line.replace(/^(\s*)(answer|ans|[aA])\s*[:]\s*/gi, '$1A: ');
 
-    // 7. Spacing cleanup (punctuation & multiple spaces) — skip fill-in blank lines with underscores
+    // 5. Spacing cleanup (punctuation & multiple spaces) — skip fill-in blank lines with underscores
     if (!isFillIn(line)) {
       // Remove space before punctuation: "hello , world !" -> "hello, world!"
       line = line.replace(/[ \t]+([,.;:!?])/g, '$1');
@@ -4062,22 +4064,27 @@ function smartArrangeLocal(text) {
       line = line.replace(/([,;!])([a-zA-Z])/g, '$1 $2');
       // Add missing space after period when followed by capital letter (excluding URLs/numbers)
       line = line.replace(/([a-z0-9])\.([A-Z][a-z])/g, '$1. $2');
+      // Add missing space after question mark when followed by a letter
+      line = line.replace(/(\?)([a-zA-Z])/g, '$1 $2');
 
-      // Collapse double spaces (preserving underscores)
-      let spaced = line;
+      // Collapse double spaces inside line body while preserving leading line indentation
+      const indentMatch = line.match(/^(\s*)(.*)$/);
+      const indent = indentMatch ? indentMatch[1] : '';
+      const body = indentMatch ? indentMatch[2] : line;
+      let spaced = body;
       let prev;
       do {
         prev = spaced;
         spaced = spaced.replace(/(^|[^_]) {2,}(?=[^_]|$)/g, '$1 ');
       } while (spaced !== prev);
-      line = spaced;
+      line = indent + spaced;
     }
 
-    // 8. Normalize Inkflow tags ([sticky : yellow] -> [sticky:yellow], [callout : info] -> [callout:info])
+    // 6. Normalize Inkflow tags ([sticky : yellow] -> [sticky:yellow], [callout : info] -> [callout:info])
     line = line.replace(/\[\s*(sticky|callout)\s*:\s*([a-zA-Z0-9_-]*)\s*\]/gi, (m, tag, color) => `[${tag.toLowerCase()}${color ? ':' + color.toLowerCase() : ''}]`);
     line = line.replace(/\[\s*(sticky|callout)\s*\]/gi, (m, tag) => `[${tag.toLowerCase()}]`);
 
-    // 9. Normalize highlights (== key == -> ==key==)
+    // 7. Normalize highlights (== key == -> ==key==)
     line = line.replace(/==\s*([^=\n]+?)\s*==/g, '==$1==');
 
     if (line !== orig) fixes++;

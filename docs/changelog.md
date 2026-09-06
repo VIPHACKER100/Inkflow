@@ -17,17 +17,18 @@ All notable changes to Inkflow are documented in this file.
 ### ✨ Enhanced
 
 - **Offline Smart Arrange Upgrade** (`smartArrangeLocal`): Major upgrade to the offline, deterministic text formatting engine. In addition to bullet normalization and spacing cleanup, it now automatically formats:
-  - Markdown headers (`#Title` → `# Title`, `##Heading` → `## Heading`)
+  - Markdown headers (`#Title` → `# Title`, `##   Heading` → `## Heading`)
   - Inkflow study tags (`[sticky : yellow]` → `[sticky:yellow]`, `[callout : info]` → `[callout:info]`)
   - Highlight spacing (`== key ==` → `==key==`)
-  - Bullet capitalization (first character capitalized automatically)
-  - Q&A flashcard labels (`q 1 :` / `q:` → `Q1:`, `a:` → `A:`)
-  - Punctuation spacing (removes space before `,.;:!?` and adds space after `,;!`)
+  - Bullet capitalization & expanded markers (`*`, `•`, `‣`, `+`, `⁃`, `◦`, `▪`, `▫`, `–`, `—` → `- `, with preserved indentation)
+  - Q&A flashcard labels (`q 1 :` / `question 1:` → `Q1:`, `a 1 :` / `ans 1:` → `A1:`)
+  - Punctuation spacing (removes space before `,.;:!?` and adds space after `,;!?`)
+  - Indentation safety (collapses internal double spaces while preserving leading line indentation for code & nested lists)
   - Structural line breaks before headers (`#`/`##`) and Q&A questions (`Q:`/`Q1:`)
 
 ### ✅ Testing
 
-- Smoke test suite expanded: **21 tests, 0 failures** (was 20). Added unit test covering `smartArrangeLocal` header normalization, bullet formatting, tag normalization, Q&A reformatting, and punctuation cleanup.
+- Smoke test suite expanded: **22 tests, 0 failures** (was 20). Added unit tests covering `smartArrangeLocal` header normalization, bullet formatting, tag normalization, Q&A reformatting, indentation preservation, and punctuation cleanup.
 
 ## [1.6.22] — 2026-09-06
 

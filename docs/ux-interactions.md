@@ -97,7 +97,7 @@ Four AI buttons stream results onto the canvas via the `callAI()` provider route
 - 📝 **Generate Assignment** — creates an assignment sheet
 
 A fifth button needs no AI at all:
-- 🪄 **Smart Arrange** — offline deterministic tidy-up (v1.6.7+): normalizes bullets, spacing, blank-line runs and question gaps via `smartArrangeLocal()`; works with no provider and no API key, reporting the number of fixes in a toast.
+- 🪄 **Smart Arrange** — offline deterministic tidy-up (v1.6.7+): normalizes bullets (`*`/`•`/`‣`/`+`/`⁃`/`◦`/`▪`/`▫`/`–`/`—`), Q&A flashcards (`question 1:`/`ans 1:`/`q1:`), punctuation spacing, indentation-safe double-space collapse, blank-line runs, and question gaps via `smartArrangeLocal()`; works with no provider and no API key, reporting the number of fixes in a toast.
 
 Configure provider (OpenRouter / Anthropic / Ollama), model, and API key in the **AI Features** section; a status line (`setAiStatus`) shows progress. The four AI actions route through `callAI()` which dispatches to the correct backend. See [AI Integration](./ai-integration.md).
 

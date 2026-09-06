@@ -420,6 +420,17 @@ test('smartArrangeLocal normalizes headers, bullets, tags, and Q&A formatting', 
   assert.ok(res.text.includes('word, next word.'), 'punctuation spacing must be fixed');
 });
 
+test('smartArrangeLocal preserves indentation and handles expanded bullet/Q&A/header variants', () => {
+  const input = '##   Multi Space Header\n    + plus bullet\n    indented  code  line\nquestion 1: What is DNA?\nans 1: Deoxyribonucleic acid.';
+  const res = smartArrangeLocal(input);
+  assert.ok(res.fixes > 0, 'must report non-zero fixes');
+  assert.ok(res.text.includes('## Multi Space Header'), 'header multi-space normalized');
+  assert.ok(res.text.includes('    - Plus bullet'), 'plus bullet normalized with indent');
+  assert.ok(res.text.includes('    indented code line'), 'leading indentation preserved while internal spaces collapsed');
+  assert.ok(res.text.includes('Q1: What is DNA?'), 'question 1 normalized to Q1');
+  assert.ok(res.text.includes('A1: Deoxyribonucleic acid.'), 'ans 1 normalized to A1');
+});
+
 /* ── Summary ──────────────────────────────────────────────────── */
 
 console.log(`\n${passed} passed, ${failures.length} failed\n`);

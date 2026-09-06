@@ -227,7 +227,7 @@ Dispatches an AI workflow and streams the result onto the canvas.
 - **Note (v1.6.7+)**: `arrange` does **not** call any AI provider — it runs the offline `smartArrangeLocal()` tidy-up and reports the number of fixes via toast and `#ai-status`.
 
 ### `smartArrangeLocal(text)`
-Offline deterministic text tidy-up engine used by Smart Arrange. Normalizes markdown headers (`#Title` → `# Title`), Inkflow study tags (`[sticky : color]` → `[sticky:color]`), highlight markers (`== key ==` → `==key==`), bullet points (`*`/`•`/`‣` → `- ` with capitalized first char), Q&A flashcards (`q 1 :` → `Q1:`), punctuation spacing, double spaces (preserving fill-in underscores), structural line breaks before headers/questions, 3+ blank line collapse, and trailing single newline.
+Offline deterministic text tidy-up engine used by Smart Arrange. Normalizes markdown headers (`#Title` → `# Title`, `##   Heading` → `## Heading`), Inkflow study tags (`[sticky : color]` → `[sticky:color]`), highlight markers (`== key ==` → `==key==`), bullet points (`*`/`•`/`‣`/`+`/`⁃`/`◦`/`▪`/`▫`/`–`/`—` → `- ` with preserved indentation and capitalized first char), Q&A flashcards (`q 1 :` / `question 1:` → `Q1:`, `a 1 :` / `ans 1:` → `A1:`), punctuation spacing (removes space before `,.;:!?` and adds space after `,;!?`), double space collapsing (preserving leading line indentation and fill-in underscores), structural line breaks before headers/questions, 3+ blank line collapse, and trailing single newline.
 - **Parameters**: `text` (String)
 - **Returns**: `{ text, fixes }`
 

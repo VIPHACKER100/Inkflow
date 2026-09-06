@@ -118,13 +118,13 @@ GUIDELINES:
 ```
 Smart Arrange does NOT call any AI provider. It applies the deterministic
 smartArrangeLocal() tidy-up directly in the browser:
-- normalize headers (#Title → # Title, ##Heading → ## Heading)
+- normalize headers (#Title → # Title, ##   Heading → ## Heading)
 - normalize Inkflow study tags ([sticky : yellow] → [sticky:yellow], [callout : info] → [callout:info])
 - normalize highlight spacing (== key == → ==key==)
-- normalize bullet markers (*, •, ‣ → "- ") & capitalize first character
-- reformat Q&A flashcards (q1: / Q 1 : → Q1:, a : → A:)
-- trim trailing whitespace and collapse double spaces (preserving fill-in underscores)
-- fix punctuation spacing (remove space before punctuation, add space after comma/period)
+- normalize bullet markers (*, •, ‣, +, ⁃, ◦, ▪, ▫, –, — → "- ") & capitalize first character while preserving indentation
+- reformat Q&A flashcards (q1: / Q 1 : / question 1: → Q1:, a 1 : / ans 1: → A1:, a: → A:)
+- trim trailing whitespace and collapse double spaces (preserving leading line indentation and fill-in underscores)
+- fix punctuation spacing (remove space before punctuation, add space after comma/semicolon/exclamation/question mark/period)
 - insert structural blank lines before headers (# / ##) and Q&A questions (Q: / Q1:)
 - collapse runs of 3+ blank lines down to one blank line
 - end the document with exactly one newline
