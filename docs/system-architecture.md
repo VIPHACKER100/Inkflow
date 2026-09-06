@@ -10,7 +10,7 @@ This document outlines the **high-level system architecture**, **component layer
 
 ## Architecture Overview
 
-Inkflow is architected as a modular, decoupled, single-file client-side application. It operates entirely within the user's browser, eliminating backend latency and optimizing rendering speeds. All application logic lives in `index.js` (≈5,600 lines), styling in `index.css`, and structure in `index.html`.
+Inkflow is architected as a modular, decoupled, single-file client-side application. It operates entirely within the user's browser, eliminating backend latency and optimizing rendering speeds. All application logic lives in `index.js` (≈7,000 lines), styling in `index.css`, and structure in `index.html`.
 
 ---
 

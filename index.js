@@ -401,13 +401,17 @@ function setCursorAtLine(element, targetLineIndex) {
     try {
       range.selectNodeContents(element);
       range.collapse(false);
-    } catch (err) {}
+    } catch (err) {
+      // Element not in the document yet — leave the range as-is.
+    }
   }
 
   try {
     sel.removeAllRanges();
     sel.addRange(range);
-  } catch (err) {}
+  } catch (err) {
+    // Selection APIs throw on detached/readonly elements; cursor placement is best-effort.
+  }
 }
 
 function handleLineClick(e, targetElement, canvas) {
@@ -1487,7 +1491,7 @@ function parseRichSyntax(rawText) {
   }
 
   // 2. Parse Sticky Notes: [sticky:color] content [sticky]
-  let textWithStickies = rawText.replace(/\[sticky:?(\w*)\](.*?)\[sticky\]/gs, (match, color, content) => {
+  const textWithStickies = rawText.replace(/\[sticky:?(\w*)\](.*?)\[sticky\]/gs, (match, color, content) => {
     parsedStickies.push({
       color: color || 'yellow',
       text: content.trim()
@@ -1496,7 +1500,7 @@ function parseRichSyntax(rawText) {
   });
 
   // 3. Parse Callouts: [callout:type] content [callout]
-  let textWithCallouts = textWithStickies.replace(/\[callout:?(\w*)\](.*?)\[callout\]/gs, (match, type, content) => {
+  const textWithCallouts = textWithStickies.replace(/\[callout:?(\w*)\](.*?)\[callout\]/gs, (match, type, content) => {
     parsedCallouts.push({
       type: type || 'info',
       text: content.trim()
@@ -2016,7 +2020,7 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
 
           const isHighlighted = highlightRanges.some(r => charIndex >= r.start && charIndex < r.end);
 
-          let item = {
+          const item = {
             ch,
             x,
             y: cy,
@@ -2329,7 +2333,7 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
 
           const isHighlighted = highlightRanges.some(r => charIndex >= r.start && charIndex < r.end);
 
-          let item = {
+          const item = {
             ch,
             x,
             y: cy,
@@ -2437,7 +2441,7 @@ function parseStructuredContent(text) {
       commitParagraph();
       const explicitNum = questionMatch[1];
       const content = questionMatch[2].trim();
-      let num = explicitNum ? parseInt(explicitNum, 10) : questionCounter++;
+      const num = explicitNum ? parseInt(explicitNum, 10) : questionCounter++;
       if (explicitNum) {
         questionCounter = Math.max(questionCounter, num + 1);
       }
@@ -2648,7 +2652,7 @@ function layoutTextCleanStandard(cleanText, S, PAGE_W, PAGE_H, ctx) {
           opacity: 1
         };
 
-        let item = {
+        const item = {
           ch,
           x,
           y: y + alignOffset,
@@ -2842,7 +2846,7 @@ function layoutText(text) {
 
           const isHighlighted = highlightRanges.some(r => charIndex >= r.start && charIndex < r.end);
 
-          let item = {
+          const item = {
             ch,
             x,
             y: cy,
@@ -3373,7 +3377,9 @@ async function fetchOpenRouterModels(force = false) {
         try {
           localStorage.setItem('inkflow-cached-openrouter-models', JSON.stringify(fetched));
           localStorage.setItem('inkflow-cached-openrouter-time', Date.now().toString());
-        } catch (e) {}
+        } catch (e) {
+          // localStorage may be full or disabled — the model cache is best-effort only.
+        }
 
         updateModelSyncBadge(`Live (${fetched.length} models)`, false);
 
@@ -4291,8 +4297,12 @@ function autosave() {
   }
   clearTimeout(autosaveTimeout);
   autosaveTimeout = setTimeout(() => {
+    // Single read: the textarea is the live source of truth. Reading S.text
+    // separately for the notebook record would let the two saved copies drift
+    // if any future write path updates one but not the other.
+    const currentText = document.getElementById('text-input').value;
     const state = {
-      text: document.getElementById('text-input').value,
+      text: currentText,
       font: S.font,
       fontSize: S.fontSize,
       lineHeight: S.lineHeight,
@@ -4316,11 +4326,11 @@ function autosave() {
 
     // Save to active notebook in IndexedDB if exists
     if (activeNotebookId) {
-      const titleInput = document.getElementById('text-input').value.split('\n')[0].replace(/[#*?]/g, '').trim().substring(0, 30) || 'Untitled Note';
+      const titleInput = currentText.split('\n')[0].replace(/[#*?]/g, '').trim().substring(0, 30) || 'Untitled Note';
       const notebook = {
         id: activeNotebookId,
         title: titleInput,
-        content: S.text,
+        content: currentText,
         updatedAt: new Date().toISOString(),
         settings: {
           font: S.font,
@@ -4949,7 +4959,7 @@ function resetToDefaults() {
 /* ───────────────────────────────────────────
    ACCESSIBILITY & MODAL FOCUS TRAPPING (WCAG 2.1)
 ─────────────────────────────────────────── */
-let currentModalFocusTrapCleanups = new Map();
+const currentModalFocusTrapCleanups = new Map();
 
 function trapFocusModal(modalElement) {
   if (!modalElement) return;
@@ -5955,7 +5965,7 @@ function simplifyPath(points, tolerance) {
     let dy = p2.y - y;
     
     if (dx !== 0 || dy !== 0) {
-      let t = ((p.x - x) * dx + (p.y - y) * dy) / (dx * dx + dy * dy);
+      const t = ((p.x - x) * dx + (p.y - y) * dy) / (dx * dx + dy * dy);
       if (t > 1) {
         x = p2.x;
         y = p2.y;
@@ -6936,7 +6946,7 @@ function renderNotebooksList() {
     Object.keys(groups).forEach(folder => {
       const folderHeader = document.createElement('div');
       folderHeader.className = 'folder-header';
-      folderHeader.innerHTML = `<i class="fa-solid fa-folder-open" style="margin-right:6px; color:var(--accent);"></i> ${folder}`;
+      folderHeader.innerHTML = `<i class="fa-solid fa-folder-open" style="margin-right:6px; color:var(--accent);"></i> ${escapeHtml(folder)}`;
       container.appendChild(folderHeader);
       
       groups[folder].forEach(note => {
