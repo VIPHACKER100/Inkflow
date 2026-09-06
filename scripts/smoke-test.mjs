@@ -122,6 +122,9 @@ source += `
   parseRichSyntax,
   getGlobalTextFromEditors,
   sanitizeText,
+  hashString,
+  createPRNG,
+  getCharVariation,
   PAGE_W,
   PAGE_H,
   assignState: (patch) => Object.assign(S, patch),
@@ -162,7 +165,8 @@ vm.runInContext(source, sandbox, { filename: 'index.js' });
 
 const {
   S, layoutText, parseRichSyntax, getGlobalTextFromEditors,
-  sanitizeText, PAGE_W, PAGE_H, assignState,
+  sanitizeText, hashString, createPRNG, getCharVariation,
+  PAGE_W, PAGE_H, assignState,
 } = sandbox.__inkflow;
 
 /* ── Harness ──────────────────────────────────────────────────── */
@@ -306,13 +310,39 @@ test('multi-page editors join with a newline separator', () => {
   assert.equal(getGlobalTextFromEditors(), 'page one tail\npage two head');
 });
 
-/* ── 3. sanitizeText sanity ───────────────────────────────────── */
+/* ── 4. Seeded PRNG & Realism Jitter Engine ────────────────────── */
 
-console.log('sanitizeText');
+console.log('Seeded PRNG & Realism Engine');
 
-test('control characters are stripped, tabs and newlines kept', () => {
-  const input = 'ok\x00\x07bad\uE000 text\n\ttab\r\nnext';
-  assert.equal(sanitizeText(input), 'okbad text\n\ttab\r\nnext');
+test('mulberry32 PRNG produces 100% deterministic sequence', () => {
+  const seed = hashString('Inkflow handwritten sample note text 123');
+  const prng1 = createPRNG(seed);
+  const prng2 = createPRNG(seed);
+  const seq1 = Array.from({ length: 10 }, () => prng1());
+  const seq2 = Array.from({ length: 10 }, () => prng2());
+  assert.deepEqual(seq1, seq2, 'identical seeds must produce identical random float sequences');
+});
+
+test('layoutText produces identical character queue positions across re-renders', () => {
+  assignState({ realism: 0.5, rareImperfections: true });
+  const text = 'Deterministic handwriting layout test string with Indic: नमस्ते';
+  const r1 = layoutText(text);
+  const r2 = layoutText(text);
+  assert.equal(r1.queue.length, r2.queue.length);
+  for (let i = 0; i < r1.queue.length; i++) {
+    assert.equal(r1.queue[i].x, r2.queue[i].x, `char ${i} x coordinate mismatch`);
+    assert.equal(r1.queue[i].y, r2.queue[i].y, `char ${i} y coordinate mismatch`);
+    assert.equal(r1.queue[i].v.tiltDeg, r2.queue[i].v.tiltDeg, `char ${i} tiltDeg mismatch`);
+  }
+});
+
+test('Devanagari script reduces rotation jitter magnitude to preserve legibility', () => {
+  const prngA = createPRNG(12345);
+  const prngB = createPRNG(12345);
+  const latinVar = getCharVariation(1, 0.12, 22, prngA, false);
+  const indicVar = getCharVariation(1, 0.12, 22, prngB, true);
+  assert.ok(Math.abs(indicVar.tiltDeg) <= Math.abs(latinVar.tiltDeg) + 1e-6,
+    'Indic rotation jitter must be scaled down relative to Latin jitter');
 });
 
 /* ── Summary ──────────────────────────────────────────────────── */

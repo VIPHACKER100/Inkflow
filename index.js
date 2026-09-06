@@ -12,6 +12,8 @@ const S = {
   inkColor: '#1c2340',
   bleed: 0.5,
   pressure: 0.12,
+  realism: 0.5,
+  rareImperfections: false,
   paperStyle: 'ruled',
   animSpeed: 8,
   currentPage: 0,
@@ -262,7 +264,17 @@ bindSlider('margin-slider', 'mg-val', 'margin', parseInt);
 bindSlider('rotation-slider', 'rot-val', 'rotationMax', parseFloat);
 bindSlider('bleed-slider', 'bleed-val', 'bleed', parseFloat);
 bindSlider('pressure-slider', 'pressure-val', 'pressure', parseFloat);
+bindSlider('realism-slider', 'realism-val', 'realism', parseFloat);
 bindSlider('speed-slider', 'spd-val', 'animSpeed', parseInt);
+
+const rareToggle = document.getElementById('rare-imperfections-toggle');
+if (rareToggle) {
+  rareToggle.addEventListener('change', () => {
+    S.rareImperfections = rareToggle.checked;
+    syncAllEditorStyles();
+    debounceRender();
+  });
+}
 
 /* Phase 5.6 — Ink color picker */
 const inkColorInput = document.getElementById('ink-color');
@@ -833,6 +845,12 @@ function redrawPageCanvas(pageNum) {
           ctx.shadowBlur = 0;
         }
         ctx.fillStyle = S.inkColor;
+        if (S.rareImperfections && item.isRetrace) {
+          ctx.save();
+          ctx.globalAlpha = v.opacity * 0.35;
+          ctx.fillText(item.ch, 1, 0.5);
+          ctx.restore();
+        }
         ctx.fillText(item.ch, 0, 0);
       }
       ctx.restore();
@@ -1370,22 +1388,56 @@ function drawPaperBackground(ctx, style, pageNum = 1) {
 }
 
 /* ───────────────────────────────────────────
-   PHASE 4.3 — PER-CHARACTER VARIATION ENGINE
-   All offsets scale proportionally with fontSize
-   so the handwriting looks natural at any size.
+   SEEDED PRNG — Mulberry32 & Hash Generator
+   Keyed on note ID / text so rendering is 100%
+   deterministic across re-renders and exports.
 ─────────────────────────────────────────── */
-function getCharVariation(rotMax, pressure, fontSize) {
-  const rand = (min, max) => min + Math.random() * (max - min);
-  // Scale factor: at 22px baseline, factors equal ~1.0
+function hashString(str) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < (str || '').length; i++) {
+    h = Math.imul(h ^ str.charCodeAt(i), 16777619);
+  }
+  return h >>> 0;
+}
+
+function createPRNG(seed) {
+  let a = (seed ^ 0xDEADBEEF) >>> 0;
+  return function() {
+    let t = (a += 0x6D2B79F5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* ───────────────────────────────────────────
+   PHASE 4.3 — PER-CHARACTER VARIATION ENGINE
+   All offsets scale proportionally with fontSize & S.realism.
+   Includes Devanagari script awareness to preserve legibility.
+─────────────────────────────────────────── */
+function getCharVariation(rotMax, pressure, fontSize, prng = Math.random, isIndic = false) {
+  const rand = (min, max) => min + prng() * (max - min);
   const k = (fontSize || 22) / 22;
+  const r = S.realism !== undefined ? S.realism : 0.5;
+
+  // Devanagari script scaling multipliers: tighten jitter for connected Indic glyphs & matras
+  const scriptRotMult = isIndic ? 0.3 : 1.0;
+  const scriptScaleMult = isIndic ? 0.4 : 1.0;
+
+  const maxTilt = Math.max(rotMax, 3.5 * r) * scriptRotMult;
+  const scaleJitter = 0.075 * r * scriptScaleMult;
+
+  const pressureMod = (1 - (prng() * pressure * 1.4)) * (1.0 + rand(-0.15, 0.15) * r);
+  const opacity = 1.0 - (rand(0, 0.15) * r);
+
   return {
-    tiltDeg: rand(-rotMax, rotMax),
-    scaleY: rand(0.97, 1.03),
-    scaleX: rand(0.98, 1.02),
-    baselineOff: rand(-0.4, 0.4) * k,
-    spacingExtra: rand(-0.4, 0.6) * k,
-    pressureMod: 1 - (Math.random() * pressure * 1.4),  // stroke weight variation
-    opacity: rand(0.92, 1.0),
+    tiltDeg: rand(-maxTilt, maxTilt),
+    scaleY: 1.0 + rand(-scaleJitter, scaleJitter),
+    scaleX: 1.0 + rand(-scaleJitter, scaleJitter),
+    baselineOff: rand(-0.4, 0.4) * k * r * scriptScaleMult,
+    spacingExtra: rand(-0.5, 0.5) * k * r,
+    pressureMod: Math.max(0.6, Math.min(1.4, pressureMod)),
+    opacity: Math.max(0.75, opacity),
   };
 }
 
@@ -1849,7 +1901,7 @@ function getFontStack(isIndic) {
   return `"${S.font}", "Noto Sans Devanagari", "Hind", sans-serif`;
 }
 
-function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevanagari, getFontStack, getCharVariation, getGraphemes, ctx) {
+function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevanagari, getFontStack, getCharVariation, getGraphemes, ctx, prng = Math.random) {
   const queue = [];
   const pageTexts = [];
   let currentPageText = '';
@@ -1865,6 +1917,9 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
   let x = col1Left;
   const lineH = S.fontSize * S.lineHeight;
   let y = margin + S.fontSize + lineH;
+  let lineDrift = 0;
+  const k = S.fontSize / 22;
+  const r = S.realism !== undefined ? S.realism : 0.5;
 
   let pageIdx = 0;
   let charIndex = 0;
@@ -1883,6 +1938,7 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
         x = activeCol === 1 ? col1Left : col2Left;
         y += lineH;
         lineCharIndex = 0;
+        lineDrift = 0;
         if (y + S.fontSize * 0.5 > PAGE_H - margin) {
           if (activeCol === 1) {
             activeCol = 2;
@@ -1919,6 +1975,7 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
         x = leftBoundary;
         y += lineH;
         lineCharIndex = 0;
+        lineDrift = 0;
         if (y + S.fontSize * 0.5 > PAGE_H - margin) {
           if (activeCol === 1) {
             activeCol = 2;
@@ -1948,10 +2005,12 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
           spacingExtra: 0,
           pressureMod: 1,
           opacity: 1
-        } : getCharVariation(S.rotationMax, S.pressure, S.fontSize);
-        const wobble = S.paperStyle === 'clean' ? 0 : Math.sin(lineCharIndex * 0.04) * 0.4 * (S.fontSize / 22);
+        } : getCharVariation(S.rotationMax, S.pressure, S.fontSize, prng, true);
+        const wobble = S.paperStyle === 'clean' ? 0 : Math.sin(lineCharIndex * 0.04) * 0.4 * k;
         const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
-        const cy = y + (v.baselineOff * 0.4) + wobble + alignOffset;
+        lineDrift += (prng() - 0.48) * 0.3 * r * k;
+        const clampedDrift = Math.max(-3.0 * r * k, Math.min(3.0 * r * k, lineDrift));
+        const cy = y + (v.baselineOff * 0.4) + wobble + alignOffset + (S.paperStyle === 'clean' ? 0 : clampedDrift);
 
         const isHighlighted = highlightRanges.some(r => charIndex >= r.start && charIndex < r.start + lineWord.length);
 
@@ -1985,7 +2044,7 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
             spacingExtra: 0,
             pressureMod: 1,
             opacity: 1
-          } : getCharVariation(S.rotationMax, S.pressure, S.fontSize);
+          } : getCharVariation(S.rotationMax, S.pressure, S.fontSize, prng, false);
 
           ctx.font = `${S.fontSize}px ${fontStack}`;
           const charWidth = ctx.measureText(ch).width + v.spacingExtra;
@@ -2066,7 +2125,7 @@ function layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDeva
   return { queue, pageTexts, pageCount: pageIdx + 1 };
 }
 
-function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevanagari, getFontStack, getCharVariation, getGraphemes, ctx) {
+function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevanagari, getFontStack, getCharVariation, getGraphemes, ctx, prng = Math.random) {
   const queue = [];
   const pageTexts = [];
   let currentPageText = '';
@@ -2085,6 +2144,7 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
   let charIndex = 0;
   let stickyCounter = 0;
   let calloutCounter = 0;
+  const k = S.fontSize / 22;
 
   const lines = text.split('\n');
 
@@ -2115,23 +2175,9 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
         yCues += lineH * 0.5;
       }
       currentPageText += '\n';
-      // If empty line, we still consumed it, but lineText has length 0.
       continue;
     }
 
-    // Skip the prefix tags in charIndex since we stripped them for cleanText
-    // Wait! Did parseRichSyntax strip the '== ' cue and summary prefixes?
-    // Ah! parseRichSyntax only handles highlights ==text== and sticky/callout tags.
-    // Cornell cues ('? ' or 'cue:') and summary ('== ' or 'summary:') are stripped in layoutTextCornell itself!
-    // So rawLine's prefix was removed.
-    // If rawLine starts with '? ' (length 2) or '== ' (length 3), we should adjust charIndex by adding the length of the prefix
-    // because in cleanText, these prefixes were NOT stripped by parseRichSyntax!
-    // Wait! Is that correct?
-    // Yes! parseRichSyntax is run on the *entire* raw text before layoutText. It output cleanText.
-    // So the cleanText still contains the Cornell prefixes like '? ' or '== '!
-    // Then layoutTextCornell receives cleanText, and splits it by lines, and detects prefixes!
-    // So yes, cleanText still had these prefixes, which layoutTextCornell now parses and strips.
-    // So we must increment charIndex by the length of the prefix we strip here!
     let prefixLength = 0;
     if (rawLine.trim().startsWith('? ')) {
       prefixLength = rawLine.indexOf('? ') + 2;
@@ -2191,7 +2237,6 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
     for (let wi = 0; wi < words.length; wi++) {
       const word = words[wi];
       if (!word) {
-        // If multiple spaces occurred
         if (wi < words.length - 1) {
           currentPageText += ' ';
           charIndex++;
@@ -2256,8 +2301,8 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
           spacingExtra: 0,
           pressureMod: 1,
           opacity: 1
-        } : getCharVariation(S.rotationMax, S.pressure, S.fontSize);
-        const wobble = S.paperStyle === 'clean' ? 0 : Math.sin(lineCharIndex * 0.04) * 0.4 * (S.fontSize / 22);
+        } : getCharVariation(S.rotationMax, S.pressure, S.fontSize, prng, true);
+        const wobble = S.paperStyle === 'clean' ? 0 : Math.sin(lineCharIndex * 0.04) * 0.4 * k;
         const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
         const cy = y + (v.baselineOff * 0.4) + wobble + alignOffset;
 
@@ -2294,7 +2339,7 @@ function layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevana
             spacingExtra: 0,
             pressureMod: 1,
             opacity: 1
-          } : getCharVariation(S.rotationMax, S.pressure, S.fontSize);
+          } : getCharVariation(S.rotationMax, S.pressure, S.fontSize, prng, false);
 
           ctx.font = `${S.fontSize}px ${fontStack}`;
           const charWidth = ctx.measureText(ch).width + v.spacingExtra;
@@ -2715,6 +2760,10 @@ function layoutText(text) {
 
   const { cleanText } = parseRichSyntax(text);
 
+  // Seeded PRNG for 100% deterministic layout & jitter per note
+  const seedText = (activeNotebookId || '') + cleanText;
+  const prng = createPRNG(hashString(seedText));
+
   // Use a temporary canvas context to measure text sizes properly
   const tmpCanvas = document.createElement('canvas');
   tmpCanvas.width = PAGE_W;
@@ -2722,13 +2771,13 @@ function layoutText(text) {
   const ctx = tmpCanvas.getContext('2d');
 
   if (S.paperStyle === 'clean' && S.noteLayout === 'standard') {
-    return layoutTextCleanStandard(cleanText, S, PAGE_W, PAGE_H, ctx);
+    return layoutTextCleanStandard(cleanText, S, PAGE_W, PAGE_H, ctx, prng);
   }
 
   if (S.noteLayout === 'twocolumn') {
-    return layoutTextTwoColumn(cleanText, S, PAGE_W, PAGE_H, sanitizeText, containsDevanagari, getFontStack, getCharVariation, getGraphemes, ctx);
+    return layoutTextTwoColumn(cleanText, S, PAGE_W, PAGE_H, sanitizeText, containsDevanagari, getFontStack, getCharVariation, getGraphemes, ctx, prng);
   } else if (S.noteLayout === 'cornell') {
-    return layoutTextCornell(cleanText, S, PAGE_W, PAGE_H, sanitizeText, containsDevanagari, getFontStack, getCharVariation, getGraphemes, ctx);
+    return layoutTextCornell(cleanText, S, PAGE_W, PAGE_H, sanitizeText, containsDevanagari, getFontStack, getCharVariation, getGraphemes, ctx, prng);
   }
 
   const queue = [];
@@ -2739,9 +2788,12 @@ function layoutText(text) {
   const rightMargin = PAGE_W - margin;
   let x = margin;
   const lineH = S.fontSize * S.lineHeight;
-  
+  const k = S.fontSize / 22;
+  const r = S.realism !== undefined ? S.realism : 0.5;
+
   // Skip the 1st line of every page, starting on line 2 grid baseline
   let y = margin + lineH * 2;
+  let lineDrift = 0;
 
   let pageIdx = 0;
   let charIndex = 0;
@@ -2760,6 +2812,7 @@ function layoutText(text) {
         x = margin;
         y += lineH;
         lineCharIndex = 0;
+        lineDrift = 0;
         if (y + S.fontSize * 0.5 > PAGE_H - margin) {
           pageTexts.push(currentPageText);
           currentPageText = '';
@@ -2785,6 +2838,7 @@ function layoutText(text) {
         x = margin;
         y += lineH;
         lineCharIndex = 0;
+        lineDrift = 0;
         if (y + S.fontSize * 0.5 > PAGE_H - margin) {
           pageTexts.push(currentPageText);
           currentPageText = '';
@@ -2794,10 +2848,13 @@ function layoutText(text) {
       }
 
       if (wordIsIndic) {
-        const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
-        const wobble = Math.sin(lineCharIndex * 0.04) * 0.4 * (S.fontSize / 22);
+        const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize, prng, true);
+        const wobble = Math.sin(lineCharIndex * 0.04) * 0.4 * k;
         const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
-        const cy = y + (v.baselineOff * 0.4) + wobble + alignOffset;
+        
+        lineDrift += (prng() - 0.48) * 0.3 * r * k;
+        const clampedDrift = Math.max(-3.0 * r * k, Math.min(3.0 * r * k, lineDrift));
+        const cy = y + (v.baselineOff * 0.4) + wobble + alignOffset + clampedDrift;
 
         const isHighlighted = highlightRanges.some(r => charIndex >= r.start && charIndex < r.start + lineWord.length);
 
@@ -2823,15 +2880,17 @@ function layoutText(text) {
         const isUltraLongWord = ctx.measureText(lineWord).width > (rightMargin - margin);
         for (let ci = 0; ci < graphemes.length; ci++) {
           const ch = graphemes[ci];
-          const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
+          const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize, prng, false);
 
           ctx.font = `${S.fontSize}px ${fontStack}`;
-          const charWidth = ctx.measureText(ch).width + v.spacingExtra;
+          const letterJitter = (prng() * 2 - 1) * 0.4 * r * k;
+          const charWidth = ctx.measureText(ch).width + v.spacingExtra + letterJitter;
 
           if (isUltraLongWord && x + charWidth > (rightMargin + 2.5) && x > margin) {
             x = margin;
             y += lineH;
             lineCharIndex = 0;
+            lineDrift = 0;
             if (y + S.fontSize * 0.5 > PAGE_H - margin) {
               pageTexts.push(currentPageText);
               currentPageText = '';
@@ -2840,11 +2899,16 @@ function layoutText(text) {
             }
           }
 
-          const wobble = Math.sin(lineCharIndex * 0.04) * 0.8 * (S.fontSize / 22);
+          const wobble = Math.sin(lineCharIndex * 0.04) * 0.8 * k;
           const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
-          const cy = y + v.baselineOff + wobble + alignOffset;
+
+          // Baseline drift random-walk
+          lineDrift += (prng() - 0.48) * 0.45 * r * k;
+          const clampedDrift = Math.max(-3.5 * r * k, Math.min(3.5 * r * k, lineDrift));
+          const cy = y + v.baselineOff + wobble + alignOffset + clampedDrift;
 
           const isHighlighted = highlightRanges.some(r => charIndex >= r.start && charIndex < r.end);
+          const isRetrace = S.rareImperfections && (prng() < 0.018);
 
           const item = {
             ch,
@@ -2856,7 +2920,8 @@ function layoutText(text) {
             fontStack,
             highlight: isHighlighted,
             fontSize: S.fontSize,
-            isBold: false
+            isBold: false,
+            isRetrace: isRetrace
           };
 
           if (ch === '\uFFF0') {
@@ -2869,7 +2934,7 @@ function layoutText(text) {
 
           queue.push(item);
 
-          x += ctx.measureText(ch).width + v.spacingExtra;
+          x += charWidth;
           charIndex++;
           lineCharIndex++;
           currentPageText += ch;
@@ -2879,7 +2944,13 @@ function layoutText(text) {
       // Space after word (not on last word of line)
       if (li === lines.length - 1) {
         ctx.font = `${S.fontSize}px ${fontStack}`;
-        x += ctx.measureText(' ').width + S.wordSpacing;
+        const wordJitter = (prng() * 2 - 1) * 2.0 * r * k;
+        let spaceAdd = ctx.measureText(' ').width + S.wordSpacing + wordJitter;
+        // Rare imperfection: space compression on words near right margin
+        if (S.rareImperfections && (x + wordWidth > rightMargin - 45) && (prng() < 0.35)) {
+          spaceAdd *= 0.65;
+        }
+        x += Math.max(2, spaceAdd);
         if (wi < words.length - 1) {
           currentPageText += ' ';
           charIndex++;

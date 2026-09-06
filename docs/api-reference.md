@@ -26,22 +26,30 @@ Single source of truth for the app. Fields: `text`, `font`, `fontSize`, `lineHei
 ## Core Rendering
 
 ### `layoutText(text)`
-Unified layout engine that computes all character positions, word-wrap, and page breaks. Routes internally to `layoutTextTwoColumn`, `layoutTextCornell`, or `layoutTextCleanStandard` depending on `noteLayout` / `paperStyle`.
+Unified layout engine that computes all character positions, word-wrap, baseline drift, variable spacing, and page breaks. Instantiates a seeded `mulberry32` PRNG based on `hashString((activeNotebookId || '') + cleanText)` for 100% deterministic layout & rendering. Routes internally to `layoutTextTwoColumn`, `layoutTextCornell`, or `layoutTextCleanStandard` depending on `noteLayout` / `paperStyle`.
 - **Parameters**: `text` (String) — raw input text
 - **Returns**: `{ queue, pageTexts, pageCount }` — character render items, per-page text strings, total pages
 - **Used by**: `renderText()`, `buildCharQueue()`, `startAnimation()`, `autoFitFontSize()`, `redrawPageCanvas()`
 
-### `layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevanagari, getFontStack, getCharVariation, getGraphemes, ctx)`
-Computes two-column layout wrapping and coordinates.
+### `layoutTextTwoColumn(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevanagari, getFontStack, getCharVariation, getGraphemes, ctx, prng)`
+Computes two-column layout wrapping and coordinates with seeded PRNG jitter.
 - **Returns**: `{ queue, pageTexts, pageCount }`
 
-### `layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevanagari, getFontStack, getCharVariation, getGraphemes, ctx)`
-Computes Cornell Study Notes coordinates. Lines prefixed `? ` / `cue:` → cues column; `== ` / `summary:` → summary footer; other lines → main notes.
+### `layoutTextCornell(text, S, PAGE_W, PAGE_H, sanitizeText, containsDevanagari, getFontStack, getCharVariation, getGraphemes, ctx, prng)`
+Computes Cornell Study Notes coordinates with seeded PRNG jitter. Lines prefixed `? ` / `cue:` → cues column; `== ` / `summary:` → summary footer; other lines → main notes.
 - **Returns**: `{ queue, pageTexts, pageCount }`
 
-### `layoutTextCleanStandard(cleanText, S, PAGE_W, PAGE_H, ctx)`
-Structured-content layout for `clean` paper + Standard layout. Parses `#`/`##` headings, bullets, and questions via `parseStructuredContent()`, with proportional font sizes, block spacing, and vertical text alignment offsets (`getAlignmentOffset`). Since v1.6.16, one empty row is inserted before each question block (except at page top) so a finished answer is followed by breathing room; the row is mirrored into `pageTexts` to keep the editor overlay aligned.
+### `layoutTextCleanStandard(cleanText, S, PAGE_W, PAGE_H, ctx, prng)`
+Structured-content layout for `clean` paper + Standard layout. Parses `#`/`##` headings, bullets, and questions via `parseStructuredContent()`, with proportional font sizes, block spacing, and vertical text alignment offsets (`getAlignmentOffset`). One empty row is inserted before each question block (except at page top) so a finished answer is followed by breathing room; the row is mirrored into `pageTexts` to keep the editor overlay aligned.
 - **Returns**: `{ queue, pageTexts, pageCount }`
+
+### `hashString(str)` & `createPRNG(seed)`
+Generates an FNV-1a hash of a string and returns a seeded `mulberry32` pseudo-random number generator function for deterministic variation generation.
+- **Returns**: `Function` returning deterministic random floats `[0, 1)`.
+
+### `getCharVariation(rotMax, pressure, fontSize, prng, isIndic)`
+Generates individual glyph transforms (rotation, scale, baseline offset, pressure modifier, opacity) scaled by `fontSize` and `S.realism`. Automatically scales down jitter for Indic script characters (`isIndic === true`).
+- **Returns**: `{ tiltDeg, scaleY, scaleX, baselineOff, spacingExtra, pressureMod, opacity }`
 
 ### `renderText(text)`
 Renders text onto canvas pages with full handwriting simulation.

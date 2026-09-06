@@ -6,6 +6,17 @@
 
 All notable changes to Inkflow are documented in this file.
 
+## [1.6.22] — 2026-09-06
+
+### ✨ Added
+- **Human Handwriting Realism Engine**: Replaced mechanical, pixel-identical character rendering with controlled, seeded organic variation algorithms:
+  - **Seeded PRNG (`mulberry32`)**: Keyed on note text/ID to produce 100% deterministic layout and rendering. Re-renders, page switches, and PDF exports produce pixel-identical output.
+  - **Per-Glyph Jitter**: Scaled scale (±7.5%) and rotation (±3.5°) applied per character. Devanagari script automatically scales jitter magnitude (0.3× rotation, 0.4× scale) so Indic matras and *shirorekha* top lines remain legible.
+  - **Baseline Drift**: Added a random-walk line offset accumulator clamped to `[-3.5 * realism * k, +3.5 * realism * k]` so handwriting naturally drifts along ruled lines without wandering off.
+  - **Pressure & Opacity Variations**: Per-character stroke width (`pressureMod` ~ ±15%) and opacity variations (`0.85`–`1.0`).
+  - **Variable Spacing**: Independent letter-spacing jitter (±0.4px) and wider word-spacing jitter (±2.0px).
+  - **Rare Imperfections & Realism Controls**: Added a **Realism / Human Jitter** slider (`0.0`–`1.0`) and **Rare Imperfections** toggle. When enabled, ~1.8% of glyphs render a faint 1px double-stroke retrace effect, and word spacing compresses by 35% on words approaching the right margin.
+
 ## [1.6.21] — 2026-09-05
 
 ### 🐛 Fixed

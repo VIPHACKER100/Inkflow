@@ -88,37 +88,52 @@ Used by the Clean layout engine. Splits text into blocks: `#` headings, `##` sub
 
 ---
 
-## Per-Character Transformation Loop
+## Per-Character Transformation Loop & Realism Engine
 
-The mathematical core of character rendering computes randomized transforms, baselines, and stroke properties for every individual glyph. All offsets scale proportionally with `fontSize` so the handwriting looks natural at any size.
+The mathematical core of character rendering computes seeded, randomized transforms, baselines, and stroke properties for every individual glyph. All offsets scale proportionally with `fontSize` and `S.realism` so the handwriting looks natural at any size and setting.
 
-$$k = \text{FontSize} / 22$$
-$$\text{Tilt} = \text{random}(-\text{rotMax}, \text{rotMax})$$
-$$\text{Scale}_X = \text{random}(0.98, 1.02)$$
-$$\text{Scale}_Y = \text{random}(0.97, 1.03)$$
-$$\text{Baseline Offset} = \text{random}(-0.4, 0.4) \times k$$
-$$\text{Spacing Adjust} = \text{random}(-0.4, 0.6) \times k$$
-$$\text{Pressure Modifier} = 1 - \text{random}(0, \text{Pressure} \times 1.4)$$
-$$\text{Opacity} = \text{random}(0.92, 1.0)$$
-
-These transforms are applied within the character rendering matrix:
+### Seeded PRNG (`mulberry32`)
+To guarantee 100% deterministic layout and rendering across re-renders, page navigations, and PDF exports, Inkflow uses a fast `mulberry32` PRNG initialized with an FNV-1a hash of the active note ID and text content:
 
 ```javascript
-const v = getCharVariation(S.rotationMax, S.pressure, S.fontSize);
-// lineCharIndex resets at each new line — prevents drift accumulation
-const wobble = Math.sin(lineCharIndex * 0.04) * 0.8 * (S.fontSize / 22);
-const alignOffset = getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
-const cy = y + v.baselineOff + wobble + alignOffset;
-
-ctx.save();
-ctx.translate(item.x, item.y);
-ctx.rotate((v.tiltDeg * Math.PI) / 180);
-ctx.scale(v.scaleX, v.scaleY);
+const seedText = (activeNotebookId || '') + cleanText;
+const prng = createPRNG(hashString(seedText));
 ```
 
-> **Key fix (v1.2.0)**: The `wobble` function now uses `lineCharIndex` (reset to 0 at every line break) instead of the global `charIndex`. This eliminates the zigzag/typewriter artifact that appeared on long passages.
+### Script Awareness (Indic / Devanagari)
+Devanagari script features connected matras and horizontal top hanging lines (*shirorekha*). Heavy rotation or scaling would sever these joins. `getCharVariation()` applies script-specific scaling multipliers:
+- **Latin / Cursive**: Full jitter scaling (`scriptRotMult = 1.0`, `scriptScaleMult = 1.0`).
+- **Devanagari / Indic**: Tighter jitter bounds (`scriptRotMult = 0.3`, `scriptScaleMult = 0.4`).
 
-> **Clean style**: When `paperStyle === 'clean'`, all variation values are forced to neutral (`tilt 0`, scale 1, no wobble) and baseline wobble is zeroed for a clean, consistent baseline.
+### Transform Equations
+
+$$k = \text{FontSize} / 22, \quad r = S.\text{realism}$$
+$$\text{MaxTilt} = \max(\text{rotMax}, 3.5 \times r) \times \text{scriptRotMult}$$
+$$\text{ScaleJitter} = 0.075 \times r \times \text{scriptScaleMult}$$
+$$\text{Tilt} = \text{random}(-\text{MaxTilt}, \text{MaxTilt})$$
+$$\text{Scale}_X = 1.0 + \text{random}(-\text{ScaleJitter}, \text{ScaleJitter})$$
+$$\text{Scale}_Y = 1.0 + \text{random}(-\text{ScaleJitter}, \text{ScaleJitter})$$
+$$\text{Baseline Offset} = \text{random}(-0.4, 0.4) \times k \times r \times \text{scriptScaleMult}$$
+$$\text{Pressure Modifier} = \left(1 - \text{random}(0, \text{Pressure} \times 1.4)\right) \times \left(1 + \text{random}(-0.15, 0.15) \times r\right)$$
+$$\text{Opacity} = 1.0 - \text{random}(0, 0.15) \times r$$
+
+### Baseline Drift (Random Walk)
+Instead of purely independent per-character baseline noise, each line maintains a `lineDrift` accumulator that models organic baseline slant:
+
+```javascript
+lineDrift += (prng() - 0.48) * 0.45 * r * k;
+const clampedDrift = Math.max(-3.5 * r * k, Math.min(3.5 * r * k, lineDrift));
+const cy = y + v.baselineOff + wobble + alignOffset + clampedDrift;
+```
+
+### Rare Imperfections
+When `S.rareImperfections` is enabled:
+1. **Retrace / Double-Stroke**: ~1.8% of characters are tagged (`isRetrace: true`) and rendered with a faint 1px offset secondary stroke (`ctx.globalAlpha = opacity * 0.35`).
+2. **Margin Space Compression**: Words approaching the right margin (`x + wordWidth > rightMargin - 45`) have their space allocation compressed by 35% on ~35% of marginal occurrences to simulate misjudged margin space.
+
+> **Key fix (v1.2.0)**: The `wobble` function uses `lineCharIndex` (reset to 0 at every line break) instead of global `charIndex`. This eliminates typewriter artifacts on long passages.
+
+> **Clean style**: When `paperStyle === 'clean'`, variation values are forced to neutral (`tilt 0`, scale 1, no wobble, zero drift) for clean, consistent baselines.
 
 ---
 
