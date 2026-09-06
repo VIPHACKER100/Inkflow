@@ -6,6 +6,18 @@
 
 All notable changes to Inkflow are documented in this file.
 
+## [1.6.23] — 2026-09-07
+
+### 🐛 Fixed
+
+- **Markdown Leakage on Canvas** (`sanitizeAiResponse`): AI provider responses containing triple-backtick code fences (` ```python … ``` `), inline backtick spans (`` `term` ``), bold/italic markers (`**bold**`, `_italic_`, `__bold__`), and raw HTML tags (`<br>`, `<strong>`) were passed directly to the canvas renderer and appeared as literal handwritten characters. A `sanitizeAiResponse()` post-processing pass now runs on every AI result before it reaches the textarea or renderer. Code-fence body content is preserved (only the fence markers are stripped); Inkflow's own markup (`==highlights==`, `[sticky:…]`, `[callout:…]`, `# headings`) is left completely intact.
+
+- **Q&A Numbering Skips and Near-Duplicate Questions** (`resequenceQA`): AI-generated flashcard pairs were numbered by the model itself (e.g. `Q3:`, `Q7:`) rather than by Inkflow, so skipped or duplicated model numbers produced gaps and merged content in the margin label system. Additionally, the same concept was occasionally generated twice with near-identical wording. `resequenceQA()` now runs after `sanitizeAiResponse()` and (a) renumbers every `Q:/A:` pair sequentially from `Q1` using a local counter, completely ignoring the model's own numbering, and (b) drops any question whose trigram Jaccard similarity to any previously accepted question meets or exceeds 0.72, also dropping the paired `A:` so the note is never left with a dangling answer.
+
+### ✅ Testing
+
+- Smoke test suite expanded: **20 tests, 0 failures** (was 14). Added 6 new unit tests covering `sanitizeAiResponse` (code fences, inline backticks, bold/italic stripping, HTML tags, `==highlight==` preservation) and `resequenceQA` (local sequential renumbering, near-duplicate deduplication).
+
 ## [1.6.22] — 2026-09-06
 
 ### ✨ Added

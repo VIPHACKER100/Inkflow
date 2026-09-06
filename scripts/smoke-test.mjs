@@ -125,6 +125,8 @@ source += `
   hashString,
   createPRNG,
   getCharVariation,
+  sanitizeAiResponse,
+  resequenceQA,
   PAGE_W,
   PAGE_H,
   assignState: (patch) => Object.assign(S, patch),
@@ -166,6 +168,7 @@ vm.runInContext(source, sandbox, { filename: 'index.js' });
 const {
   S, layoutText, parseRichSyntax, getGlobalTextFromEditors,
   sanitizeText, hashString, createPRNG, getCharVariation,
+  sanitizeAiResponse, resequenceQA,
   PAGE_W, PAGE_H, assignState,
 } = sandbox.__inkflow;
 
@@ -343,6 +346,61 @@ test('Devanagari script reduces rotation jitter magnitude to preserve legibility
   const indicVar = getCharVariation(1, 0.12, 22, prngB, true);
   assert.ok(Math.abs(indicVar.tiltDeg) <= Math.abs(latinVar.tiltDeg) + 1e-6,
     'Indic rotation jitter must be scaled down relative to Latin jitter');
+});
+
+/* ── 5. AI Response Sanitizer & Q&A Resequencer ─────────────── */
+
+console.log('AI sanitizer & Q\u0026A resequencer');
+
+test('sanitizeAiResponse strips triple-backtick code fences but keeps body', () => {
+  const raw = 'Notes:\n```python\ndef hello():\n    print("hi")\n```\nDone.';
+  const out = sanitizeAiResponse(raw);
+  assert.ok(!out.includes('```'), 'backtick fences must be removed');
+  assert.ok(out.includes('def hello'), 'code body must be preserved');
+  assert.ok(out.includes('Done.'), 'surrounding text must be preserved');
+});
+
+test('sanitizeAiResponse strips inline backtick spans', () => {
+  const raw = 'Use the `print()` function and `input()` together.';
+  const out = sanitizeAiResponse(raw);
+  assert.ok(!out.includes('`'), 'no backticks should remain');
+  assert.equal(out, 'Use the print() function and input() together.');
+});
+
+test('sanitizeAiResponse strips bold and italic markers but preserves Inkflow ==highlights==', () => {
+  const raw = '**Bold term** and _italic_ and ==highlighted== and __also bold__.';
+  const out = sanitizeAiResponse(raw);
+  assert.ok(!out.includes('**'), 'bold ** should be stripped');
+  assert.ok(!out.includes('__'), 'bold __ should be stripped');
+  assert.ok(out.includes('==highlighted=='), '==highlights== must be preserved');
+  assert.ok(out.includes('Bold term'), 'bold content must survive stripping');
+});
+
+test('sanitizeAiResponse strips inline HTML tags', () => {
+  const raw = 'Hello <strong>world</strong> and <br> newline.';
+  const out = sanitizeAiResponse(raw);
+  assert.ok(!out.includes('<strong>') && !out.includes('</strong>'), 'HTML tags must be removed');
+  assert.ok(out.includes('world'), 'tag contents must survive');
+});
+
+test('resequenceQA renumbers Q: pairs with local counter ignoring model numbers', () => {
+  const input = 'Q3: What is photosynthesis?\nA: Process by which plants make food.\nQ7: What is osmosis?\nA: Movement of water across membranes.';
+  const out = resequenceQA(input);
+  assert.ok(out.includes('Q1: What is photosynthesis?'), 'first Q must become Q1');
+  assert.ok(out.includes('Q2: What is osmosis?'), 'second Q must become Q2');
+  assert.ok(!out.includes('Q3:') && !out.includes('Q7:'), 'original model numbers must be gone');
+});
+
+test('resequenceQA deduplicates near-identical questions', () => {
+  const dup1 = 'Q1: What is the process of photosynthesis in plants?';
+  const dup2 = 'Q2: What is the process of photosynthesis in plants?'; // exact duplicate
+  const unique = 'Q3: Describe osmosis in detail.';
+  const input = [dup1, 'A: Answer one.', dup2, 'A: Answer two.', unique, 'A: Answer three.'].join('\n');
+  const out = resequenceQA(input);
+  const qLines = out.split('\n').filter(l => l.startsWith('Q'));
+  assert.equal(qLines.length, 2, 'duplicate question must be deduplicated');
+  assert.ok(out.includes('Q1:'), 'first unique Q retained as Q1');
+  assert.ok(out.includes('Q2: Describe osmosis'), 'second unique Q renumbered as Q2');
 });
 
 /* ── Summary ──────────────────────────────────────────────────── */

@@ -3848,6 +3848,155 @@ GUIDELINES:
 - Keep formatting elegant, human-like, and easy to read on handwritten notebook pages.`;
 
 /* ───────────────────────────────────────────
+   AI RESPONSE SANITIZER
+   Strips markdown artefacts (code fences, inline
+   backticks, bold/italic markers, HTML tags) that
+   AI providers emit despite system-prompt guidance.
+   Must run on every AI result BEFORE it reaches
+   the canvas renderer or the textarea.
+─────────────────────────────────────────── */
+
+/**
+ * Convert a raw AI response into clean Inkflow-syntax text.
+ * Preserves Inkflow's own markup (# headings, ==highlights==,
+ * [sticky:…], [callout:…]) while removing markdown artefacts.
+ *
+ * @param {string} raw - The raw text returned by the AI provider.
+ * @returns {string} Sanitized text safe for canvas rendering.
+ */
+function sanitizeAiResponse(raw) {
+  if (!raw || typeof raw !== 'string') return raw || '';
+  let t = raw;
+
+  // 1. Triple-backtick code fences — strip the fence markers, keep the body
+  //    ```python\ncode here\n```  →  code here
+  t = t.replace(/```[\w]*\n?/g, '').replace(/```/g, '');
+
+  // 2. Inline backtick spans — `term`  →  term
+  t = t.replace(/`([^`\n]+)`/g, '$1');
+
+  // 3. Bold/italic markers — **text** / __text__  →  text  (preserve ==highlights==)
+  //    Process ** before * to avoid partial matches.
+  t = t.replace(/\*{3}([^*\n]+)\*{3}/g, '$1'); // bold-italic ***
+  t = t.replace(/\*{2}([^*\n]+)\*{2}/g, '$1'); // bold **
+  t = t.replace(/_{2}([^_\n]+)_{2}/g,   '$1'); // bold __
+  t = t.replace(/\*([^*\n]+)\*/g,       '$1'); // italic *
+  t = t.replace(/_([^_\n]+)_/g,         '$1'); // italic _
+
+  // 4. Inline HTML tags — <br>, <p>, <strong>, etc.
+  t = t.replace(/<[^>]{1,80}>/g, ' ');
+
+  // 5. Markdown links — [label](url)  →  label
+  t = t.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1');
+
+  // 6. Markdown images — ![alt](url)  →  (drop entirely)
+  t = t.replace(/!\[[^\]]*\]\([^)]*\)/g, '');
+
+  // 7. Horizontal rules --- / *** / ===  →  blank line
+  t = t.replace(/^[ \t]*[\-*=]{3,}[ \t]*$/gm, '');
+
+  // 8. Collapse runs of 3+ blank lines down to one blank line
+  t = t.replace(/\n{3,}/g, '\n\n');
+
+  // 9. Trim leading/trailing whitespace
+  t = t.trim();
+
+  return t;
+}
+
+/* ───────────────────────────────────────────
+   Q&A RESEQUENCER + NEAR-DUPLICATE FILTER
+   Renumbers Q: / A: flashcard pairs using a
+   local counter (ignoring the model's own
+   numbering) and drops near-identical questions
+   before they are added to the note.
+─────────────────────────────────────────── */
+
+/**
+ * Build a Set of character trigrams from a string.
+ * Used for fast Jaccard similarity estimation.
+ * @param {string} s
+ * @returns {Set<string>}
+ */
+function _trigrams(s) {
+  const out = new Set();
+  const norm = s.toLowerCase().replace(/\s+/g, ' ').trim();
+  for (let i = 0; i <= norm.length - 3; i++) out.add(norm.slice(i, i + 3));
+  return out;
+}
+
+/**
+ * Jaccard similarity between two trigram Sets (0.0–1.0).
+ * @param {Set<string>} a
+ * @param {Set<string>} b
+ * @returns {number}
+ */
+function _jaccard(a, b) {
+  if (a.size === 0 && b.size === 0) return 1;
+  let inter = 0;
+  for (const t of a) if (b.has(t)) inter++;
+  return inter / (a.size + b.size - inter);
+}
+
+/**
+ * Post-process AI text to:
+ *  (a) Re-number all Q:/A: pairs sequentially (Q1, Q2, …)
+ *      regardless of the numbering the model used.
+ *  (b) Deduplicate near-identical questions
+ *      (Jaccard similarity ≥ 0.72 on trigrams).
+ *
+ * Non-Q&A lines pass through unchanged.
+ *
+ * @param {string} text - Sanitized AI response text.
+ * @returns {string} Text with corrected Q&A numbering.
+ */
+function resequenceQA(text) {
+  if (!text) return text;
+  const DEDUP_THRESHOLD = 0.72;
+  const lines = text.split('\n');
+  const out   = [];
+  let qCounter  = 0;
+  let skipNext  = false;     // drop the A: line following a deduped Q:
+  const seenQ   = [];        // [{trigrams, text}] of accepted questions
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    if (skipNext) {
+      // This is the A: paired with a dropped Q: — skip it too
+      if (/^A:/i.test(line.trim())) { skipNext = false; continue; }
+      // If there's no matching A: immediately, resume normal output
+      skipNext = false;
+    }
+
+    // Match Q: lines (with or without existing numbering: "Q:", "Q1:", "Q 2.")
+    const qMatch = line.match(/^(Q(?:\d+)?[:\.]?)\s+(.+)$/i);
+    if (qMatch) {
+      const questionText = qMatch[2].trim();
+      const tgrams       = _trigrams(questionText);
+
+      // Deduplicate — check against every previously accepted question
+      const isDup = seenQ.some(({ trigrams }) => _jaccard(tgrams, trigrams) >= DEDUP_THRESHOLD);
+      if (isDup) {
+        skipNext = true;   // also drop the following A:
+        continue;
+      }
+
+      // Accept: renumber and record
+      qCounter++;
+      seenQ.push({ trigrams: tgrams, text: questionText });
+      out.push(`Q${qCounter}: ${questionText}`);
+      continue;
+    }
+
+    // Pass A: lines through unchanged (they follow the renumbered Q: above)
+    out.push(line);
+  }
+
+  return out.join('\n');
+}
+
+/* ───────────────────────────────────────────
    PHASE 7.3–7.6 — AI ACTION DISPATCHER
 ─────────────────────────────────────────── */
 async function callAI(prompt, systemPrompt, onChunk) {
@@ -3993,6 +4142,9 @@ async function aiAction(type) {
   }
 
   if (result !== null) {
+    // ── Post-process: strip markdown artefacts, then fix Q&A numbering ──
+    result = resequenceQA(sanitizeAiResponse(result));
+
     textarea.value = result;
     S.text = result;
     renderText(S.text);
