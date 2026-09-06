@@ -227,7 +227,8 @@ Dispatches an AI workflow and streams the result onto the canvas.
 - **Note (v1.6.7+)**: `arrange` does **not** call any AI provider — it runs the offline `smartArrangeLocal()` tidy-up and reports the number of fixes via toast and `#ai-status`.
 
 ### `smartArrangeLocal(text)`
-Offline deterministic text tidy-up used by Smart Arrange (v1.6.7+). Normalizes bullet markers (`*`/`•`/`‣` → `- `), trims trailing whitespace, collapses double spaces and runs of 3+ blank lines, removes spaces before punctuation (preserving fill-in lines containing underscores), inserts a blank line before numbered questions, and ends with a single newline.
+Offline deterministic text tidy-up engine used by Smart Arrange. Normalizes markdown headers (`#Title` → `# Title`), Inkflow study tags (`[sticky : color]` → `[sticky:color]`), highlight markers (`== key ==` → `==key==`), bullet points (`*`/`•`/`‣` → `- ` with capitalized first char), Q&A flashcards (`q 1 :` → `Q1:`), punctuation spacing, double spaces (preserving fill-in underscores), structural line breaks before headers/questions, 3+ blank line collapse, and trailing single newline.
+- **Parameters**: `text` (String)
 - **Returns**: `{ text, fixes }`
 
 ### `bindUIActions()`

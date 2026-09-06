@@ -14,9 +14,20 @@ All notable changes to Inkflow are documented in this file.
 
 - **Q&A Numbering Skips and Near-Duplicate Questions** (`resequenceQA`): AI-generated flashcard pairs were numbered by the model itself (e.g. `Q3:`, `Q7:`) rather than by Inkflow, so skipped or duplicated model numbers produced gaps and merged content in the margin label system. Additionally, the same concept was occasionally generated twice with near-identical wording. `resequenceQA()` now runs after `sanitizeAiResponse()` and (a) renumbers every `Q:/A:` pair sequentially from `Q1` using a local counter, completely ignoring the model's own numbering, and (b) drops any question whose trigram Jaccard similarity to any previously accepted question meets or exceeds 0.72, also dropping the paired `A:` so the note is never left with a dangling answer.
 
+### ✨ Enhanced
+
+- **Offline Smart Arrange Upgrade** (`smartArrangeLocal`): Major upgrade to the offline, deterministic text formatting engine. In addition to bullet normalization and spacing cleanup, it now automatically formats:
+  - Markdown headers (`#Title` → `# Title`, `##Heading` → `## Heading`)
+  - Inkflow study tags (`[sticky : yellow]` → `[sticky:yellow]`, `[callout : info]` → `[callout:info]`)
+  - Highlight spacing (`== key ==` → `==key==`)
+  - Bullet capitalization (first character capitalized automatically)
+  - Q&A flashcard labels (`q 1 :` / `q:` → `Q1:`, `a:` → `A:`)
+  - Punctuation spacing (removes space before `,.;:!?` and adds space after `,;!`)
+  - Structural line breaks before headers (`#`/`##`) and Q&A questions (`Q:`/`Q1:`)
+
 ### ✅ Testing
 
-- Smoke test suite expanded: **20 tests, 0 failures** (was 14). Added 6 new unit tests covering `sanitizeAiResponse` (code fences, inline backticks, bold/italic stripping, HTML tags, `==highlight==` preservation) and `resequenceQA` (local sequential renumbering, near-duplicate deduplication).
+- Smoke test suite expanded: **21 tests, 0 failures** (was 20). Added unit test covering `smartArrangeLocal` header normalization, bullet formatting, tag normalization, Q&A reformatting, and punctuation cleanup.
 
 ## [1.6.22] — 2026-09-06
 

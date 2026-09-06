@@ -4020,51 +4020,88 @@ async function callAI(prompt, systemPrompt, onChunk) {
    AI provider or API key.
 ─────────────────────────────────────────── */
 function smartArrangeLocal(text) {
+  if (!text || typeof text !== 'string') return { text: '', fixes: 0 };
   let fixes = 0;
   const isFillIn = (l) => /_{2,}/.test(l);
   const out = [];
 
-  for (let line of text.split('\n')) {
-    // Trim trailing whitespace
-    const trimmed = line.replace(/[ \t]+$/, '');
-    if (trimmed !== line) { fixes++; line = trimmed; }
+  const lines = text.split('\n');
 
-    // Normalize bullet markers (*, •, ‣ → "- ")
-    const bullet = line.match(/^\s*([*•‣]|-(?!\s*-))\s+(.*)$/);
-    if (bullet) {
-      const normalized = '- ' + bullet[2];
-      if (normalized !== line) fixes++;
-      line = normalized;
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
+    const orig = line;
+
+    // 1. Trim trailing whitespace
+    const trimmed = line.replace(/[ \t]+$/, '');
+    if (trimmed !== line) { line = trimmed; }
+
+    // 2. Normalize headers (#Title -> # Title, ##Heading -> ## Heading)
+    line = line.replace(/^([#]{1,6})([^\s#])/g, '$1 $2');
+
+    // 5. Normalize bullets (*, •, ‣ -> "- ") while preserving leading indent spaces and capitalizing first char
+    const bulletMatch = line.match(/^(\s*)([*•‣]|-(?!\s*-))\s+(.*)$/);
+    if (bulletMatch) {
+      const indent = bulletMatch[1];
+      const content = bulletMatch[3];
+      const capContent = content.length > 0 ? content.charAt(0).toUpperCase() + content.slice(1) : content;
+      line = indent + '- ' + capContent;
     }
 
-    // Spacing cleanup — fill-in lines (Runs of underscores) are preserved as-is
+    // 6. Normalize Q&A flashcards (q: / Q : / q1. / Q1 : -> Q1: or Q:)
+    line = line.replace(/^(\s*)([qQ])\s*(\d+)\s*[:.]\s*/g, '$1Q$3: ');
+    line = line.replace(/^(\s*)([qQ])\s*[:]\s*/g, '$1Q: ');
+    line = line.replace(/^(\s*)([aA])\s*[:]\s*/g, '$1A: ');
+
+    // 7. Spacing cleanup (punctuation & multiple spaces) — skip fill-in blank lines with underscores
     if (!isFillIn(line)) {
-      const noSpaceBeforePunct = line.replace(/[ \t]+([,.;:!?])/g, '$1');
-      let spaced = noSpaceBeforePunct;
+      // Remove space before punctuation: "hello , world !" -> "hello, world!"
+      line = line.replace(/[ \t]+([,.;:!?])/g, '$1');
+      // Add missing space after comma/semicolon/exclamation when immediately followed by a letter
+      line = line.replace(/([,;!])([a-zA-Z])/g, '$1 $2');
+      // Add missing space after period when followed by capital letter (excluding URLs/numbers)
+      line = line.replace(/([a-z0-9])\.([A-Z][a-z])/g, '$1. $2');
+
+      // Collapse double spaces (preserving underscores)
+      let spaced = line;
       let prev;
       do {
         prev = spaced;
         spaced = spaced.replace(/(^|[^_]) {2,}(?=[^_]|$)/g, '$1 ');
       } while (spaced !== prev);
-      if (spaced !== line) fixes++;
       line = spaced;
     }
 
+    // 8. Normalize Inkflow tags ([sticky : yellow] -> [sticky:yellow], [callout : info] -> [callout:info])
+    line = line.replace(/\[\s*(sticky|callout)\s*:\s*([a-zA-Z0-9_-]*)\s*\]/gi, (m, tag, color) => `[${tag.toLowerCase()}${color ? ':' + color.toLowerCase() : ''}]`);
+    line = line.replace(/\[\s*(sticky|callout)\s*\]/gi, (m, tag) => `[${tag.toLowerCase()}]`);
+
+    // 9. Normalize highlights (== key == -> ==key==)
+    line = line.replace(/==\s*([^=\n]+?)\s*==/g, '==$1==');
+
+    if (line !== orig) fixes++;
     out.push(line);
   }
 
   let result = out.join('\n');
 
-  // Collapse 3+ consecutive newlines to one blank line
+  // 8. Collapse 3+ consecutive newlines to one blank line
   const collapsed = result.replace(/\n{3,}/g, '\n\n');
-  if (collapsed !== result) fixes++;
-  result = collapsed;
+  if (collapsed !== result) {
+    fixes++;
+    result = collapsed;
+  }
 
-  // Add a blank line before numbered questions ("12. How does ... ?")
+  // 9. Add structural line breaks before headers (# / ##) and Q&A questions (Q: / Q1:)
   const structured = [];
-  for (const l of result.split('\n')) {
+  const resultLines = result.split('\n');
+  for (let i = 0; i < resultLines.length; i++) {
+    const l = resultLines[i];
     const prev = structured[structured.length - 1];
-    if (/^\d+\.\s+.*\?\s*$/.test(l) && prev !== undefined && prev !== '' && !/^\d+\./.test(prev)) {
+
+    const isHeader = /^#{1,6}\s+/.test(l);
+    const isQuestion = /^Q\d*:\s+/.test(l) || /^\d+\.\s+.*\?\s*$/.test(l);
+
+    if ((isHeader || isQuestion) && prev !== undefined && prev !== '' && !isHeader) {
       structured.push('');
       fixes++;
     }
@@ -4072,10 +4109,12 @@ function smartArrangeLocal(text) {
   }
   result = structured.join('\n');
 
-  // End with exactly one newline
+  // 10. End with exactly one trailing newline
   const finalText = result.replace(/\s+$/, '') + '\n';
-  if (finalText !== result) fixes++;
-  result = finalText;
+  if (finalText !== result) {
+    fixes++;
+    result = finalText;
+  }
 
   return { text: result, fixes };
 }

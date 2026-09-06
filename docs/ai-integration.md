@@ -112,16 +112,20 @@ GUIDELINES:
 
 ### Workflow Prompts
 
-### 1. 🪄 Smart Arrange — *offline since v1.6.7*
+### 1. 🪄 Smart Arrange — *offline since v1.6.7 (Upgraded)*
 ```
 Smart Arrange does NOT call any AI provider. It applies the deterministic
 smartArrangeLocal() tidy-up directly in the browser:
-- normalize bullet markers (*, •, ‣ → "- ")
-- trim trailing whitespace
-- collapse double spaces and runs of 3+ blank lines
-- remove spaces before punctuation (fill-in lines with underscores are preserved)
-- insert a blank line before numbered questions ("12. How does … ?")
-- end the document with a single newline
+- normalize headers (#Title → # Title, ##Heading → ## Heading)
+- normalize Inkflow study tags ([sticky : yellow] → [sticky:yellow], [callout : info] → [callout:info])
+- normalize highlight spacing (== key == → ==key==)
+- normalize bullet markers (*, •, ‣ → "- ") & capitalize first character
+- reformat Q&A flashcards (q1: / Q 1 : → Q1:, a : → A:)
+- trim trailing whitespace and collapse double spaces (preserving fill-in underscores)
+- fix punctuation spacing (remove space before punctuation, add space after comma/period)
+- insert structural blank lines before headers (# / ##) and Q&A questions (Q: / Q1:)
+- collapse runs of 3+ blank lines down to one blank line
+- end the document with exactly one newline
 ```
 It needs no provider selection and no API key, and reports the number of fixes via a toast plus the AI status line.
 

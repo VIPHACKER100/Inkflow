@@ -127,6 +127,7 @@ source += `
   getCharVariation,
   sanitizeAiResponse,
   resequenceQA,
+  smartArrangeLocal,
   PAGE_W,
   PAGE_H,
   assignState: (patch) => Object.assign(S, patch),
@@ -168,7 +169,7 @@ vm.runInContext(source, sandbox, { filename: 'index.js' });
 const {
   S, layoutText, parseRichSyntax, getGlobalTextFromEditors,
   sanitizeText, hashString, createPRNG, getCharVariation,
-  sanitizeAiResponse, resequenceQA,
+  sanitizeAiResponse, resequenceQA, smartArrangeLocal,
   PAGE_W, PAGE_H, assignState,
 } = sandbox.__inkflow;
 
@@ -401,6 +402,22 @@ test('resequenceQA deduplicates near-identical questions', () => {
   assert.equal(qLines.length, 2, 'duplicate question must be deduplicated');
   assert.ok(out.includes('Q1:'), 'first unique Q retained as Q1');
   assert.ok(out.includes('Q2: Describe osmosis'), 'second unique Q renumbered as Q2');
+});
+
+/* ── 6. Smart Arrange Offline Tidy-up ─────────────────────────── */
+
+console.log('\nSmart Arrange offline tidy-up');
+
+test('smartArrangeLocal normalizes headers, bullets, tags, and Q&A formatting', () => {
+  const input = '#Title\n* bullet point 1\n[sticky : yellow] note [sticky]\nq 1 : What is cell division?\na : It is mitosis.\nword ,next word .';
+  const res = smartArrangeLocal(input);
+  assert.ok(res.fixes > 0, 'must report non-zero fixes');
+  assert.ok(res.text.includes('# Title'), 'header must have space');
+  assert.ok(res.text.includes('- Bullet point 1'), 'bullet must be normalized and capitalized');
+  assert.ok(res.text.includes('[sticky:yellow]'), 'tag must be normalized');
+  assert.ok(res.text.includes('Q1: What is cell division?'), 'Q1: must be normalized');
+  assert.ok(res.text.includes('A: It is mitosis.'), 'A: must be normalized');
+  assert.ok(res.text.includes('word, next word.'), 'punctuation spacing must be fixed');
 });
 
 /* ── Summary ──────────────────────────────────────────────────── */
