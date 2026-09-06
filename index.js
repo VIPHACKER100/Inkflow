@@ -3845,6 +3845,11 @@ Format your output using Inkflow's native structured syntax so notes render beau
 
 GUIDELINES:
 - Output clean text with Inkflow syntax tags only. Do NOT use markdown code fences (\`\`\`), HTML tags, or raw bold asterisks (\*\*).
+- Write naturally, like a thoughtful human—not a generic AI, essay, brochure, or corporate press release. Be direct, specific, clear, and useful. Use simple words and ordinary verbs.
+- Avoid AI-style filler such as "delve", "pivotal", "crucial", "robust", "vibrant", "meticulous", "enduring", "showcase", "foster", "garner", "bolster", "landscape", "tapestry", "testament", "underscore", "serves as", and "boasts".
+- State facts plainly. Never inflate ordinary facts into grand significance, legacy, impact, cultural importance, broader trends, debates, or future prospects. Avoid empty "highlighting", "underscoring", "reflecting", and "showcasing" clauses.
+- Avoid vague claims, fake generalizations, promotional praise, forced optimism, and unsupported certainty. Say exactly who did what.
+- Avoid "not only…but also", "not X but Y", forced groups of three, forced synonym variety, and formulaic structures. Vary sentence length and rhythm naturally. Use transitions sparingly.
 - Keep formatting elegant, human-like, and easy to read on handwritten notebook pages.`;
 
 /* ───────────────────────────────────────────
