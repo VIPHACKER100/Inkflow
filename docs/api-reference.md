@@ -93,6 +93,11 @@ Returns a fully-decoded `<img>` for a drafted glyph (cached), or `null` while de
 
 ## Text Processing & Rich Syntax
 
+### `getCharVariation(char, lineIdx, charIdx, globalIdx)`
+Calculates deterministic human handwriting variations (scale ±7-8%, rotation ±3-4°, baseline drift random walk, pressure simulation width/opacity variation) for a character instance using PRNG hash.
+- **Parameters**: `char` (String), `lineIdx` (Integer), `charIdx` (Integer), `globalIdx` (Integer)
+- **Returns**: `{ scale, rotation, baselineShift, opacity, strokeWidthMult }`
+
 ### `sanitizeText(str)`
 Strips non-printable control characters and Private Use Area codepoints. Returns cleaned string.
 
@@ -236,6 +241,26 @@ Rebuilds the model dropdown and API-key label for the selected provider (`openro
 
 ### `setAiStatus(msg)`
 Writes a status message into `#ai-status`.
+
+### `sanitizeAiResponse(text)`
+Post-processes raw AI provider response text before it reaches the canvas renderer or state. Strips markdown triple-backtick code fences (` ```python … ``` `, preserving code body), inline backtick spans (`` `term` `` → `term`), bold/italic markers (`**`, `__`, `*`, `_`), and raw HTML tags (`<p>`, `<code>`, etc.), while preserving Inkflow's native syntax tags (`[Q: ...]`, `[sticky:...]`, `[callout:...]`, `==highlight==`, `---`, `***`, `#`, etc.).
+- **Parameters**: `text` (String)
+- **Returns**: Cleaned plain text (String)
+
+### `resequenceQA(text)`
+Post-processes Q&A sections in AI output. Rewrites model question numbers (`Q:`, `Q3:`, `Q7.`) into clean sequential `Q1:`, `Q2:`, … labels using a local counter (ignoring model numbering), and deduplicates near-identical questions via character trigram Jaccard similarity (threshold ≥ 0.72). Dropped duplicate questions automatically drop their paired answer.
+- **Parameters**: `text` (String)
+- **Returns**: Resequenced and deduplicated text (String)
+
+### `_trigrams(str)`
+Helper function that extracts a `Set` of character trigrams (overlapping 3-character substrings) from a string, normalized to lowercase.
+- **Parameters**: `str` (String)
+- **Returns**: `Set` of 3-character substrings
+
+### `_jaccard(setA, setB)`
+Helper function that calculates the Jaccard similarity index `|A ∩ B| / |A ∪ B|` between two `Set` instances. Returns a Float between `0.0` and `1.0`.
+- **Parameters**: `setA` (Set), `setB` (Set)
+- **Returns**: Float
 
 ---
 

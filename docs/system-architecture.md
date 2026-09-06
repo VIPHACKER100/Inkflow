@@ -10,7 +10,7 @@ This document outlines the **high-level system architecture**, **component layer
 
 ## Architecture Overview
 
-Inkflow is architected as a modular, decoupled, single-file client-side application. It operates entirely within the user's browser, eliminating backend latency and optimizing rendering speeds. All application logic lives in `index.js` (≈7,000 lines), styling in `index.css`, and structure in `index.html`.
+Inkflow is architected as a modular, decoupled, single-file client-side application. It operates entirely within the user's browser, eliminating backend latency and optimizing rendering speeds. All application logic lives in `index.js` (≈7,200 lines), styling in `index.css`, and structure in `index.html`.
 
 ---
 
@@ -47,7 +47,7 @@ graph TD
     end
 
     subgraph External_Layer ["Integration & Export Services"]
-        M["callAI Router → OpenRouter / Anthropic Claude / Local Ollama (SSE Streaming)"]
+        M["callAI Router → OpenRouter / Anthropic / Ollama → sanitizeAiResponse & resequenceQA"]
         O["jsPDF Multi-Page Document Compiler"]
         P["Clipboard API — Copy as PNG"]
         Q["OS Print Spooler"]
@@ -78,7 +78,7 @@ graph TD
     L -->|"Editor innerText Sync"| C
 
     A -->|"AI Action Requests + SSE stream"| M
-    M -->|"Incremental Text Chunks"| E
+    M -->|"Cleaned / Resequenced Text"| E
     A -->|"Voice Transcripts"| W
     W -->|"Appended Text"| E
     C -->|"canvas.toBlob() 2x upscaled"| X
@@ -101,7 +101,7 @@ A centralized global configuration object `S` acts as the single source of truth
 The rendering pipeline that transforms state into visual canvas output. The key innovation since v1.2.0 is the **unified `layoutText()` engine**, which performs all word-wrap, page-break, and character-queue computation in a single pass. It routes to three specialist engines — `layoutTextTwoColumn`, `layoutTextCornell`, and `layoutTextCleanStandard` — while the standard flowing engine handles the default case. Static rendering (`renderText`) and animation (`startAnimation`) consume the identical layout output.
 
 ### 4. Integration & Export Services
-External integrations for AI text generation via the `callAI()` provider router (OpenRouter + Anthropic + local Ollama, SSE streaming), voice dictation (Web Speech API), native canvas image exports (2×-upscaled Blob-URL PNG/JPG/SVG), multi-page lossless PDF compilation (jsPDF), clipboard copy (Clipboard API), and native OS print dialog access. User-provided content (notebook titles, folder names) is escaped via `escapeHtml()` before innerHTML injection to prevent XSS.
+External integrations for AI text generation via the `callAI()` provider router (OpenRouter + Anthropic + local Ollama, SSE streaming, plus `sanitizeAiResponse()` and `resequenceQA()` post-processing), voice dictation (Web Speech API), native canvas image exports (2×-upscaled Blob-URL PNG/JPG/SVG), multi-page lossless PDF compilation (jsPDF), clipboard copy (Clipboard API), and native OS print dialog access. User-provided content (notebook titles, folder names) is escaped via `escapeHtml()` before innerHTML injection to prevent XSS.
 
 ---
 
@@ -109,7 +109,10 @@ External integrations for AI text generation via the `callAI()` provider router 
 
 ```mermaid
 graph LR
-    INPUT["Text Input / AI Chunk / Voice Transcript"] --> SANITIZE["sanitizeText"]
+    AI_STREAM["Raw AI Model Stream"] --> SANITIZE_AI["sanitizeAiResponse (strips markdown/html)"]
+    SANITIZE_AI --> RESEQ_QA["resequenceQA (renumber Qs & dedupe trigrams)"]
+    USER_INPUT["User Text Input / Voice"] --> SANITIZE["sanitizeText"]
+    RESEQ_QA --> SANITIZE
     SANITIZE --> RICH["parseRichSyntax (stickies / callouts / highlights)"]
     RICH --> LAYOUT["layoutText"]
     LAYOUT --> QUEUE["queue[] — char positions & variations"]

@@ -154,6 +154,56 @@ TASK: Write a complete, comprehensive academic assignment on the topic. Include 
 
 ---
 
+## AI Response Post-Processing Pipeline (v1.6.23+)
+
+To ensure raw model outputs render seamlessly as natural handwriting without breaking canvas formatting or duplicating content, all stream results pass through a two-stage post-processing pipeline (`sanitizeAiResponse()` and `resequenceQA()`) before updating state, rendering to canvas, or saving.
+
+```
+       ┌────────────────────────────────────────────────────────┐
+       │             Raw AI Model Stream Response               │
+       └───────────────────────────┬────────────────────────────┘
+                                   │
+                                   ▼
+       ┌────────────────────────────────────────────────────────┐
+       │   Stage 1: Markdown & Tag Sanitizer                    │
+       │   sanitizeAiResponse(text)                             │
+       │   - Strips ```code fences``` (keeps code body)        │
+       │   - Strips `inline backticks`                           │
+       │   - Strips **bold**, __bold__, *italic*, _italic_      │
+       │   - Strips raw HTML tags (<b>, <code>, <p>, etc.)      │
+       │   - Preserves Inkflow syntax ([sticky], ==hl==, etc.)  │
+       └───────────────────────────┬────────────────────────────┘
+                                   │
+                                   ▼
+       ┌────────────────────────────────────────────────────────┐
+       │   Stage 2: Q&A Resequencer & Deduplicator              │
+       │   resequenceQA(text)                                   │
+       │   - Local sequential renumbering (Q1:, Q2:, ...)        │
+       │   - Trigram Jaccard deduplication (threshold ≥ 0.72)   │
+       │   - Drops near-duplicate questions & paired answers     │
+       └───────────────────────────┬────────────────────────────┘
+                                   │
+                                   ▼
+       ┌────────────────────────────────────────────────────────┐
+       │            Canvas Renderer & State Autosave            │
+       └────────────────────────────────────────────────────────┘
+```
+
+### 1. Markdown Leakage Stripping (`sanitizeAiResponse`)
+Raw markdown symbols (like code fences or backticks) break the aesthetic of "handwritten" notes. `sanitizeAiResponse()` runs a single-pass regex conversion that cleans unwanted syntax while protecting Inkflow study markup:
+- **Code Fences**: Removes triple-backtick markers (` ```python ... ``` `) while preserving the code text inside.
+- **Inline Backticks**: Removes single backticks around inline words (`` `class` `` → `class`).
+- **Bold & Italic**: Strips double and single asterisks/underscores (`**bold**` → `bold`).
+- **HTML Markup**: Strips raw HTML tags (`<span>`, `<code>`, `<p>`).
+- **Syntax Preservation**: Leaves Inkflow tags intact (`[sticky:color]`, `[callout:type]`, `==highlight==`, `---`, `***`, `#`, `##`).
+
+### 2. Q&A Resequencer & Deduplicator (`resequenceQA`)
+AI models occasionally misnumber flashcard questions (skipping numbers) or repeat duplicate questions within a single session. `resequenceQA()` fixes both issues deterministically:
+- **Local Renumbering**: Ignores the model's own labels (`Q3:`, `Q7.`, etc.) and assigns sequential numbers starting at `Q1:`, `Q2:`, … based on a local counter.
+- **Trigram Jaccard Deduplication**: Computes character 3-grams (`_trigrams()`) for each question and evaluates pairwise Jaccard similarity (`_jaccard()`). If a new question shares **≥ 72% trigram similarity** with any previously accepted question in the set, it and its corresponding `A:` answer are silently dropped.
+
+---
+
 ## Execution Flow
 
 1. User inputs API key and selects an AI feature
@@ -161,8 +211,9 @@ TASK: Write a complete, comprehensive academic assignment on the topic. Include 
 3. `callAI()` checks the selected provider and dispatches to `callClaude()` or `callOllama()`
 4. Request dispatched via `fetch` with `stream: true`
 5. `onChunk` incrementally updates the textarea and canvas (200ms throttle)
-6. Status line shows `✦ Generating…`, then `✓ Done — <model>`
-7. On completion, final text is synced and autosaved
+6. On stream completion, the raw output passes through `sanitizeAiResponse()` and `resequenceQA()`
+7. Status line shows `✦ Generating…`, then `✓ Done — <model>`
+8. Cleaned, resequenced text is updated in `S.text`, synced to page editors, re-rendered on canvas, and autosaved
 
 ---
 

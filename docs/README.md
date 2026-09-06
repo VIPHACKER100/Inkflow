@@ -6,7 +6,7 @@
 
 Welcome to the **Inkflow** documentation hub. This folder contains all technical, design, and operational documentation for the project.
 
-**Current Version**: 1.6.22 — Human Handwriting Realism Engine (seeded `mulberry32` PRNG for 100% deterministic layout & exports, per-glyph jitter with script-aware Devanagari protection, random-walk baseline drift, pen pressure variations, variable letter & word spacing, rare retrace double-strokes and margin compression, toggleable `#realism-slider` and `#rare-imperfections-toggle`), Editor Marker Round-Trip fixes (`[sticky]`/`[callout]` syntax survives page-editor edits), PDF Output Size presets (Compact / Standard / High, persisted), Lossless Page-Editor Sync (`textContent` + `pre-wrap`), Clean Notes Q&A structure, Question & Answer numbers in left margin, Offline Smart Arrange.
+**Current Version**: 1.6.23 — AI Response Post-Processing (`sanitizeAiResponse()` strips markdown leakage — code fences, backticks, bold/italic markers, HTML tags — before any AI result reaches the canvas; `resequenceQA()` locally renumbers all Q:/A: flashcard pairs and deduplicates near-identical questions via trigram Jaccard similarity); Human Handwriting Realism Engine (seeded `mulberry32` PRNG for 100% deterministic layout & exports, per-glyph jitter with script-aware Devanagari protection, random-walk baseline drift, pen pressure variations, variable letter & word spacing, rare retrace double-strokes and margin compression, toggleable `#realism-slider` and `#rare-imperfections-toggle`), Editor Marker Round-Trip fixes, PDF Output Size presets (Compact / Standard / High, persisted), Lossless Page-Editor Sync, Clean Notes Q&A structure, Question & Answer numbers in left margin, Offline Smart Arrange.
 
 ---
 
