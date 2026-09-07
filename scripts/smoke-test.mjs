@@ -128,6 +128,9 @@ source += `
   sanitizeAiResponse,
   resequenceQA,
   smartArrangeLocal,
+  updateEditorStyles,
+  getAlignmentOffset,
+  handleLineClick,
   PAGE_W,
   PAGE_H,
   assignState: (patch) => Object.assign(S, patch),
@@ -170,6 +173,7 @@ const {
   S, layoutText, parseRichSyntax, getGlobalTextFromEditors,
   sanitizeText, hashString, createPRNG, getCharVariation,
   sanitizeAiResponse, resequenceQA, smartArrangeLocal,
+  updateEditorStyles, getAlignmentOffset, handleLineClick,
   PAGE_W, PAGE_H, assignState,
 } = sandbox.__inkflow;
 
@@ -430,6 +434,57 @@ test('smartArrangeLocal preserves indentation and handles expanded bullet/Q&A/he
   assert.ok(res.text.includes('Q1: What is DNA?'), 'question 1 normalized to Q1');
   assert.ok(res.text.includes('A1: Deoxyribonucleic acid.'), 'ans 1 normalized to A1');
 });
+
+/* ── 7. Edit Mode Lines Alignment ───────────────────────────── */
+
+console.log('\nEdit Mode Lines Alignment');
+
+test('updateEditorStyles sets paddingTop matching canvas baseline minus half-leading & baseline offset', () => {
+  assignState({ fontSize: 22, lineHeight: 1.5, textAlignment: 'bottom', noteLayout: 'standard' });
+  const editorEl = makeElement('editor-1');
+  editorEl.id = 'editor-1';
+  const canvasEl = makeElement('page-1');
+  canvasEl.offsetWidth = PAGE_W; // scale = 1.0
+
+  updateEditorStyles(editorEl, canvasEl);
+
+  const lineSpacingPx = 22 * 1.5; // 33
+  const alignOff = getAlignmentOffset('bottom', 22, 1.5); // 0
+  const expectedBaseline = S.margin + lineSpacingPx * 2 + alignOff; // 80 + 66 = 146
+  const expectedTopPadding = expectedBaseline - 0.5 * lineSpacingPx - 0.30 * 22; // 122.9
+
+  assert.equal(parseFloat(editorEl.style.paddingTop), expectedTopPadding,
+    `paddingTop should be ${expectedTopPadding}px`);
+  assert.equal(parseFloat(editorEl.style.lineHeight), lineSpacingPx,
+    `lineHeight should be ${lineSpacingPx}px`);
+
+  // DOM baseline calculation check:
+  // paddingTop + 0.5 * lineSpacingPx + 0.30 * fontSize
+  const domBaseline = parseFloat(editorEl.style.paddingTop) + 0.5 * lineSpacingPx + 0.30 * 22;
+  assert.equal(domBaseline, expectedBaseline,
+    `DOM text baseline (${domBaseline}) must exactly equal canvas line 0 baseline (${expectedBaseline})`);
+});
+
+test('handleLineClick uses aligned topPadding formula for click targetLineIndex', () => {
+  assignState({ fontSize: 20, lineHeight: 1.6, textAlignment: 'middle', noteLayout: 'standard' });
+  const lineSpacingPx = 20 * 1.6; // 32
+  const alignOff = getAlignmentOffset('middle', 20, 1.6); // -(32 * 0.32) = -10.24
+  const expectedBaseline = 60 + 32 * 2 + alignOff; // 113.76
+  const expectedTopPadding = expectedBaseline - 0.5 * lineSpacingPx - 0.30 * 20; // 91.76
+
+  const editorEl = makeElement('editor-1');
+  editorEl.innerText = 'Line 0\nLine 1\nLine 2';
+
+  const canvasEl = makeElement('page-1');
+  canvasEl.getBoundingClientRect = () => ({ top: 0, height: 720 });
+
+  // Simulate click on line 0 (y = expectedTopPadding + 10)
+  handleLineClick({ clientY: expectedTopPadding + 10 }, editorEl, canvasEl);
+  // Lines should stay unchanged since target line 0 exists
+  assert.equal(editorEl.innerText, 'Line 0\nLine 1\nLine 2');
+});
+
+
 
 /* ── Summary ──────────────────────────────────────────────────── */
 

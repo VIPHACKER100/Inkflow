@@ -443,9 +443,9 @@ function handleLineClick(e, targetElement, canvas) {
 
   if (targetElement.classList.contains('margin-text-overlay')) {
     const marginFontSize = Math.max(11, Math.min(S.fontSize, 16));
-    topPadding = Math.max(0, firstLineBaseline - marginFontSize * 0.82);
+    topPadding = Math.max(0, firstLineBaseline - 0.5 * lineSpacingPx - 0.30 * marginFontSize);
   } else {
-    topPadding = Math.max(0, firstLineBaseline - S.fontSize * 0.82);
+    topPadding = Math.max(0, firstLineBaseline - 0.5 * lineSpacingPx - 0.30 * S.fontSize);
   }
 
   let targetLineIndex = Math.floor((clickYInCanvas - topPadding) / lineSpacingPx);
@@ -883,7 +883,7 @@ function updateEditorStyles(editor, canvas) {
   const firstLineBaseline = (isCornell || isTwoColumn)
     ? (S.margin + S.fontSize + lineSpacingPx + alignOff)
     : (S.margin + lineSpacingPx * 2 + alignOff);
-  const topPadding = Math.max(0, firstLineBaseline - S.fontSize * 0.82);
+  const topPadding = Math.max(0, firstLineBaseline - 0.5 * lineSpacingPx - 0.30 * S.fontSize);
 
   const leftPad = isCornell ? 230 : S.margin;
   const marginWidth = isCornell ? 220 : (S.margin - 10);
@@ -914,7 +914,7 @@ function updateEditorStyles(editor, canvas) {
       const marginFirstLineBaseline = (isCornell || isTwoColumn)
         ? (S.margin + S.fontSize + lineSpacingPx + alignOff)
         : (S.margin + lineSpacingPx * 2 + alignOff);
-      const marginTopPadding = Math.max(0, marginFirstLineBaseline - marginFontSize * 0.82);
+      const marginTopPadding = Math.max(0, marginFirstLineBaseline - 0.5 * lineSpacingPx - 0.30 * marginFontSize);
 
       marginText.style.fontFamily = getFontStack(containsDevanagari(marginText.innerText));
       marginText.style.fontSize = (marginFontSize * scale) + 'px';
