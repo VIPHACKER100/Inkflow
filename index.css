@@ -667,6 +667,7 @@ html.dark .export-toast--error   { color: #f07070; }
   position: relative;
   z-index: 1;
   padding-bottom: 90px;
+  width: 100%;
 }
 
 .page-wrapper {
@@ -675,6 +676,8 @@ html.dark .export-toast--error   { color: #f07070; }
   flex-direction: column;
   align-items: center;
   padding-right: 0;
+  width: 100%;
+  max-width: 720px;
 }
 
 .worksheet-header {
@@ -692,6 +695,8 @@ html.dark .export-toast--error   { color: #f07070; }
   padding: 0;
   box-shadow: none;
   pointer-events: auto;
+  /* Scale worksheet header proportionally when canvas is scaled down */
+  transform-origin: top right;
 }
 
 .worksheet-field-row {
@@ -747,10 +752,11 @@ html.dark .export-toast--error   { color: #f07070; }
 
 .canvas-container {
   position: relative;
-  display: inline-block;
+  display: block;
   box-shadow: 0 4px 24px var(--paper-shadow), 0 1px 4px rgba(0, 0, 0, 0.06);
   border-radius: 2px;
   max-width: 100%;
+  overflow: visible;
 }
 
 .canvas-page {
@@ -924,11 +930,35 @@ html.dark .page-editor:focus {
   }
 
   #canvas-area {
-    padding: 16px 8px 80px;
+    padding: 16px 16px 80px;
+    overflow-x: hidden;
+    align-items: center;
   }
 
   #canvas-area::before {
     left: 0;
+  }
+
+  /* Ensure canvas-container doesn't overflow viewport */
+  .canvas-container {
+    max-width: calc(100vw - 32px);
+    width: 100%;
+  }
+
+  .canvas-page {
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  /* worksheet-header: scale down proportionally with the canvas */
+  .worksheet-header {
+    right: 4px;
+    top: 4px;
+  }
+
+  .worksheet-input-box {
+    width: 60px;
+    font-size: 10px;
   }
 
   #page-nav {
@@ -2779,9 +2809,34 @@ a {
     padding-bottom: calc(16px + env(safe-area-inset-bottom));
   }
 
-  /* Tighter canvas gutters */
+
+  /* Canvas area: no horizontal overflow, tight gutters */
   #canvas-area {
-    padding: 12px 6px 70px;
+    padding: 12px 8px 80px;
+    overflow-x: hidden;
+    align-items: center;
+  }
+
+  /* Canvas fills available width, height scales proportionally */
+  .canvas-container {
+    max-width: calc(100vw - 16px);
+    width: 100%;
+  }
+
+  .canvas-page {
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Worksheet header stays inside canvas bounds */
+  .worksheet-header {
+    right: 4px;
+    top: 4px;
+  }
+
+  .worksheet-input-box {
+    width: 56px;
+    font-size: 10px;
   }
 }
 
@@ -2790,4 +2845,58 @@ a {
   .logo-text {
     display: none;
   }
+
+  /* Even tighter canvas on very small phones */
+  #canvas-area {
+    padding: 8px 6px 80px;
+  }
+
+  .canvas-container {
+    max-width: calc(100vw - 12px);
+    width: 100%;
+  }
+
+  .page-label {
+    font-size: 10px;
+  }
 }
+
+/* ── Font dropdown preview classes (new handwriting suite) ── */
+.font-delius { font-family: 'Delius'; }
+.font-gloria-hallelujah { font-family: 'Gloria Hallelujah'; }
+.font-schoolbell { font-family: 'Schoolbell'; }
+.font-architects-daughter { font-family: 'Architects Daughter'; }
+.font-gochi-hand { font-family: 'Gochi Hand'; }
+.font-neucha { font-family: 'Neucha'; }
+.font-covered-by-your-grace { font-family: 'Covered By Your Grace'; }
+.font-the-girl-next-door { font-family: 'The Girl Next Door'; }
+.font-waiting-for-the-sunrise { font-family: 'Waiting for the Sunrise'; }
+.font-dancing-script { font-family: 'Dancing Script'; }
+.font-great-vibes { font-family: 'Great Vibes'; }
+.font-satisfy { font-family: 'Satisfy'; }
+.font-sacramento { font-family: 'Sacramento'; }
+.font-cedarville-cursive { font-family: 'Cedarville Cursive'; }
+.font-zeyada { font-family: 'Zeyada'; }
+.font-la-belle-aurore { font-family: 'La Belle Aurore'; }
+.font-nothing-you-could-do { font-family: 'Nothing You Could Do'; }
+.font-homemade-apple { font-family: 'Homemade Apple'; }
+.font-reenie-beanie { font-family: 'Reenie Beanie'; }
+.font-just-another-hand { font-family: 'Just Another Hand'; }
+.font-nanum-pen-script { font-family: 'Nanum Pen Script'; }
+.font-nanum-brush-script { font-family: 'Nanum Brush Script'; }
+.font-pangolin { font-family: 'Pangolin'; }
+.font-reey { font-family: 'Reey'; }
+/* ── New print handwriting fonts (v1.6.24) — all OFL / Apache 2.0 ── */
+.font-permanent-marker { font-family: 'Permanent Marker'; }
+.font-coming-soon { font-family: 'Coming Soon'; }
+.font-short-stack { font-family: 'Short Stack'; }
+.font-handlee { font-family: 'Handlee'; }
+.font-rancho { font-family: 'Rancho'; }
+.font-amatic-sc { font-family: 'Amatic SC'; }
+.font-fuzzy-bubbles { font-family: 'Fuzzy Bubbles'; }
+/* ── New cursive / script fonts (v1.6.24) — all OFL / Apache 2.0 ── */
+.font-pacifico { font-family: 'Pacifico'; }
+.font-parisienne { font-family: 'Parisienne'; }
+.font-yellowtail { font-family: 'Yellowtail'; }
+.font-charm { font-family: 'Charm'; }
+.font-aladin { font-family: 'Aladin'; }

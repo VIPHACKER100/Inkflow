@@ -88,7 +88,7 @@ Bottom pill-style navigation (`◀ Page X of Y ▶`) for multi-page A4 transitio
 ## Typography
 
 - **UI Font**: `'Crimson Pro'`, Georgia, serif (`--font-ui`)
-- **Handwriting Fonts**: Google Fonts — English (Caveat, Indie Flower, Shadows Into Light, Patrick Hand), Devanagari (Kalam, Amita, Noto Sans Devanagari, Noto Serif Devanagari, Hind, Tiro Devanagari Hindi, Baloo 2, Martel), plus user-uploaded and HandFonted Studio fonts
+- **Handwriting Fonts**: Google Fonts (all copyright-free OFL / Apache 2.0) — 40+ curated fonts including 20 Print handwriting fonts (Caveat, Indie Flower, Shadows Into Light, Patrick Hand, Delius, Gloria Hallelujah, Schoolbell, Architects Daughter, Gochi Hand, Neucha, Covered By Your Grace, The Girl Next Door, Waiting for the Sunrise, Permanent Marker, Coming Soon, Short Stack, Handlee, Rancho, Amatic SC, Fuzzy Bubbles), 20 Cursive & Script fonts (Dancing Script, Great Vibes, Satisfy, Sacramento, Cedarville Cursive, Zeyada, La Belle Aurore, Nothing You Could Do, Homemade Apple, Reenie Beanie, Just Another Hand, Nanum Pen Script, Nanum Brush Script, Pangolin, Reey, Pacifico, Parisienne, Yellowtail, Charm, Aladin), 8 Devanagari fonts (Kalam, Amita, Noto Sans Devanagari, Noto Serif Devanagari, Hind, Tiro Devanagari Hindi, Baloo 2, Martel), plus user-uploaded and HandFonted Studio fonts
 - **Clean Fallbacks**: Roboto, Arial — for users preferring non-handwriting rendering
 - **Indic Fallbacks**: Noto Sans Devanagari, Hind — automatic for Devanagari/Hindi text via `getFontStack()`
 
@@ -152,12 +152,37 @@ Each preset sets paper style, ink color, rotation chaos, bleed, pressure, and fo
 
 ## Responsive Breakpoints
 
-| Range | Device Class |
-| :--- | :--- |
-| ≥ 1920px | Large desktop — larger canvas (`canvasSize: 320`) |
-| 1024 – 1919px | Standard desktop (`canvasSize: 256`) |
-| 768 – 1023px | Tablet landscape (`canvasSize: 280`) |
-| 481 – 767px | Tablet portrait (`canvasSize: 240`) |
-| ≤ 480px | Mobile (`canvasSize: min(280, width−60)`) |
+### Page Canvas Display Width
 
-Touch devices additionally get `touch-action: none` on the sketchpad and larger hit targets.
+Canvas pages use `getResponsiveCanvasWidth()` (v1.6.24) to set the CSS display width at creation and on every resize. The canvas internal resolution always stays at 794×1123 px (A4); only the visual size changes.
+
+| Viewport | Display Width | Gutters |
+| :--- | :--- | :--- |
+| ≤ 480 px (small phones) | `min(794, vw − 24)px` | 6px each side |
+| ≤ 768 px (large phones / tablets) | `min(794, vw − 32)px` | 16px each side |
+| > 768 px (desktop) | `min(794, 720)px` | — |
+
+### Mobile CSS Overrides (≤768px)
+
+| Selector | Property | Value |
+| :--- | :--- | :--- |
+| `#canvas-area` | `overflow-x` | `hidden` |
+| `#canvas-area` | `align-items` | `center` |
+| `.canvas-container` | `max-width` | `calc(100vw − 16px)` |
+| `.canvas-container` | `width` | `100%` |
+| `.canvas-page` | `width` | `100% !important` |
+| `.canvas-page` | `height` | `auto !important` |
+| `.worksheet-header` | `right` / `top` | `4px` / `4px` |
+| `.worksheet-input-box` | `width` / `font-size` | `56px` / `10px` |
+
+### Sketchpad Modal Breakpoints
+
+| Range | Device Class | Canvas Size |
+| :--- | :--- | :--- |
+| ≥ 1920 px | Large desktop | `canvasSize: 320` |
+| 1024 – 1919 px | Standard desktop | `canvasSize: 256` |
+| 768 – 1023 px | Tablet landscape | `canvasSize: 280` |
+| 481 – 767 px | Tablet portrait | `canvasSize: 240` |
+| ≤ 480 px | Mobile | `canvasSize: min(280, width − 60)` |
+
+Touch devices additionally get `touch-action: none` on the sketchpad canvas and larger hit targets via `@media (hover: none)`.

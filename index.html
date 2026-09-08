@@ -30,7 +30,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Delius&family=Homemade+Apple&family=Shadows+Into+Light&family=Architects+Daughter&family=Gochi+Hand&family=Just+Another+Hand&family=Nanum+Pen+Script&family=Pangolin&family=Reey:wght@400&family=Indie+Flower&family=Patrick+Hand&family=Kalam:wght@300;400;700&family=Amita:wght@400;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Serif+Devanagari:wght@400;500;600;700&family=Hind:wght@300;400;500;600;700&family=Tiro+Devanagari+Hindi:ital@0;1&family=Baloo+2:wght@400;500;600;700;800&family=Martel:wght@200;300;400;600;700;800;900&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Delius&family=Homemade+Apple&family=Shadows+Into+Light&family=Architects+Daughter&family=Gochi+Hand&family=Just+Another+Hand&family=Nanum+Pen+Script&family=Nanum+Brush+Script&family=Pangolin&family=Reey:wght@400&family=Indie+Flower&family=Patrick+Hand&family=Kalam:wght@300;400;700&family=Amita:wght@400;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Serif+Devanagari:wght@400;500;600;700&family=Hind:wght@300;400;500;600;700&family=Tiro+Devanagari+Hindi:ital@0;1&family=Baloo+2:wght@400;500;600;700;800&family=Martel:wght@200;300;400;600;700;800;900&family=Gloria+Hallelujah&family=Schoolbell&family=Dancing+Script:wght@400..700&family=Great+Vibes&family=Satisfy&family=Sacramento&family=Nothing+You+Could+Do&family=Covered+By+Your+Grace&family=Reenie+Beanie&family=The+Girl+Next+Door&family=Waiting+for+the+Sunrise&family=Cedarville+Cursive&family=Zeyada&family=La+Belle+Aurore&family=Neucha&family=Permanent+Marker&family=Coming+Soon&family=Short+Stack&family=Handlee&family=Rancho&family=Amatic+SC:wght@400;700&family=Fuzzy+Bubbles:wght@400;700&family=Pacifico&family=Parisienne&family=Yellowtail&family=Charm:wght@400;700&family=Aladin&display=swap"
     rel="stylesheet" />
 
   <!-- html2canvas for image export -->
@@ -167,15 +167,53 @@ Try pasting a paragraph of lecture notes!"></textarea>
           <!-- Phase 3.1 — Font selector -->
           <div class="sb-label">Handwriting Font</div>
           <select id="font-select" title="Handwriting Font">
-            <optgroup label="English Handwriting">
+            <optgroup label="English — Print Handwriting">
               <option value="Caveat" class="font-caveat">Caveat</option>
               <option value="Indie Flower" class="font-indie-flower">Indie Flower</option>
               <option value="Shadows Into Light" class="font-shadows-into-light">Shadows Into Light</option>
               <option value="Patrick Hand" class="font-patrick-hand">Patrick Hand</option>
+              <option value="Delius" class="font-delius">Delius</option>
+              <option value="Gloria Hallelujah" class="font-gloria-hallelujah">Gloria Hallelujah</option>
+              <option value="Schoolbell" class="font-schoolbell">Schoolbell</option>
+              <option value="Architects Daughter" class="font-architects-daughter">Architects Daughter</option>
+              <option value="Gochi Hand" class="font-gochi-hand">Gochi Hand</option>
+              <option value="Neucha" class="font-neucha">Neucha</option>
+              <option value="Covered By Your Grace" class="font-covered-by-your-grace">Covered By Your Grace</option>
+              <option value="The Girl Next Door" class="font-the-girl-next-door">The Girl Next Door</option>
+              <option value="Waiting for the Sunrise" class="font-waiting-for-the-sunrise">Waiting for the Sunrise</option>
+              <option value="Permanent Marker" class="font-permanent-marker">Permanent Marker</option>
+              <option value="Coming Soon" class="font-coming-soon">Coming Soon</option>
+              <option value="Short Stack" class="font-short-stack">Short Stack</option>
+              <option value="Handlee" class="font-handlee">Handlee</option>
+              <option value="Rancho" class="font-rancho">Rancho</option>
+              <option value="Amatic SC" class="font-amatic-sc">Amatic SC</option>
+              <option value="Fuzzy Bubbles" class="font-fuzzy-bubbles">Fuzzy Bubbles</option>
+            </optgroup>
+            <optgroup label="English — Cursive & Script">
+              <option value="Dancing Script" class="font-dancing-script">Dancing Script</option>
+              <option value="Great Vibes" class="font-great-vibes">Great Vibes</option>
+              <option value="Satisfy" class="font-satisfy">Satisfy</option>
+              <option value="Sacramento" class="font-sacramento">Sacramento</option>
+              <option value="Cedarville Cursive" class="font-cedarville-cursive">Cedarville Cursive</option>
+              <option value="Zeyada" class="font-zeyada">Zeyada</option>
+              <option value="La Belle Aurore" class="font-la-belle-aurore">La Belle Aurore</option>
+              <option value="Nothing You Could Do" class="font-nothing-you-could-do">Nothing You Could Do</option>
+              <option value="Homemade Apple" class="font-homemade-apple">Homemade Apple</option>
+              <option value="Reenie Beanie" class="font-reenie-beanie">Reenie Beanie</option>
+              <option value="Just Another Hand" class="font-just-another-hand">Just Another Hand</option>
+              <option value="Nanum Pen Script" class="font-nanum-pen-script">Nanum Pen Script</option>
+              <option value="Nanum Brush Script" class="font-nanum-brush-script">Nanum Brush Script</option>
+              <option value="Pangolin" class="font-pangolin">Pangolin</option>
+              <option value="Reey" class="font-reey">Reey</option>
+              <option value="Pacifico" class="font-pacifico">Pacifico</option>
+              <option value="Parisienne" class="font-parisienne">Parisienne</option>
+              <option value="Yellowtail" class="font-yellowtail">Yellowtail</option>
+              <option value="Charm" class="font-charm">Charm</option>
+              <option value="Aladin" class="font-aladin">Aladin</option>
             </optgroup>
             <optgroup label="हिंदी / Devanagari">
               <option value="Kalam" class="font-kalam">Kalam — कलम (Handwriting)</option>
-              <option value="Amita" class="font-amita">Amita — अ��िता (Calligraphic)</option>
+              <option value="Amita" class="font-amita">Amita — अमिता (Calligraphic)</option>
               <option value="Noto Sans Devanagari" class="font-noto-sans-devanagari">Noto Sans Devanagari — नोटो (Clean)</option>
               <option value="Noto Serif Devanagari" class="font-noto-serif-devanagari">Noto Serif Devanagari — नोटो सेरिफ़ (Formal)</option>
               <option value="Hind" class="font-hind">Hind — हिन्द (Readable)</option>
@@ -707,7 +745,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
   <script defer src="/_vercel/insights/script.js"></script>
 
   <!-- Custom Script -->
-  <script src="index.js?v=1.6.23"></script>
+  <script src="index.js?v=1.6.24"></script>
 
   <!-- Phase 1 PWA — Service Worker Registration -->
   <script>

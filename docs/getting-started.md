@@ -4,7 +4,7 @@
 
 # 🚀 Getting Started with Inkflow
 
-Welcome to **Inkflow v1.6.11** — a single-file Progressive Web App (PWA) that turns plain text into beautiful, handwritten-style notes with built-in AI (OpenRouter, Anthropic, and local Ollama) plus offline helpers like the no-key Smart Arrange.
+Welcome to **Inkflow v1.6.24** — a single-file Progressive Web App (PWA) that turns plain text into beautiful, handwritten-style notes with built-in AI (OpenRouter, Anthropic, and local Ollama) plus offline helpers like the no-key Smart Arrange. Fully responsive — verified at 390px mobile width.
 
 ---
 
@@ -43,8 +43,8 @@ See [Deployment](./deployment.md) for details, including the AI proxy caveat.
 ```
 Inkflow/
 ├── index.html          # App shell + CDN library loads (html2canvas, jsPDF, opentype.js, Font Awesome — SRI-pinned)
-├── index.css           # ~2,650 lines: design tokens, themes, paper styles, modals
-├── index.js            # ~6,800 lines: the entire application logic
+├── index.css           # ~2,800 lines: design tokens, themes, paper styles, mobile media queries, modals
+├── index.js            # ~7,300 lines: the entire application logic
 ├── sw.js               # Service worker: PWA offline support (cache-first assets)
 ├── scripts/
 │   └── check-versions.mjs  # npm run check-versions — enforces version parity across files
@@ -92,12 +92,13 @@ Inkflow/
 
 | Category | Features |
 | :--- | :--- |
-| **Handwriting** | 14 fonts (English + Devanagari handwriting, 2 clean fallbacks) + custom uploads, 10 paper styles, ink presets, bleed/pressure, auto-fit, alignment |
+| **Handwriting** | 40+ fonts (English + Devanagari handwriting, clean fallbacks) + custom uploads, 10 paper styles, ink presets, bleed/pressure, auto-fit, alignment |
 | **Layouts** | Standard, Two-Column, Cornell Study Notes |
 | **Study Tools** | Study Mode, Flashcards (auto-extracted), Voice-to-Notes, Notebooks & Folders, margin Q/Ans labels |
 | **AI & Offline** | Smart Arrange (offline, no key), Summarize, Grammar Fix, Lecture→Notes, Assignment Generator (OpenRouter/Anthropic/Ollama) |
 | **Custom Fonts** | Upload `.ttf`/`.otf`, or build your own with the HandFonted Studio |
 | **Export** | PNG, JPG, PDF (3 size presets: Compact / Standard / High), SVG, Clipboard, Print — all 2× upscaled |
+| **Mobile (v1.6.24)** | Responsive canvas fills viewport, icon-only compact toolbar, sidebar drawer, safe-area insets, full-screen modals |
 
 ---
 

@@ -519,8 +519,10 @@ function createPage(pageNum) {
   canvas.width = PAGE_W;
   canvas.height = PAGE_H;
   canvas.id = 'page-' + pageNum;
-  canvas.style.width = Math.min(PAGE_W, 720) + 'px';
-  canvas.style.height = Math.min(PAGE_H, 720 * PAGE_H / PAGE_W) + 'px';
+  // Set responsive display width so canvas scales to viewport on mobile
+  const responsiveW = getResponsiveCanvasWidth();
+  canvas.style.width = responsiveW + 'px';
+  canvas.style.height = Math.round(responsiveW * PAGE_H / PAGE_W) + 'px';
 
   const editor = document.createElement('div');
   editor.className = 'page-editor';
@@ -690,9 +692,9 @@ function createPage(pageNum) {
   container.appendChild(canvas);
   container.appendChild(editor);
   container.appendChild(marginText);
+  container.appendChild(worksheetHeader); // inside canvas-container so it scales with canvas
   wrapper.appendChild(label);
   wrapper.appendChild(container);
-  wrapper.appendChild(worksheetHeader);
 
   document.getElementById('page-container').appendChild(wrapper);
   pages.push(canvas);
@@ -996,13 +998,32 @@ function getGlobalTextFromEditors() {
 }
 
 window.addEventListener('resize', () => {
+  const responsiveW = getResponsiveCanvasWidth();
   pages.forEach((c, idx) => {
+    // Update canvas display size to fit viewport
+    c.style.width = responsiveW + 'px';
+    c.style.height = Math.round(responsiveW * PAGE_H / PAGE_W) + 'px';
     const editor = document.getElementById('editor-' + (idx + 1));
     if (editor) {
       updateEditorStyles(editor, c);
     }
   });
 });
+
+// Returns the appropriate CSS display width for a page canvas based on viewport
+function getResponsiveCanvasWidth() {
+  // Available width = viewport minus canvas-area horizontal padding
+  const vw = window.innerWidth;
+  if (vw <= 480) {
+    // Small phones: fill viewport with 12px gutters each side
+    return Math.min(PAGE_W, vw - 24);
+  } else if (vw <= 768) {
+    // Tablets/large phones: fill with 16px gutters
+    return Math.min(PAGE_W, vw - 32);
+  }
+  // Desktop: cap at 720
+  return Math.min(PAGE_W, 720);
+}
 
 
 /* ───────────────────────────────────────────

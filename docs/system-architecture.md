@@ -10,7 +10,7 @@ This document outlines the **high-level system architecture**, **component layer
 
 ## Architecture Overview
 
-Inkflow is architected as a modular, decoupled, single-file client-side application. It operates entirely within the user's browser, eliminating backend latency and optimizing rendering speeds. All application logic lives in `index.js` (≈7,200 lines), styling in `index.css`, and structure in `index.html`.
+Inkflow is architected as a modular, decoupled, single-file client-side application. It operates entirely within the user's browser, eliminating backend latency and optimizing rendering speeds. All application logic lives in `index.js` (≈7,300 lines), styling in `index.css`, and structure in `index.html`.
 
 ---
 
@@ -94,6 +94,8 @@ graph TD
 ### 1. User Interface Layer
 The visible DOM elements the user interacts with directly: the sidebar control console, the floating top toolbar (56px fixed header; icon-only compaction ≤768px), the main canvas grid viewport with inline page editors (`.page-editor` contenteditable overlays), bottom pill-style pagination controls, the modal overlays (HandFonted Studio, Flashcards review), and the mobile drawer system — ≤768px the sidebar slides off-canvas behind a `#sidebar-backdrop` scrim, managed by `setSidebarOpen()` (scrim tap / `Escape` / canvas-tap close, body scroll-lock, `aria-expanded` sync).
 
+Page canvases are created at a CSS display width computed by `getResponsiveCanvasWidth()` (v1.6.24): phones ≤480px receive `vw − 24px`, tablets ≤768px receive `vw − 32px`, and desktop stays at 720px. The `window.resize` listener keeps all canvases' CSS dimensions live. The `.worksheet-header` (Date / P. No. overlay) is positioned inside `.canvas-container` so it always anchors to the actual canvas top-right corner regardless of viewport width.
+
 ### 2. State Management Layer
 A centralized global configuration object `S` acts as the single source of truth. Changes to any UI control update `S`, which triggers a debounced re-render. A debounced autosave module serializes settings to `localStorage` after a 1000ms idle delay and mirrors them into the active notebook. Custom handwriting glyphs live in **IndexedDB** (`InkflowDB` → `draftedGlyphs`), and notebooks live in **IndexedDB** (`InkflowDB` → `notebooks`), bypassing the 5MB `localStorage` quota.
 
@@ -142,3 +144,4 @@ graph LR
 6. **Rich Study Syntax**: `[sticky]`, `[callout]`, `==highlight==`, and `Q:`/`A:` markers are parsed out of the plain text and painted as margin notes, boxes, and flashcards.
 7. **Client-Side Vectorization**: Real-time Moore-Neighbor contour tracing, RDP curve simplification, and TTF compilation run purely inside the browser.
 8. **Standalone Portability**: All styling, layout logic, rendering scripts, and third-party dependencies run from a single, portable HTML file.
+9. **Fully Responsive Canvas (v1.6.24)**: `getResponsiveCanvasWidth()` ensures pages fill the available viewport on any device at creation and on every resize, with no hardcoded pixel widths on mobile. The overlay tree (`.canvas-container` → `canvas`, `.page-editor`, `.margin-text-overlay`, `.worksheet-header`) is fully self-contained so all positioned children scale together.

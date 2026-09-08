@@ -152,12 +152,20 @@ Word-wraps and fills short text (used inside stickies/callouts).
 ## Page Management
 
 ### `createPage(pageNum)`
-Creates a canvas page with a `contenteditable` editor overlay, Date/Page No. inputs, and margin-text overlay.
+Creates a canvas page with a `contenteditable` editor overlay, Date/Page No. inputs, and margin-text overlay. The canvas CSS display size is set by `getResponsiveCanvasWidth()` so it fills the viewport correctly on mobile from the moment of creation. The `.worksheet-header` DOM element is appended inside `.canvas-container` (v1.6.24) rather than `.page-wrapper`, ensuring the DATE/P.NO box is always positioned relative to the actual canvas surface.
 - **Returns**: Canvas element
 - **Side Effects**: Appends wrapper to DOM, registers focus/blur/input listeners, pushes to `pages[]`, calls `updatePageNav()`
 
 ### `redrawPageCanvas(pageNum)`
 Re-paints a single page's background and character queue (used during date/page-number editing).
+
+### `getResponsiveCanvasWidth()` *(v1.6.24)*
+Computes the correct CSS display width for a page canvas based on the current `window.innerWidth`.
+- ≤ 480 px: `min(PAGE_W, vw − 24)`
+- ≤ 768 px: `min(PAGE_W, vw − 32)`
+- Desktop: `min(PAGE_W, 720)`
+- **Returns**: `Number` — pixel width to assign to `canvas.style.width`
+- **Called by**: `createPage()` and the `window.resize` listener
 
 ### `updateEditorStyles(editor, canvas)`
 Syncs the page editor (`.page-editor`) and left-margin notes (`.margin-text-overlay`) font family, font size, line-height, top padding, left padding, width, and word spacing to canvas dimensions and settings. Dynamically calculates `firstLineBaseline` (`S.margin + lineSpacingPx * 2` for standard/clean; `S.margin + S.fontSize + lineSpacingPx` for Cornell/Two-Column) so DOM text baseline aligns perfectly with canvas paper ruled lines without vertical shifting.

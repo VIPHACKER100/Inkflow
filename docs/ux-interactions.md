@@ -140,6 +140,17 @@ See [Custom Font Suite](./custom-font-suite.md).
 
 Inkflow's mobile layout is a first-class target — verified at a 390×844 viewport.
 
+### Responsive Canvas Sizing (v1.6.24)
+Canvas pages are created with a CSS display width computed by `getResponsiveCanvasWidth()`:
+- **≤ 480 px** (small phones): `min(794, vw − 24)px` — fills the viewport with 6px gutters each side.
+- **≤ 768 px** (large phones / tablets): `min(794, vw − 32)px` — fills with 16px gutters.
+- **Desktop**: capped at 720 px as before.
+
+The `window.resize` and `orientationchange` listeners update every existing canvas's `style.width` and `style.height` live, so rotating the device immediately reflows all pages without a reload.
+
+### Worksheet Header Alignment (v1.6.24)
+The Date / P. No. header box (`.worksheet-header`) is appended to `.canvas-container` instead of `.page-wrapper`. Because `.canvas-container` is the `position: relative` ancestor that exactly wraps the canvas element, `position: absolute; right: 8px` now always anchors the box to the actual paper top-right corner regardless of how narrow the viewport is.
+
 ### Compact Toolbar
 At ≤768px the toolbar switches to icon-only: button wording lives in `.btn-label` spans that CSS hides, so every control (Animate, Clear, Study Mode, autosave badge, dark toggle) stays visible and tappable. Emoji glyphs, `title` tooltips, and `aria-label`s carry the meaning. At ≤480px the logo text hides too, leaving the mark only.
 

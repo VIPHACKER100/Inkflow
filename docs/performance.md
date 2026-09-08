@@ -10,12 +10,13 @@ This document covers Inkflow's performance characteristics and the techniques th
 
 ## Architecture-Level Wins
 
-- **Single-file vanilla JS** (≈7,200 lines, zero runtime dependencies beyond CDN libs) — no framework overhead, no virtual DOM.
+- **Single-file vanilla JS** (≈7,300 lines, zero runtime dependencies beyond CDN libs) — no framework overhead, no virtual DOM.
 - **Persistent page canvases**: characters are drawn once onto each A4 canvas and stay there; re-renders only occur on setting changes, not on scroll/export.
 - **Debounced rendering**: editor/textarea changes trigger `debounceRender()` — a 280ms trailing debounce around `renderText(S.text)`, so typing never re-lays-out per keystroke.
 - **Debounced autosave**: `autosave()` debounces 1000ms before serializing settings to `localStorage` and the active notebook to IndexedDB — writes are batched and non-blocking.
 - **IndexedDB for heavy assets**: custom glyph images (`draftedGlyphs`) and notebooks (`notebooks`) live in IndexedDB, keeping `localStorage` small.
 - **Fast Post-Processing**: `sanitizeAiResponse()` and `resequenceQA()` run in sub-millisecond time (<1ms) via single-pass regex and character trigram Sets.
+- **Responsive Canvas Resize (v1.6.24)**: `window.resize` updates all canvas CSS widths + editor styles in one pass using `getResponsiveCanvasWidth()` — O(pages), no redraws triggered, no layout thrash.
 
 ---
 
@@ -37,8 +38,9 @@ Drafted glyphs are decoded lazily into an in-memory `glyphImageCache` (index.js:
 | Metric | Value |
 | :--- | :--- |
 | Character render rate (animate, speed 8) | ~8 chars/frame → 500+ chars in ~2s |
-| A4 page canvas | 794 × 1123 px |
-| Approx. memory per filled page | ~3.4 MB bitmap |
+| A4 page canvas (internal resolution) | 794 × 1123 px |
+| A4 page canvas (CSS, mobile 390px) | ≈366 × 518 px |
+| Approx. memory per filled page | ~3.4 MB bitmap (full resolution) |
 | Render debounce | 280 ms trailing |
 | Autosave debounce | 1000 ms trailing |
 | Auto-fit font size | Binary search, 6 iterations |

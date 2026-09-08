@@ -6,6 +6,39 @@
 
 All notable changes to Inkflow are documented in this file.
 
+## [1.6.24] — 2026-09-08
+
+### ✒️ Expanded Free Handwriting Fonts Collection (OFL / Apache 2.0)
+
+- **12 New Open-Source Google Fonts Handwriting Styles**: Expanded the built-in typography library with 12 copyright-free handwriting typefaces:
+  - **Print Handwriting**: `Permanent Marker` (bold felt-tip marker), `Coming Soon` (playful casual print), `Short Stack` (rounded clean print), `Handlee` (gentle everyday handwriting), `Rancho` (brush casual block), `Amatic SC` (narrow hand-drawn caps), `Fuzzy Bubbles` (rounded friendly lettering).
+  - **Cursive & Script**: `Pacifico` (retro casual brush script), `Parisienne` (flowing French cursive), `Yellowtail` (flat-brush signage script), `Charm` (delicate flourishes), `Aladin` (expressive decorative calligraphic script).
+- **Comprehensive Font Selector**: The dropdown now houses over 40 distinct handwriting and calligraphic choices categorized under Print Handwriting, Cursive & Script, Devanagari / Hindi, and Clean fallback options.
+- **PWA Service Worker Pre-Cache Synchronization**: Synchronized the bundled Google Fonts stylesheet link in `sw.js` with `index.html` so newly added handwriting fonts are reliably cached for offline PWA operation.
+
+### 📱 Mobile Canvas Layout Fix
+
+- **Responsive Canvas Sizing (`getResponsiveCanvasWidth`)**: Canvas display width was previously hardcoded to `min(794, 720)px` regardless of viewport width. On narrow phones the canvas overflowed and CSS `max-width: 100%` squished it visually while the JS coordinate system was still 720px wide, causing misalignment between the ruled lines, the worksheet header, and the editor overlay. A new `getResponsiveCanvasWidth()` function computes the correct CSS display width at page-creation time and on every `resize` / `orientationchange` event:
+  - ≤ 480 px phones: `min(794, vw − 24)px` (6px gutter each side)
+  - ≤ 768 px tablets / large phones: `min(794, vw − 32)px` (16px gutter each side)
+  - Desktop: `min(794, 720)px` (unchanged)
+
+- **Worksheet Header Repositioned Inside Canvas Container**: The Date / P. No. header overlay (`.worksheet-header`) was previously appended to `.page-wrapper`, so its `position: absolute; right: 8px` was measured against the outer flex wrapper rather than the actual canvas surface. On mobile, where the canvas is narrower than the wrapper, the box floated outside the paper area. It is now appended to `.canvas-container` (the `position: relative` element that wraps `<canvas>`, `.page-editor`, and `.margin-text-overlay`), keeping it anchored to the canvas top-right corner at all viewport sizes.
+
+- **`window.resize` Handler Updated**: The resize listener now updates `canvas.style.width` and `canvas.style.height` for every page before recalculating editor styles, so rotating the device or resizing the browser window immediately reflows all pages.
+
+- **CSS — Layout Width Constraints**: `#page-container` and `.page-wrapper` now carry `width: 100%; max-width: 720px` so the flexbox tree properly constrains child elements on narrow viewports instead of overflowing. `.canvas-container` switched from `display: inline-block` to `display: block`.
+
+- **CSS — Mobile Media Queries (≤768px and ≤480px)**:
+  - `#canvas-area`: `overflow-x: hidden; align-items: center`
+  - `.canvas-container`: `max-width: calc(100vw − 16px); width: 100%`
+  - `.canvas-page`: `width: 100% !important; height: auto !important` (preserves A4 aspect ratio)
+  - `.worksheet-header`: `right: 4px; top: 4px`
+  - `.worksheet-input-box`: `width: 56px; font-size: 10px`
+  - Smallest phones (≤480px) get `padding: 8px 6px 80px` on `#canvas-area` and `max-width: calc(100vw − 12px)` on `.canvas-container`
+
+---
+
 ## [1.6.23] — 2026-09-07
 
 ### 🐛 Fixed
