@@ -131,6 +131,11 @@ source += `
   updateEditorStyles,
   getAlignmentOffset,
   handleLineClick,
+  collectAnswerLineItems,
+  drawMarginQuestionLabels,
+  getAnswerPrefixInfo,
+  clusterQueueLines,
+  pages,
   PAGE_W,
   PAGE_H,
   assignState: (patch) => Object.assign(S, patch),
@@ -174,6 +179,8 @@ const {
   sanitizeText, hashString, createPRNG, getCharVariation,
   sanitizeAiResponse, resequenceQA, smartArrangeLocal,
   updateEditorStyles, getAlignmentOffset, handleLineClick,
+  collectAnswerLineItems, drawMarginQuestionLabels, getAnswerPrefixInfo,
+  clusterQueueLines, pages,
   PAGE_W, PAGE_H, assignState,
 } = sandbox.__inkflow;
 
@@ -420,19 +427,21 @@ test('smartArrangeLocal normalizes headers, bullets, tags, and Q&A formatting', 
   assert.ok(res.text.includes('- Bullet point 1'), 'bullet must be normalized and capitalized');
   assert.ok(res.text.includes('[sticky:yellow]'), 'tag must be normalized');
   assert.ok(res.text.includes('Q1: What is cell division?'), 'Q1: must be normalized');
-  assert.ok(res.text.includes('A: It is mitosis.'), 'A: must be normalized');
+  assert.ok(res.text.includes('Answer: It is mitosis.'), 'Answer: must be normalized');
   assert.ok(res.text.includes('word, next word.'), 'punctuation spacing must be fixed');
 });
 
 test('smartArrangeLocal preserves indentation and handles expanded bullet/Q&A/header variants', () => {
-  const input = '##   Multi Space Header\n    + plus bullet\n    indented  code  line\nquestion 1: What is DNA?\nans 1: Deoxyribonucleic acid.';
+  const input = '##   Multi Space Header\n    + plus bullet\n    indented  code  line\nquestion 1: What is DNA?\nans 1: Deoxyribonucleic acid.\nC.!= 5\nexplanation: Because it is';
   const res = smartArrangeLocal(input);
   assert.ok(res.fixes > 0, 'must report non-zero fixes');
   assert.ok(res.text.includes('## Multi Space Header'), 'header multi-space normalized');
   assert.ok(res.text.includes('    - Plus bullet'), 'plus bullet normalized with indent');
   assert.ok(res.text.includes('    indented code line'), 'leading indentation preserved while internal spaces collapsed');
   assert.ok(res.text.includes('Q1: What is DNA?'), 'question 1 normalized to Q1');
-  assert.ok(res.text.includes('A1: Deoxyribonucleic acid.'), 'ans 1 normalized to A1');
+  assert.ok(res.text.includes('Answer 1: Deoxyribonucleic acid.'), 'ans 1 normalized to Answer 1');
+  assert.ok(res.text.includes('C. != 5'), 'option spacing normalized');
+  assert.ok(res.text.includes('Explanation: Because it is'), 'explanation normalized');
 });
 
 /* ── 7. Edit Mode Lines Alignment ───────────────────────────── */
@@ -484,7 +493,147 @@ test('handleLineClick uses aligned topPadding formula for click targetLineIndex'
   assert.equal(editorEl.innerText, 'Line 0\nLine 1\nLine 2');
 });
 
+/* ── 8. Margin Ans Labels & Edit-Mode-Only "Answer:" ─────────── */
 
+console.log('\nMargin Ans Labels & Edit-Mode-Only "Answer:"');
+
+test('getAnswerPrefixInfo detects Answer:, Ans:, A:, A1: prefixes and rejects non-answers', () => {
+  const check = (input, expectedLen, expectedBare) => {
+    const res = getAnswerPrefixInfo(input, null);
+    assert.ok(res, `prefix for "${input}" must be detected`);
+    assert.equal(res.prefixLength, expectedLen, `prefixLength for "${input}"`);
+    assert.equal(res.isBare, expectedBare, `isBare for "${input}"`);
+  };
+  check('Answer:Hello', 7, false);
+  check('Ans:Hello', 4, false);
+  check('A:Hello', 2, false);
+  check('A1:Hello', 3, false);
+  check('Answer:', 7, true);
+  check('Answer', 6, true);
+  check('Ans', 3, true);
+  assert.equal(getAnswerPrefixInfo('A. 1name', null), null, 'multiple-choice option A. 1name must not be an answer prefix');
+  assert.equal(getAnswerPrefixInfo('A.', null), null, 'bare option A. must not be an answer prefix');
+  assert.equal(getAnswerPrefixInfo('B. =', null), null, 'option B. must not be an answer prefix');
+  assert.equal(getAnswerPrefixInfo('C.', null), null, 'option C. must not be an answer prefix');
+  assert.equal(getAnswerPrefixInfo('Answering questions', null), null);
+  assert.equal(getAnswerPrefixInfo('Apple pie', null), null);
+});
+
+test('collectAnswerLineItems hides inline Answer: prefix on canvas while preserving edit mode text', () => {
+  assignState({ noteLayout: 'standard', showMarginLabels: true, margin: 80 });
+  const input = '1. What is cell?\nAnswer: Cell is the basic unit of life.';
+  const { cleanText } = parseRichSyntax(sanitizeText(input));
+  const { queue, pageTexts } = layoutText(cleanText || input);
+
+  // Edit mode text must retain "Answer:"
+  assert.ok(pageTexts[0].includes('Answer: Cell is the basic unit of life.'),
+    'pageTexts must preserve "Answer:" for edit mode display');
+
+  const hidden = collectAnswerLineItems(queue);
+
+  // Prefix items ('A', 'n', 's', 'w', 'e', 'r', ':') must be in hidden set
+  const hiddenChars = queue.filter(item => hidden.has(item)).map(item => item.ch).join('');
+  assert.equal(hiddenChars, 'Answer:', 'hidden items must match "Answer:" prefix');
+
+  // Content items ('Cell is...') must NOT be hidden
+  const visibleChars = queue.filter(item => !hidden.has(item)).map(item => item.ch).join('');
+  assert.ok(visibleChars.includes('Cellisthebasicunitoflife.'),
+    'answer content must remain visible for canvas rendering');
+
+  // Content items on the answer line must start cleanly at S.margin
+  const clusters = clusterQueueLines(queue);
+  const answerCluster = clusters.find(c => c.items.some(it => hidden.has(it)));
+  assert.ok(answerCluster, 'answer line cluster must exist');
+  const visibleAnswerItems = answerCluster.items.filter(it => !hidden.has(it));
+  assert.ok(visibleAnswerItems.length > 0, 'visible answer items must exist');
+  assert.ok(Math.abs(visibleAnswerItems[0].x - S.margin) <= 1.0,
+    `first visible answer character must start at margin (${S.margin}), got ${visibleAnswerItems[0].x}`);
+});
+
+test('collectAnswerLineItems hides bare Answer: line on canvas while preserving edit mode text', () => {
+  assignState({ noteLayout: 'standard', showMarginLabels: true, margin: 80 });
+  const input = '1. What is cell?\nAnswer:\nCell is the basic unit of life.';
+  const { cleanText } = parseRichSyntax(sanitizeText(input));
+  const { queue, pageTexts } = layoutText(cleanText || input);
+
+  assert.ok(pageTexts[0].includes('Answer:\nCell'), 'bare Answer: preserved in pageTexts for edit mode');
+
+  const hidden = collectAnswerLineItems(queue);
+  const hiddenChars = queue.filter(item => hidden.has(item)).map(item => item.ch).join('');
+  assert.equal(hiddenChars, 'Answer:', 'bare Answer: characters must be hidden on canvas');
+});
+
+test('drawMarginQuestionLabels draws Q1 and Ans labels right-aligned in left margin', () => {
+  assignState({ noteLayout: 'standard', showMarginLabels: true, margin: 80, fontSize: 22, lineHeight: 1.5 });
+  const input = '1. What is cell?\nAnswer: Cell is the basic unit of life.';
+  const { cleanText } = parseRichSyntax(sanitizeText(input));
+  const { queue } = layoutText(cleanText || input);
+
+  const drawnLabels = [];
+  const fakePage = makeElement('page-1');
+  fakePage.getContext = () => ({
+    save() {},
+    restore() {},
+    measureText: () => ({ width: 20 }),
+    fillText(text, x, y) {
+      drawnLabels.push({ text, x, y });
+    },
+    font: '',
+    fillStyle: '',
+    globalAlpha: 1,
+    textAlign: '',
+  });
+  pages.length = 0;
+  pages.push(fakePage);
+
+  collectAnswerLineItems(queue);
+  drawMarginQuestionLabels(queue, 0);
+
+  assert.equal(drawnLabels.length, 2, 'must draw two margin labels (Q1 and Ans)');
+  assert.equal(drawnLabels[0].text, 'Q1', 'first label must be Q1');
+  assert.equal(drawnLabels[1].text, 'Ans', 'second label must be Ans');
+  assert.equal(drawnLabels[0].x, 80 - 24, 'Q1 label x must be S.margin - 24');
+  assert.equal(drawnLabels[1].x, 80 - 24, 'Ans label x must be S.margin - 24');
+  assert.ok(drawnLabels[1].y > drawnLabels[0].y, 'Ans y must be below Q1 y');
+});
+
+test('drawMarginQuestionLabels draws correct sequence for multi-QA and never labels MC options', () => {
+  assignState({ noteLayout: 'standard', showMarginLabels: true, margin: 80, fontSize: 22, lineHeight: 1.5 });
+  const input = [
+    '1. What is cell?',
+    'A. Option A',
+    'B. Option B',
+    'Answer: Cell is unit of life.',
+    '2. What is atom?',
+    'Ans: Smallest particle.',
+  ].join('\n');
+  const { cleanText } = parseRichSyntax(sanitizeText(input));
+  const { queue } = layoutText(cleanText || input);
+
+  const drawnLabels = [];
+  const fakePage = makeElement('page-1');
+  fakePage.getContext = () => ({
+    save() {},
+    restore() {},
+    measureText: () => ({ width: 20 }),
+    fillText(text, x, y) {
+      drawnLabels.push({ text, x, y });
+    },
+    font: '',
+    fillStyle: '',
+    globalAlpha: 1,
+    textAlign: '',
+  });
+  pages.length = 0;
+  pages.push(fakePage);
+
+  collectAnswerLineItems(queue);
+  drawMarginQuestionLabels(queue, 0);
+
+  // Must have: Q1, Ans, Q2, Ans (MC options A. and B. must NOT have Ans)
+  assert.equal(drawnLabels.length, 4, 'must have exactly 4 labels (Q1, Ans, Q2, Ans)');
+  assert.deepEqual(drawnLabels.map(l => l.text), ['Q1', 'Ans', 'Q2', 'Ans']);
+});
 
 /* ── Summary ──────────────────────────────────────────────────── */
 

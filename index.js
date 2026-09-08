@@ -620,11 +620,9 @@ function createPage(pageNum) {
     autosave();
   });
 
-  // Focus: clear canvas text, preserve margin text, and enable overlay text in inkColor
+  // Focus: clear canvas text, preserve margin text and labels, and enable overlay text in inkColor
   editor.addEventListener('focus', () => {
-    const ctx = canvas.getContext('2d');
-    drawPaperBackground(ctx, S.paperStyle, pageNum);
-    drawMarginTextOnCanvas(ctx, pageNum);
+    refreshEditorCanvasDecorations(pageNum);
     updateEditorStyles(editor, canvas);
   });
 
@@ -634,11 +632,12 @@ function createPage(pageNum) {
     redrawPageCanvas(pageNum);
   });
 
-  // Input: concatenate all editor contents, sync to sidebar, and autosave
+  // Input: concatenate all editor contents, sync to sidebar, refresh margin labels live, and autosave
   editor.addEventListener('input', () => {
     const globalText = getGlobalTextFromEditors();
     S.text = globalText;
     document.getElementById('text-input').value = globalText;
+    refreshEditorCanvasDecorations(pageNum);
     updateEditorStyles(editor, canvas);
     autosave();
   });
@@ -801,6 +800,22 @@ function drawMarginTextOnCanvas(ctx, pageNum) {
   }
 
   ctx.restore();
+}
+
+function refreshEditorCanvasDecorations(pageNum) {
+  const canvas = pages[pageNum - 1];
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  drawPaperBackground(ctx, S.paperStyle, pageNum);
+  drawMarginTextOnCanvas(ctx, pageNum);
+  if (S.showMarginLabels !== false && S.noteLayout === 'standard') {
+    const textInputVal = document.getElementById('text-input').value;
+    if (textInputVal && textInputVal.trim()) {
+      const { cleanText } = parseRichSyntax(sanitizeText(textInputVal));
+      const { queue } = layoutText(cleanText || textInputVal);
+      drawMarginQuestionLabels(queue, pageNum - 1);
+    }
+  }
 }
 
 function redrawPageCanvas(pageNum) {
@@ -1819,6 +1834,9 @@ function paintCallouts(queue, targetPageIdx = null) {
    aligned with their lines on the page.
 ─────────────────────────────────────────── */
 function clusterQueueLines(queue) {
+  for (let i = 0; i < queue.length; i++) {
+    if (queue[i]._qIdx === undefined) queue[i]._qIdx = i;
+  }
   const byPage = new Map();
   for (const it of queue) {
     if (!byPage.has(it.pageIdx)) byPage.set(it.pageIdx, []);
@@ -1828,22 +1846,57 @@ function clusterQueueLines(queue) {
   const lineTol = S.fontSize * S.lineHeight * 0.5;
   const clusters = [];
   for (const [pageIdx, items] of byPage) {
-    items.sort((a, b) => a.y - b.y || a.x - b.x);
+    // Preserve natural reading order using queue index
+    items.sort((a, b) => a._qIdx - b._qIdx);
     let cluster = [];
+    let clusterBaseY = null;
     for (const it of items) {
-      // Wobble keeps same-line y within ~1px, so half a line separates rows
-      if (cluster.length > 0 && it.y - cluster[cluster.length - 1].y > lineTol) {
+      if (cluster.length > 0 && Math.abs(it.y - clusterBaseY) > lineTol) {
         clusters.push({ pageIdx, items: cluster });
         cluster = [];
+        clusterBaseY = null;
+      }
+      if (cluster.length === 0) {
+        clusterBaseY = it.y;
       }
       cluster.push(it);
     }
-    if (cluster.length > 0) clusters.push({ pageIdx, items: cluster });
+    if (cluster.length > 0) {
+      clusters.push({ pageIdx, items: cluster });
+    }
   }
   return clusters;
 }
 
-const ANSWER_LINE_RE = /^answer:?$/i;
+const ANSWER_LINE_RE = /^(?:answer|ans)(?:\d+)?[:.\-]?$/i;
+
+function getAnswerPrefixInfo(lineText, items) {
+  // 1. Matches "Answer:", "Ans:", "Answer.", "Ans.", "Answer-", "Ans-", "Answer 1:", "Ans 1:"
+  let m = lineText.match(/^(answer|ans)(?:\d+)?([:.\-])/i);
+  if (m) {
+    return { prefixLength: m[0].length, isBare: m[0].length === lineText.length };
+  }
+  // 2. Matches "A:" or "A1:" with explicit colon ONLY (strictly colon, so multiple-choice "A." or "A)" is never matched)
+  m = lineText.match(/^(a\d*)(:)/i);
+  if (m) {
+    return { prefixLength: m[0].length, isBare: m[0].length === lineText.length };
+  }
+  // 3. Bare "Answer", "Ans", "Answer 1", "Ans 1" alone on line (excludes single letter "A" or "A.")
+  m = lineText.match(/^(answer|ans)(?:\d+)?$/i);
+  if (m) {
+    return { prefixLength: m[0].length, isBare: true };
+  }
+  // 4. "Answer <text>" or "Ans <text>" where there was a space gap between the prefix word and next word
+  m = lineText.match(/^(answer|ans)/i);
+  if (m && items && items.length > m[0].length) {
+    const lastPrefixChar = items[m[0].length - 1];
+    const nextChar = items[m[0].length];
+    if (nextChar && (nextChar._ansShifted || (lastPrefixChar && (nextChar.x - lastPrefixChar.x > S.fontSize * 0.65)))) {
+      return { prefixLength: m[0].length, isBare: false };
+    }
+  }
+  return null;
+}
 
 function collectAnswerLineItems(queue) {
   // "Answer:" lines are represented on canvas by the margin "Ans" label;
@@ -1851,10 +1904,27 @@ function collectAnswerLineItems(queue) {
   const hidden = new Set();
   if (S.noteLayout !== 'standard') return hidden;
   for (const { items } of clusterQueueLines(queue)) {
-    items.sort((a, b) => a.x - b.x);
-    if (Math.abs(items[0].x - S.margin) > 2) continue;
+    if (!items || items.length === 0) continue;
+    if (items[0].x < S.margin - 10 || items[0].x > S.margin + 35) continue;
     const lineText = items.map(i => i.ch).join('');
-    if (ANSWER_LINE_RE.test(lineText)) items.forEach(i => hidden.add(i));
+    const ansInfo = getAnswerPrefixInfo(lineText, items);
+    if (ansInfo) {
+      for (let i = 0; i < ansInfo.prefixLength && i < items.length; i++) {
+        hidden.add(items[i]);
+      }
+      // If inline content follows the prefix on the same line,
+      // shift the content items left to begin cleanly at S.margin on canvas
+      if (!ansInfo.isBare && items.length > ansInfo.prefixLength) {
+        const firstContent = items[ansInfo.prefixLength];
+        if (!firstContent._ansShifted) {
+          const shift = firstContent.x - S.margin;
+          for (let i = ansInfo.prefixLength; i < items.length; i++) {
+            items[i].x -= shift;
+            items[i]._ansShifted = true;
+          }
+        }
+      }
+    }
   }
   return hidden;
 }
@@ -1862,26 +1932,32 @@ function collectAnswerLineItems(queue) {
 function drawMarginQuestionLabels(queue, onlyPageIdx = null) {
   for (const { pageIdx, items } of clusterQueueLines(queue)) {
     if (onlyPageIdx !== null && pageIdx !== onlyPageIdx) continue;
-    items.sort((a, b) => a.x - b.x);
-    // Only lines that START at the left margin (not wrapped continuations)
-    if (Math.abs(items[0].x - S.margin) > 2) continue;
+    if (!items || items.length === 0) continue;
+    // Only lines that start near the left margin (not wrapped continuations)
+    if (items[0].x < S.margin - 10 || items[0].x > S.margin + 35) continue;
 
     // The queue holds no space characters, so joined line text is squashed
     // ("1.Whatare…"). Questions end with '?' — numbered sub-points don't.
     const lineText = items.map(i => i.ch).join('');
-    const qMatch = lineText.match(/^(\d+)\.\s*\S.*\?\s*$/);
-    const isAnswer = ANSWER_LINE_RE.test(lineText);
-    if (!qMatch && !isAnswer) continue;
+    const qMatch = lineText.match(/^(?:Q|Question)?(\d+)?[:.)]\s*\S.*\?\s*$/i);
+    const ansInfo = getAnswerPrefixInfo(lineText, items);
+    if (!qMatch && !ansInfo) continue;
 
     const canvas = pages[pageIdx];
     if (!canvas) continue;
     const ctx = canvas.getContext('2d');
-    const label = qMatch ? 'Q' + qMatch[1] : 'Ans';
-    // "Ans" sits one line down: its own row (the hidden "Answer:" slot) is
-    // blank, so the label aligns with the first line of the answer content
-    const anchorY = qMatch
-      ? items[0].y
-      : items[0].y + S.fontSize * S.lineHeight;
+    const label = qMatch ? (qMatch[1] ? 'Q' + qMatch[1] : 'Q') : 'Ans';
+    // For inline answers, the label aligns with THIS line (items[0].y).
+    // For bare "Answer:" lines, its own row is hidden/blank on canvas,
+    // so the label aligns with the first line of the answer content below it.
+    let anchorY;
+    if (qMatch) {
+      anchorY = items[0].y;
+    } else if (ansInfo.isBare) {
+      anchorY = items[0].y + S.fontSize * S.lineHeight;
+    } else {
+      anchorY = items[0].y;
+    }
     // Optical centering: a text line's ink center sits slightly ABOVE its
     // baseline, so the label baseline is raised a touch (−0.15 × font size)
     const labelFont = Math.max(13, Math.round(S.fontSize * 0.78));
@@ -2552,11 +2628,17 @@ function parseStructuredContent(text) {
       continue;
     }
 
-    // 4c. Bare "Answer:" marker lines become their own block (hidden on canvas,
+    // 4c. "Answer:" marker lines and inline answers (hidden on canvas,
     // represented by the margin "Ans" label; editors keep the word)
-    if (/^answer\s*:?$/i.test(trimmed)) {
+    const answerLineMatch = trimmed.match(/^(?:answer|ans)\s*[:.\-]?\s*(.*)$/i);
+    if (answerLineMatch) {
       commitParagraph();
-      blocks.push({ type: 'paragraph', text: 'Answer:' });
+      const ansContent = answerLineMatch[1].trim();
+      if (!ansContent) {
+        blocks.push({ type: 'paragraph', text: 'Answer:' });
+      } else {
+        blocks.push({ type: 'paragraph', text: 'Answer: ' + ansContent });
+      }
       continue;
     }
 
@@ -4098,34 +4180,44 @@ function smartArrangeLocal(text) {
       line = indent + '- ' + capContent;
     }
 
-    // 4. Normalize Q&A flashcards (q: / Q : / q1. / Q1 : / question 1: -> Q1: or Q:; a1: / ans 1: -> A1: or A:)
+    // 4. Normalize Q&A (q: / Q : / q1. / Q1 : / question 1: -> Q1: or Q:; a: / ans: / answer: -> Answer:)
     line = line.replace(/^(\s*)(question|[qQ])\s*(\d+)\s*[:.]\s*/gi, '$1Q$3: ');
     line = line.replace(/^(\s*)(question|[qQ])\s*[:]\s*/gi, '$1Q: ');
-    line = line.replace(/^(\s*)(answer|ans|[aA])\s*(\d+)\s*[:.]\s*/gi, '$1A$3: ');
-    line = line.replace(/^(\s*)(answer|ans|[aA])\s*[:]\s*/gi, '$1A: ');
+    line = line.replace(/^(\s*)(answer|ans|[aA])\s*(\d+)\s*[:.]\s*/gi, '$1Answer $3: ');
+    line = line.replace(/^(\s*)(answer|ans|[aA])\s*[:]\s*/gi, '$1Answer: ');
+
+    // 4b. Normalize multiple-choice options (A. option, B. option, etc.)
+    line = line.replace(/^(\s*)([A-Da-d])[.)]\s*([^\s])/g, '$1$2. $3');
+
+    // 4c. Normalize Explanation prefix
+    line = line.replace(/^(\s*)explanation\s*[:.]?\s*/gi, '$1Explanation: ');
 
     // 5. Spacing cleanup (punctuation & multiple spaces) — skip fill-in blank lines with underscores
     if (!isFillIn(line)) {
+      const optMatch = line.match(/^(\s*[A-Za-z0-9]+[.):]\s+)(.*)$/);
+      const prefix = optMatch ? optMatch[1] : '';
+      let rest = optMatch ? optMatch[2] : line;
+
       // Remove space before punctuation: "hello , world !" -> "hello, world!"
-      line = line.replace(/[ \t]+([,.;:!?])/g, '$1');
+      rest = rest.replace(/[ \t]+([,.;:!?])/g, '$1');
       // Add missing space after comma/semicolon/exclamation when immediately followed by a letter
-      line = line.replace(/([,;!])([a-zA-Z])/g, '$1 $2');
+      rest = rest.replace(/([,;!])([a-zA-Z])/g, '$1 $2');
       // Add missing space after period when followed by capital letter (excluding URLs/numbers)
-      line = line.replace(/([a-z0-9])\.([A-Z][a-z])/g, '$1. $2');
+      rest = rest.replace(/([a-z0-9])\.([A-Z][a-z])/g, '$1. $2');
       // Add missing space after question mark when followed by a letter
-      line = line.replace(/(\?)([a-zA-Z])/g, '$1 $2');
+      rest = rest.replace(/(\?)([a-zA-Z])/g, '$1 $2');
 
       // Collapse double spaces inside line body while preserving leading line indentation
-      const indentMatch = line.match(/^(\s*)(.*)$/);
+      const indentMatch = rest.match(/^(\s*)(.*)$/);
       const indent = indentMatch ? indentMatch[1] : '';
-      const body = indentMatch ? indentMatch[2] : line;
+      const body = indentMatch ? indentMatch[2] : rest;
       let spaced = body;
       let prev;
       do {
         prev = spaced;
         spaced = spaced.replace(/(^|[^_]) {2,}(?=[^_]|$)/g, '$1 ');
       } while (spaced !== prev);
-      line = indent + spaced;
+      line = prefix + indent + spaced;
     }
 
     // 6. Normalize Inkflow tags ([sticky : yellow] -> [sticky:yellow], [callout : info] -> [callout:info])
