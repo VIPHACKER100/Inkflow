@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <!--
     Defense-in-depth CSP: scripts/styles/fonts are locked to the pinned CDNs,
     and outbound network calls to the three AI endpoints (+ Vercel Analytics).
@@ -64,7 +64,7 @@
      PHASE 2.5 — TOP TOOLBAR
 ════════════════════════════════════════ -->
   <header id="toolbar">
-    <button id="hamburger" class="btn icon-btn" aria-label="Toggle sidebar">☰</button>
+    <button id="hamburger" class="btn icon-btn" aria-label="Toggle sidebar" aria-expanded="false" aria-controls="sidebar">☰</button>
     <div class="logo">
       <div class="logo-img-wrapper">
         <img src="./inkflow_logo.jpeg" alt="Inkflow Logo" class="logo-img" />
@@ -73,8 +73,8 @@
     </div>
 
     <div class="toolbar-group">
-      <button class="btn sm" id="btn-animate" title="Watch notes write themselves">✍ Animate</button>
-      <button class="btn sm" id="btn-clear" title="Clear all pages">✕ Clear</button>
+      <button class="btn sm" id="btn-animate" title="Watch notes write themselves" aria-label="Animate">✍ <span class="btn-label">Animate</span></button>
+      <button class="btn sm" id="btn-clear" title="Clear all pages" aria-label="Clear all pages">✕ <span class="btn-label">Clear</span></button>
     </div>
 
     <div class="toolbar-spacer"></div>
@@ -82,13 +82,16 @@
     <div class="toolbar-group">
       <span id="autosave-indicator" class="autosave-badge saved" title="Auto-save status"><span class="autosave-icon">☁️</span> <span class="autosave-text">Saved</span></span>
       <span id="page-indicator-toolbar">Page 1 of 1</span>
-      <button class="btn sm" id="btn-study-mode" title="Toggle Study Mode">📖 Study Mode</button>
-      <button class="btn sm" id="btn-open-flashcards" title="Review Flashcards" style="display:none; margin-left: 5px;">🃏 Flashcards (<span id="flashcard-count-indicator">0</span>)</button>
+      <button class="btn sm" id="btn-study-mode" title="Toggle Study Mode" aria-label="Study Mode">📖 <span class="btn-label">Study Mode</span></button>
+      <button class="btn sm" id="btn-open-flashcards" title="Review Flashcards" aria-label="Flashcards" style="display:none; margin-left: 5px;">🃏 <span class="btn-label">Flashcards (<span id="flashcard-count-indicator">0</span>)</span></button>
       <button class="dark-toggle" id="dark-toggle" aria-label="Toggle dark mode" style="margin-left: 8px;">
         <span id="dark-icon">☀️</span>
       </button>
     </div>
   </header>
+
+  <!-- Mobile drawer scrim — taps close the sidebar; styled only ≤768px -->
+  <div id="sidebar-backdrop" aria-hidden="true"></div>
 
   <!-- ════════════════════════════════════════
      PHASE 2.1 — APP LAYOUT
@@ -704,7 +707,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
   <script defer src="/_vercel/insights/script.js"></script>
 
   <!-- Custom Script -->
-  <script src="index.js?v=1.6.22"></script>
+  <script src="index.js?v=1.6.23"></script>
 
   <!-- Phase 1 PWA — Service Worker Registration -->
   <script>

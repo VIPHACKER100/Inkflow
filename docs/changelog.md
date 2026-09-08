@@ -26,9 +26,17 @@ All notable changes to Inkflow are documented in this file.
   - Indentation safety (collapses internal double spaces while preserving leading line indentation for code & nested lists)
   - Structural line breaks before headers (`#`/`##`) and Q&A questions (`Q:`/`Q1:`)
 
+### 📱 Mobile UX
+
+- **Compact Icon-Only Toolbar (≤768px)**: The top toolbar previously laid out at ~793px of content inside a 390px phone viewport — buttons ran off-screen and were untappable. Button wording (`Animate`, `Clear`, `Study Mode`, autosave text, page counter) is now wrapped in `.btn-label` spans and hidden on small screens, so the toolbar fits exactly (verified 390px = 390px). Emoji glyphs, `title` tooltips, and new `aria-label` attributes carry the meaning; on ≤480px the logo text hides as well.
+- **Proper Sidebar Drawer**: The hamburger toggle became `setSidebarOpen()`, which synchronously manages the drawer, a new `#sidebar-backdrop` scrim, body scroll-lock (`body.sidebar-open`), and `aria-expanded`/`aria-controls` state. The drawer closes on: scrim tap, `Escape`, or any tap on the note canvas (capture-phase listener, so the tap still reaches the page editor). Taps inside the drawer keep it open.
+- **Safe-Area & Stable Viewport**: `viewport-fit=cover` plus `env(safe-area-inset-*)` padding on the toolbar, drawer, bottom pagination, and modal sheets; `100dvh` replaces `100vh` so the layout no longer jumps when mobile browser chrome collapses.
+- **Full-Screen Mobile Modals**: `HandFonted Studio` and `Flashcards` modals render as edge-to-edge sheets on phones (100vw × 100dvh, zero radius, safe-area padding) instead of cramped 90vw cards.
+- **Touch Polish**: `touch-action: manipulation` on all interactive elements removes the 300ms double-tap-zoom delay; sidebar form inputs are forced to ≥16px so iOS Safari does not zoom on focus; the existing `@media (hover: none)` 44px touch-target rules remain in force.
+
 ### ✅ Testing
 
-- Smoke test suite expanded: **22 tests, 0 failures** (was 20). Added unit tests covering `smartArrangeLocal` header normalization, bullet formatting, tag normalization, Q&A reformatting, indentation preservation, and punctuation cleanup.
+- Smoke test suite expanded: **24 tests, 0 failures** (was 20 at 1.6.22). Covers `smartArrangeLocal` normalization (headers, bullets, tags, Q&A labels, indentation, punctuation), `layoutText()` pagination invariants (character conservation, page bounds, first-line skip), baseline-parity units, and the editor sync marker round-trip.
 
 ## [1.6.22] — 2026-09-06
 

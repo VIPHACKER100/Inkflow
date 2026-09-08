@@ -41,7 +41,6 @@ The floating pill at the bottom shows `Page X of Y` with ◀ / ▶ buttons (`nav
 ## Study Workflows
 
 ### Study Mode
-### Study Mode
 The 📖 **Study Mode** toolbar button (`toggleStudyMode()`) adds the `study-mode-active` class to the body. This expands the canvas viewport to 100% width (`grid-template-columns: 1fr`), hides the sidebar (`display: none`), auto-dims the top toolbar (`opacity: 0.5`) with hover reveal, smoothly centers the active page canvas into view, and reveals the floating **🚪 Exit Study Mode** button (bottom-right). Pressing `Escape` or clicking the floating button exits Study Mode.
 
 ### Flashcards
@@ -134,6 +133,28 @@ Opened via **🎨 HandFonted Studio**:
 4. **🔨 Build Font** (`buildCustomFont()`) compiles glyphs into a TrueType font, registers it with `FontFace`, and applies it instantly.
 
 See [Custom Font Suite](./custom-font-suite.md).
+
+---
+
+## Mobile & Touch Experience (≤768px)
+
+Inkflow's mobile layout is a first-class target — verified at a 390×844 viewport.
+
+### Compact Toolbar
+At ≤768px the toolbar switches to icon-only: button wording lives in `.btn-label` spans that CSS hides, so every control (Animate, Clear, Study Mode, autosave badge, dark toggle) stays visible and tappable. Emoji glyphs, `title` tooltips, and `aria-label`s carry the meaning. At ≤480px the logo text hides too, leaving the mark only.
+
+### Sidebar Drawer
+The sidebar becomes an off-canvas drawer driven by `setSidebarOpen(open)`:
+- The ☰ hamburger toggles it and mirrors state to `aria-expanded`.
+- A `#sidebar-backdrop` scrim dims the page; tapping it closes the drawer.
+- `Escape` closes it; any tap on the note canvas closes it (capture-phase, so the tap still edits the page); taps inside the drawer keep it open.
+- `body.sidebar-open` locks page scroll while the drawer is open.
+
+### Safe Areas & Stable Height
+`viewport-fit=cover` exposes the notch insets, and `env(safe-area-inset-*)` pads the toolbar, drawer, bottom pagination pill, and modal sheets. The app grid uses `100dvh` instead of `100vh` so the layout stays put while mobile browser chrome collapses.
+
+### Modals & Inputs
+Modals render as edge-to-edge sheets on phones (`100vw` × `100dvh`, zero radius). All sidebar inputs are ≥16px, which prevents iOS Safari from focus-zooming. `touch-action: manipulation` on interactive elements removes the double-tap-zoom delay, and `@media (hover: none)` rules enforce ≥44px touch targets.
 
 ---
 

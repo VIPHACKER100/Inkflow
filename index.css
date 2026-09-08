@@ -2654,3 +2654,140 @@ body.study-mode-active #page-nav {
 }
 
 
+
+/* ═══════════════════════════════════════════════════════════
+   MOBILE UX OPTIMIZATIONS (v1.6.23)
+   • Toolbar compacts to icon-only controls ≤768px
+   • Sidebar becomes a proper drawer: scrim, scroll-lock,
+     safe-area aware, closes on outside tap / Escape (JS)
+   • Modals go near-fullscreen on phones
+   • Safe-area insets for notched devices (viewport-fit=cover)
+   • touch-action: manipulation kills the 300ms double-tap zoom
+═════════════════════════════════════════════════════════════ */
+
+/* Desktop default: the scrim exists only for the mobile drawer */
+#sidebar-backdrop {
+  display: none;
+}
+
+/* Remove double-tap zoom delay on all interactive elements */
+button,
+.btn,
+select,
+.paper-btn,
+.align-btn,
+.char-btn,
+.sb-section-header,
+.dark-toggle,
+a {
+  touch-action: manipulation;
+}
+
+@media (max-width: 768px) {
+  /* Stable viewport height while the mobile browser chrome collapses */
+  #app {
+    height: 100dvh;
+    padding-top: calc(56px + env(safe-area-inset-top));
+  }
+
+  /* ── Toolbar: icon-only, safe-area aware ── */
+  #toolbar {
+    top: env(safe-area-inset-top);
+    padding: 0 10px;
+    gap: 8px;
+  }
+  .logo {
+    gap: 7px;
+    margin-right: 0;
+  }
+  .logo-img-wrapper {
+    width: 30px;
+    height: 30px;
+  }
+  .logo-text {
+    font-size: 18px;
+  }
+  .toolbar-group {
+    gap: 6px;
+  }
+  /* Labels/wording hidden — emoji + title + aria-label carry meaning */
+  .btn.sm .btn-label,
+  .autosave-text,
+  #page-indicator-toolbar {
+    display: none;
+  }
+  .btn.sm {
+    padding: 8px 10px;
+  }
+  .autosave-badge {
+    padding: 4px 7px;
+    margin-right: 0;
+  }
+  .dark-toggle {
+    margin-left: 0 !important;
+  }
+
+  /* ── Sidebar drawer ── */
+  #sidebar {
+    width: min(320px, 86vw);
+    top: calc(56px + env(safe-area-inset-top));
+    z-index: 120;
+    padding-bottom: calc(40px + env(safe-area-inset-bottom));
+  }
+  #sidebar-backdrop {
+    display: block;
+    position: fixed;
+    top: calc(56px + env(safe-area-inset-top));
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(8, 8, 12, 0.5);
+    z-index: 110;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  #sidebar-backdrop.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  body.sidebar-open {
+    overflow: hidden;
+  }
+
+  /* Form inputs ≥16px so iOS Safari doesn't zoom on focus */
+  #sidebar input,
+  #sidebar select,
+  #sidebar textarea {
+    font-size: 16px;
+  }
+
+  /* ── Bottom pagination above the home indicator ── */
+  #page-nav {
+    bottom: calc(16px + env(safe-area-inset-bottom));
+  }
+
+  /* ── Modals: near-fullscreen sheets on phones ── */
+  .modal-card {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    padding: 16px;
+    padding-top: calc(16px + env(safe-area-inset-top));
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  }
+
+  /* Tighter canvas gutters */
+  #canvas-area {
+    padding: 12px 6px 70px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Smallest phones: logo image only */
+  .logo-text {
+    display: none;
+  }
+}

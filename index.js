@@ -95,11 +95,38 @@ function applyDark() {
 }
 
 /* ───────────────────────────────────────────
-   PHASE 2.7 — HAMBURGER (MOBILE)
+   PHASE 2.7 — HAMBURGER / MOBILE DRAWER
 ─────────────────────────────────────────── */
-document.getElementById('hamburger').addEventListener('click', () => {
-  document.getElementById('sidebar').classList.toggle('open');
+const sidebarEl = document.getElementById('sidebar');
+const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+const hamburgerBtn = document.getElementById('hamburger');
+
+function setSidebarOpen(open) {
+  sidebarEl.classList.toggle('open', open);
+  document.body.classList.toggle('sidebar-open', open);
+  if (sidebarBackdrop) sidebarBackdrop.classList.toggle('show', open);
+  if (hamburgerBtn) hamburgerBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+
+hamburgerBtn.addEventListener('click', () => {
+  setSidebarOpen(!sidebarEl.classList.contains('open'));
 });
+
+// Tap the scrim → close the drawer
+if (sidebarBackdrop) {
+  sidebarBackdrop.addEventListener('click', () => setSidebarOpen(false));
+}
+
+// Escape closes the drawer
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') setSidebarOpen(false);
+});
+
+// Any tap on the note content closes the drawer (capture phase so the tap
+// still reaches the page editor underneath)
+document.getElementById('canvas-area').addEventListener('click', () => {
+  if (sidebarEl.classList.contains('open')) setSidebarOpen(false);
+}, true);
 
 /* ───────────────────────────────────────────
    PHASE 2.3 — SIDEBAR SECTION TOGGLE

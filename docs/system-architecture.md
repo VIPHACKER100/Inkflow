@@ -92,7 +92,7 @@ graph TD
 ## Layer Descriptions
 
 ### 1. User Interface Layer
-The visible DOM elements the user interacts with directly: the sidebar control console, the floating top toolbar (56px fixed header), the main canvas grid viewport with inline page editors (`.page-editor` contenteditable overlays), bottom pill-style pagination controls, and the modal overlays (HandFonted Studio, Flashcards review).
+The visible DOM elements the user interacts with directly: the sidebar control console, the floating top toolbar (56px fixed header; icon-only compaction ≤768px), the main canvas grid viewport with inline page editors (`.page-editor` contenteditable overlays), bottom pill-style pagination controls, the modal overlays (HandFonted Studio, Flashcards review), and the mobile drawer system — ≤768px the sidebar slides off-canvas behind a `#sidebar-backdrop` scrim, managed by `setSidebarOpen()` (scrim tap / `Escape` / canvas-tap close, body scroll-lock, `aria-expanded` sync).
 
 ### 2. State Management Layer
 A centralized global configuration object `S` acts as the single source of truth. Changes to any UI control update `S`, which triggers a debounced re-render. A debounced autosave module serializes settings to `localStorage` after a 1000ms idle delay and mirrors them into the active notebook. Custom handwriting glyphs live in **IndexedDB** (`InkflowDB` → `draftedGlyphs`), and notebooks live in **IndexedDB** (`InkflowDB` → `notebooks`), bypassing the 5MB `localStorage` quota.
