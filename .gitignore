@@ -27,3 +27,15 @@ lerna-debug.log*
 .env.local
 .env.*.local
 strategic_roadmap.md
+
+#graphify
+graphify-out
+
+#gui-test-screenshots
+gui-test-screenshots/*
+
+#gui-test-report
+gui-test-report.md
+
+#gui-test-analysis
+gui-test-analysis.md
