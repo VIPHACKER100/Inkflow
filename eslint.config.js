@@ -150,6 +150,7 @@ module.exports = [
         screen: 'readonly',
         PAGE_W: 'readonly',
         PAGE_H: 'readonly',
+        pages: 'readonly',
         S: 'readonly',
       },
     },

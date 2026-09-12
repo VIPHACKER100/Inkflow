@@ -8,6 +8,12 @@ This plan is grounded in a codebase analysis (knowledge-graph audit, lint/test r
 
 ## Progress Log
 
+**2026-09-13 — Pass #8 (Phase 1.2: export-manager.js extraction)**
+
+- ✅ All export pipelines (PNG/JPG/transparent PNG/PDF/SVG/clipboard, `triggerDownload`, `showExportToast`, `announceToScreenReader`) extracted from index.js into `export-manager.js` (280 lines) — top-level-declaration module pattern (globals resolve at call time through the shared classic-script lexical scope), so inline `onclick` handlers and index.js's `showToast` alias work unchanged
+- ✅ index.js: 4,297 → 4,121 lines; verified by 197 unit tests + the live E2E export spec (6/6 browser tests passing) + lint + build
+- ⏭️ Next Phase 1.2 candidates: `persistence.js` (autosave/restore/glyph DB) and the HandFonted Studio block (~700 lines)
+
 **2026-09-13 — Pass #7 (agent-assisted clean-mode polish + v1.7.0 release prep)**
 
 - ✅ Clean-mode layout polish (upstream v1.6.16): an empty ruled row is inserted before each question block (only when needed; idempotent across re-layouts), and question lines render **bold** (weight 600) in render, animation, and exports — Standard layout only

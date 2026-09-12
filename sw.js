@@ -17,6 +17,7 @@ const PRECACHE_URLS = [
   '/text-layout.js',
   '/script-detector.js',
   '/export-renderers.js',
+  '/export-manager.js',
   '/diagram-engine.js',
   '/font-compilation.js',
   '/template-manager.js',

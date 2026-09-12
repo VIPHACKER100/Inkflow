@@ -15,6 +15,7 @@ const COPY_ROOT_SCRIPTS = [
   'cursive-connector.js',
   'diagram-engine.js',
   'export-renderers.js',
+  'export-manager.js',
   'font-compilation.js',
   'layer-compositor.js',
   'markdown-parser.js',
