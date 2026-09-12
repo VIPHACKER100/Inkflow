@@ -1,0 +1,188 @@
+{
+  ".vscode/settings.json": {
+    "mtime": 1785781867.3422081,
+    "seen": 1788890846.5152364,
+    "ast_hash": "73792b9af3fc811b105441cc773526b1",
+    "semantic_hash": "73792b9af3fc811b105441cc773526b1"
+  },
+  "eslint.config.mjs": {
+    "mtime": 1788717159.740646,
+    "seen": 1788890846.5152407,
+    "ast_hash": "18a779174baf0b38f67af7f79d48cda8",
+    "semantic_hash": "18a779174baf0b38f67af7f79d48cda8"
+  },
+  "index.js": {
+    "mtime": 1788859452.8954413,
+    "seen": 1788890846.5152423,
+    "ast_hash": "7dae23df547756f917dad41f8ae1fca5",
+    "semantic_hash": "7dae23df547756f917dad41f8ae1fca5"
+  },
+  "manifest.json": {
+    "mtime": 1788188545.729085,
+    "seen": 1788890846.515243,
+    "ast_hash": "cfe0674ee96292422b4d5515695bada7",
+    "semantic_hash": "cfe0674ee96292422b4d5515695bada7"
+  },
+  "package.json": {
+    "mtime": 1788852917.1866722,
+    "seen": 1788890846.5152438,
+    "ast_hash": "5d3bbeca41db39b9eb73162ca410f25f",
+    "semantic_hash": "5d3bbeca41db39b9eb73162ca410f25f"
+  },
+  "scripts/check-versions.mjs": {
+    "mtime": 1788543672.1351192,
+    "seen": 1788890846.5152447,
+    "ast_hash": "84199e4d7b4bb7dc5c8ea70db239a25d",
+    "semantic_hash": "84199e4d7b4bb7dc5c8ea70db239a25d"
+  },
+  "scripts/smoke-test.mjs": {
+    "mtime": 1788859475.655697,
+    "seen": 1788890846.5152457,
+    "ast_hash": "902f8cf8a4ba352767f89be6584e619e",
+    "semantic_hash": "902f8cf8a4ba352767f89be6584e619e"
+  },
+  "sw.js": {
+    "mtime": 1788855363.2735152,
+    "seen": 1788890846.5152462,
+    "ast_hash": "d3ece421334ae4df9dae9dbd876d94bf",
+    "semantic_hash": "d3ece421334ae4df9dae9dbd876d94bf"
+  },
+  ".agents/rules/writing-style.md": {
+    "mtime": 1788722828.0566547,
+    "seen": 1788890846.5152466,
+    "ast_hash": "6115779add13dc7759f2308b9aece316",
+    "semantic_hash": "6115779add13dc7759f2308b9aece316"
+  },
+  ".github/workflows/codeql.yml": {
+    "mtime": 1785781867.3411956,
+    "seen": 1788890846.5152473,
+    "ast_hash": "ff258c478e87f7f48b68da43142acd51",
+    "semantic_hash": "ff258c478e87f7f48b68da43142acd51"
+  },
+  "docs/README.md": {
+    "mtime": 1788854551.1840055,
+    "seen": 1788890846.5152478,
+    "ast_hash": "a2dadc81fae4dd6fd1400f8ccd27dcfe",
+    "semantic_hash": "a2dadc81fae4dd6fd1400f8ccd27dcfe"
+  },
+  "docs/accessibility.md": {
+    "mtime": 1788852399.0475051,
+    "seen": 1788890846.515249,
+    "ast_hash": "f64d3467d3437c036a290b435483c3a2",
+    "semantic_hash": "f64d3467d3437c036a290b435483c3a2"
+  },
+  "docs/ai-integration.md": {
+    "mtime": 1788724450.2390566,
+    "seen": 1788890846.5152495,
+    "ast_hash": "bb1c8493c7a64e53ce3b789d4cb5d3f5",
+    "semantic_hash": "bb1c8493c7a64e53ce3b789d4cb5d3f5"
+  },
+  "docs/animation-engine.md": {
+    "mtime": 1788549435.70237,
+    "seen": 1788890846.51525,
+    "ast_hash": "9cfad592379e78ba8a7fb4d7a74009d2",
+    "semantic_hash": "9cfad592379e78ba8a7fb4d7a74009d2"
+  },
+  "docs/api-reference.md": {
+    "mtime": 1788854792.6924658,
+    "seen": 1788890846.5152507,
+    "ast_hash": "546f5833358c6721304c031464135d0f",
+    "semantic_hash": "546f5833358c6721304c031464135d0f"
+  },
+  "docs/changelog.md": {
+    "mtime": 1788855396.0234983,
+    "seen": 1788890846.5152512,
+    "ast_hash": "812c87c2b7b7b235ac1a569adb825180",
+    "semantic_hash": "812c87c2b7b7b235ac1a569adb825180"
+  },
+  "docs/configuration-guide.md": {
+    "mtime": 1788855296.4690814,
+    "seen": 1788890846.5152519,
+    "ast_hash": "7ff19aa40429df50ee7a68da6a21d31a",
+    "semantic_hash": "7ff19aa40429df50ee7a68da6a21d31a"
+  },
+  "docs/contributing.md": {
+    "mtime": 1788549400.0934546,
+    "seen": 1788890846.5152526,
+    "ast_hash": "9b8d0abc3d40c412ab138af82b34f140",
+    "semantic_hash": "9b8d0abc3d40c412ab138af82b34f140"
+  },
+  "docs/custom-font-suite.md": {
+    "mtime": 1788188545.6779165,
+    "seen": 1788890846.515253,
+    "ast_hash": "9b039dca8131f088e436973229fe8334",
+    "semantic_hash": "9b039dca8131f088e436973229fe8334"
+  },
+  "docs/deployment.md": {
+    "mtime": 1788549435.6813676,
+    "seen": 1788890846.5152538,
+    "ast_hash": "7440e0fcdb364265b22e446263ba427c",
+    "semantic_hash": "7440e0fcdb364265b22e446263ba427c"
+  },
+  "docs/export-pipelines.md": {
+    "mtime": 1788593511.112104,
+    "seen": 1788890846.5152543,
+    "ast_hash": "4abb6dbf6275bbd25e9a7a4ad0b64e55",
+    "semantic_hash": "4abb6dbf6275bbd25e9a7a4ad0b64e55"
+  },
+  "docs/getting-started.md": {
+    "mtime": 1788854905.7066753,
+    "seen": 1788890846.5152547,
+    "ast_hash": "387d9a5cbf886f5fb5a94032c596bbeb",
+    "semantic_hash": "387d9a5cbf886f5fb5a94032c596bbeb"
+  },
+  "docs/handwriting-engine.md": {
+    "mtime": 1788718875.1919432,
+    "seen": 1788890846.5152557,
+    "ast_hash": "b1c282420fec3d091db4603ba6cbe9e7",
+    "semantic_hash": "b1c282420fec3d091db4603ba6cbe9e7"
+  },
+  "docs/paper-rendering.md": {
+    "mtime": 1788854743.147132,
+    "seen": 1788890846.5152564,
+    "ast_hash": "b9ec8249de5d62d4834a11f65ec304b2",
+    "semantic_hash": "b9ec8249de5d62d4834a11f65ec304b2"
+  },
+  "docs/performance.md": {
+    "mtime": 1788854860.7561386,
+    "seen": 1788890846.5152571,
+    "ast_hash": "1adc52042fc2341154fb46817b0210ca",
+    "semantic_hash": "1adc52042fc2341154fb46817b0210ca"
+  },
+  "docs/state-management.md": {
+    "mtime": 1788593482.501051,
+    "seen": 1788890846.5152576,
+    "ast_hash": "46bbfd1f75682562495e6b0cc76a6da1",
+    "semantic_hash": "46bbfd1f75682562495e6b0cc76a6da1"
+  },
+  "docs/system-architecture.md": {
+    "mtime": 1788854830.185565,
+    "seen": 1788890846.515258,
+    "ast_hash": "8f92597227cc6fc78f051812be6c9b95",
+    "semantic_hash": "8f92597227cc6fc78f051812be6c9b95"
+  },
+  "docs/ui-design-system.md": {
+    "mtime": 1788855308.481892,
+    "seen": 1788890846.5152586,
+    "ast_hash": "678cb0b6b481e3deb923173772c09102",
+    "semantic_hash": "678cb0b6b481e3deb923173772c09102"
+  },
+  "docs/ux-interactions.md": {
+    "mtime": 1788854588.5278146,
+    "seen": 1788890846.5152595,
+    "ast_hash": "ede3a796a5f08bdc58e4df18ba1c1d74",
+    "semantic_hash": "ede3a796a5f08bdc58e4df18ba1c1d74"
+  },
+  "index.html": {
+    "mtime": 1788855080.470982,
+    "seen": 1788890846.51526,
+    "ast_hash": "b7867682712fe16a808a549611c4f867",
+    "semantic_hash": "b7867682712fe16a808a549611c4f867"
+  },
+  "inkflow_logo.jpeg": {
+    "mtime": 1788188545.7256708,
+    "seen": 1788890846.5152607,
+    "ast_hash": "57f8eca43f386ce0d3411f32775ffb68",
+    "semantic_hash": "57f8eca43f386ce0d3411f32775ffb68"
+  }
+}

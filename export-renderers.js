@@ -45,6 +45,7 @@
     const options = { roughness: S.pressure * 4, stroke: S.inkColor, strokeWidth: 1.2, bowing: S.rotationMax * 2 };
 
     pageItems.forEach((item) => {
+      if (item.hidden) return; // clean mode: bare "Answer:" row (margin Ans label only)
       if (item.type === 'mermaid') {
         if (typeof getDiagramImage === 'undefined') return;
         const diag = getDiagramImage(item.content);
@@ -139,10 +140,15 @@
       ctx.rotate((v.tiltDeg * (item.isIndic ? 0.3 : 1) * Math.PI) / 180);
       ctx.scale(v.scaleX, v.scaleY);
       const pxSize = S.fontSize * v.pressureMod;
-      ctx.font = `${Math.max(10, pxSize)}px ${item.fontStack}`;
+      ctx.font = `${item.bold ? '600 ' : ''}${Math.max(10, pxSize)}px ${item.fontStack}`;
       ctx.globalAlpha = v.opacity;
       ctx.fillStyle = item.inkColor || S.inkColor;
       ctx.fillText(item.ch, 0, 0);
+      if (item.isRetrace) {
+        // Rare imperfection (upstream v1.6.22): faint 1px-offset retrace stroke
+        ctx.globalAlpha = v.opacity * 0.35;
+        ctx.fillText(item.ch, 1, 1);
+      }
       ctx.restore();
     });
   }
@@ -158,5 +164,12 @@
     return c;
   }
 
-  window.ExportRenderers = { renderQueueItems, renderCursiveConnectionsOn, _upscaleCanvas };
+  // PDF output presets (upstream v1.6.20): display-scale × image format × quality.
+  const PDF_SIZE_PRESETS = {
+    compact: { label: 'Compact', scale: 1, format: 'image/jpeg', quality: 0.75, jspdfFormat: 'JPEG', compression: 'FAST' },
+    standard: { label: 'Standard', scale: 2, format: 'image/jpeg', quality: 0.92, jspdfFormat: 'JPEG', compression: 'FAST' },
+    high: { label: 'High', scale: 2, format: 'image/png', quality: 1.0, jspdfFormat: 'PNG', compression: 'NONE' },
+  };
+
+  window.ExportRenderers = { renderQueueItems, renderCursiveConnectionsOn, _upscaleCanvas, PDF_SIZE_PRESETS };
 })();

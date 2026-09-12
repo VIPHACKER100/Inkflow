@@ -140,3 +140,13 @@ On page load, `fetchOpenRouterModels()` asynchronously fetches the full model ca
 | Rate limiting (429) | "Rate limited — please wait and try again" |
 | Invalid API key (401) | "Invalid API key — please check and re-enter" |
 | Empty input text | "Please enter some text first" validation |
+
+---
+
+## Offline Smart Arrange & Response Post-Processing (1.7.0)
+
+- **Smart Arrange is fully offline**: the 🪄 button runs a deterministic in-browser tidy-up (`smartArrangeLocal()` in `ai-postprocess.js`) — no provider or API key. It normalizes bullet markers, header/tag/highlight spacing, `q 1 :` → `Q1:` labels and punctuation spacing, inserts structural breaks before questions and headers, collapses blank-line runs, and reports the fix count via toast and the AI status line.
+- **Every AI result is post-processed** before it reaches the textarea or renderer:
+  1. `sanitizeAiResponse()` strips code fences, inline backticks, bold/italic markers and raw HTML — while preserving Inkflow syntax (`[sticky:…]`, `[callout:…]`, `==highlight==`, `#` headings) and the `​```diagram` / `​```mermaid` fences the renderer parses.
+  2. `resequenceQA()` renumbers Q:/A: pairs sequentially from Q1 (ignoring model numbering) and drops near-duplicate questions — trigram Jaccard similarity ≥ 0.72 — together with their paired answers.
+- Accepted grammar corrections pass through the sanitizer as well.

@@ -159,6 +159,8 @@ Registration is silent — errors are caught and ignored (e.g., file:// protocol
 
 When releasing a new version:
 
-1. Update `CACHE_NAME` in `sw.js` (e.g., `'inkflow-v1.7.0'`)
+1. Update `CACHE_NAME` in `sw.js` (e.g., `'inkflow-v1.7.0'`) — `npm run check:version` enforces that it matches `package.json` (runs in CI)
 2. Add any new JS files to `PRECACHE_URLS`
 3. The new service worker will activate and delete the old cache automatically via `skipWaiting()` + `claimClients()`
+
+The precache list also includes the **Google Fonts stylesheet** (kept identical to the `<link>` in `index.html`), so the full 48-font handwriting suite is available offline; the individual `.woff2` files are runtime-cached on first use.

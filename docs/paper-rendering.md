@@ -89,6 +89,10 @@ const PAPER_CONFIGS = {
   dark:        { bg: '#1a1a2e', lineColor: '#3a3a5e', lineOpacity: 0.7 },
   dot_grid:    { bg: '#f6f2ec', lineColor: '#c0b49a', lineOpacity: 0.35 },
   engineering: { bg: '#eef6ed', lineColor: '#78a67d', lineOpacity: 0.4 },
-  music:       { bg: '#faf7f0', lineColor: '#4a4a4a', lineOpacity: 0.55 }
+  music:       { bg: '#faf7f0', lineColor: '#4a4a4a', lineOpacity: 0.55 },
+  dated:       { bg: '#f8f4ea', lineColor: '#c5b9a0', lineOpacity: 0.55, redLine: '#e08080', dateColumn: true },
+  clean:       { bg: '#faf9f5', lineColor: '#85add4', lineOpacity: 0.65, redLine: '#ff4d6d' }
 };
 ```
+
+The **clean** style (1.7.0) shares the Ruled branch — same vertical red margin rule and horizontal guidelines, but with the paper-grain noise pass skipped. It pairs with the crisp rendering mode: neutral variation, no ink-bleed shadow, and drafted glyphs bypassed (see `docs/handwriting-engine.md`).

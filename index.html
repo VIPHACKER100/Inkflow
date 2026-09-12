@@ -3,37 +3,43 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Inkflow — AI Handwritten Notes Generator</title>
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Delius&family=Homemade+Apple&family=Indie+Flower&family=Patrick+Hand&family=Roboto:wght@300;400;500;700&family=Shadows+Into+Light&family=architects-daughter&family=gochi-hand&family=just-another-hand&family=nanum-pen-script&family=pangolin&family=reey:wght@400&family=Kalam:wght@300;400;700&family=Amita:wght@400;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Serif+Devanagari:wght@400;500;600;700&family=Hind:wght@300;400;500;600;700&family=Tiro+Devanagari+Hindi:ital@0;1&family=Baloo+2:wght@400;500;600;700;800&family=Martel:wght@200;300;400;600;700;800;900&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Delius&family=Homemade+Apple&family=Indie+Flower&family=Patrick+Hand&family=Roboto:wght@300;400;500;700&family=Shadows+Into+Light&family=Architects+Daughter&family=Gochi+Hand&family=Just+Another+Hand&family=Nanum+Pen+Script&family=Pangolin&family=reey:wght@400&family=Gloria+Hallelujah&family=Schoolbell&family=Neucha&family=Covered+By+Your+Grace&family=The+Girl+Next+Door&family=Waiting+for+the+Sunrise&family=Permanent+Marker&family=Coming+Soon&family=Short+Stack&family=Handlee&family=Rancho&family=Amatic+SC&family=Fuzzy+Bubbles&family=Dancing+Script:wght@400..700&family=Great+Vibes&family=Satisfy&family=Sacramento&family=Cedarville+Cursive&family=Zeyada&family=La+Belle+Aurore&family=Nothing+You+Could+Do&family=Reenie+Beanie&family=Nanum+Brush+Script&family=Pacifico&family=Parisienne&family=Yellowtail&family=Charm:wght@400;700&family=Aladin&family=Kalam:wght@300;400;700&family=Amita:wght@400;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Serif+Devanagari:wght@400;500;600;700&family=Hind:wght@300;400;500;600;700&family=Tiro+Devanagari+Hindi:ital@0;1&family=Baloo+2:wght@400;500;600;700;800&family=Martel:wght@200;300;400;600;700;800;900&display=swap"
     rel="stylesheet" />
 
   <!-- jsPDF for PDF export -->
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+    integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous"></script>
 
   <!-- Mammoth for DOCX extraction -->
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"
+    integrity="sha384-nFoSjZIoH3CCp8W639jJyQkuPHinJ2NHe7on1xvlUA7SuGfJAfvMldrsoAVm6ECz" crossorigin="anonymous"></script>
 
   <!-- Font Awesome for icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0" crossorigin="anonymous" />
 
   <!-- PWA Manifest -->
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#6C63FF" />
 
   <!-- Mermaid for diagram support -->
-  <script defer src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"
+    integrity="sha384-rbtjAdnIQE/aQJGEgXrVUlMibdfTSa4PQju4HDhN3sR2PmaKFzhEafuePsl9H/9I" crossorigin="anonymous"></script>
 
   <!-- OpenType.js for custom font generation -->
-  <script defer src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"
+    integrity="sha384-3TaxGqyHrMuRIWY5Z5WHNIzgNRqGIUJE+mk6tm+g1wkm9Ux2kUyOLfy9AsNWXA6u" crossorigin="anonymous"></script>
 
   <!-- Rough.js for hand-drawn diagrams -->
-  <script defer src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/dist/rough.umd.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/dist/rough.umd.js"
+    integrity="sha384-Mkt0zKtivmp+m9QRDxL5qvByMOCR8gk6sqIuqNrxpHBSVPhsRybNF39iy+JS7xv6" crossorigin="anonymous"></script>
 
   <!-- Custom Stylesheet -->
   <link rel="stylesheet" href="index.css" />
@@ -41,24 +47,26 @@
 
 <body>
 
+  <a class="skip-link" href="#canvas-area">Skip to writing canvas</a>
+
   <!-- ════════════════════════════════════════
      PHASE 2.5 — TOP TOOLBAR
 ════════════════════════════════════════ -->
   <header id="toolbar">
-    <button id="hamburger" class="btn icon-btn" aria-label="Toggle sidebar">☰</button>
+    <button id="hamburger" class="btn icon-btn" aria-label="Toggle sidebar" aria-controls="sidebar" aria-expanded="false">☰</button>
     <div class="logo">Ink<span>flow</span></div>
 
     <div class="toolbar-group">
-      <button class="btn sm" id="btn-animate" title="Watch notes write themselves">✍ Animate</button>
-      <button class="btn sm" id="btn-clear" title="Clear all pages">✕ Clear</button>
-      <button class="btn sm" onclick="toggleStudyMode()" title="Study Mode: Flashcards & Quiz">📖 Study</button>
-      <button class="btn sm" onclick="startVoiceRecording()" id="btn-voice" title="Voice to Notes">🎤 Voice</button>
+      <button class="btn sm" id="btn-animate" title="Watch notes write themselves" aria-label="Animate handwriting">✍ <span class="btn-label">Animate</span></button>
+      <button class="btn sm" id="btn-clear" title="Clear all pages" aria-label="Clear all pages">✕ <span class="btn-label">Clear</span></button>
+      <button class="btn sm" onclick="toggleStudyMode()" title="Study Mode: Flashcards & Quiz" aria-label="Study mode: flashcards and quiz">📖 <span class="btn-label">Study</span></button>
+      <button class="btn sm" onclick="startVoiceRecording()" id="btn-voice" title="Voice to Notes" aria-label="Voice to notes">🎤 <span class="btn-label">Voice</span></button>
     </div>
 
     <div class="toolbar-spacer"></div>
 
     <div class="toolbar-group">
-      <span id="page-indicator-toolbar">Page 1 of 1</span>
+      <span id="page-indicator-toolbar" class="btn-label">Page 1 of 1</span>
       <button class="dark-toggle" id="dark-toggle" aria-label="Toggle dark mode">
         <span id="dark-icon">☀️</span>
       </button>
@@ -87,7 +95,7 @@ The handwriting engine will render each character with natural variation, baseli
 Try pasting a paragraph of lecture notes!"></textarea>
           <div class="action-buttons-row">
             <button class="btn accent btn-render" onclick="triggerRender()">✦ Render</button>
-            <button class="btn" onclick="clearText()" title="Clear text">✕</button>
+            <button class="btn" onclick="clearText()" title="Clear text" aria-label="Clear text">✕</button>
             <div class="dropdown">
               <button class="btn" title="Insert Diagram template">📊 Diagram ▾</button>
               <div class="dropdown-content">
@@ -130,11 +138,49 @@ Try pasting a paragraph of lecture notes!"></textarea>
           <!-- Phase 3.1 — Font selector -->
           <div class="sb-label">Handwriting Font</div>
           <select id="font-select" title="Handwriting Font">
-            <optgroup label="English Handwriting">
+            <optgroup label="Print Handwriting">
               <option value="Caveat" class="font-caveat">Caveat</option>
               <option value="Indie Flower" class="font-indie-flower">Indie Flower</option>
               <option value="Shadows Into Light" class="font-shadows-into-light">Shadows Into Light</option>
               <option value="Patrick Hand" class="font-patrick-hand">Patrick Hand</option>
+              <option value="Delius" class="font-delius">Delius</option>
+              <option value="Gloria Hallelujah">Gloria Hallelujah</option>
+              <option value="Schoolbell">Schoolbell</option>
+              <option value="Architects Daughter" class="font-architects-daughter">Architects Daughter</option>
+              <option value="Gochi Hand" class="font-gochi-hand">Gochi Hand</option>
+              <option value="Neucha">Neucha</option>
+              <option value="Covered By Your Grace">Covered By Your Grace</option>
+              <option value="The Girl Next Door">The Girl Next Door</option>
+              <option value="Waiting for the Sunrise">Waiting for the Sunrise</option>
+              <option value="Permanent Marker">Permanent Marker</option>
+              <option value="Coming Soon">Coming Soon</option>
+              <option value="Short Stack">Short Stack</option>
+              <option value="Handlee">Handlee</option>
+              <option value="Rancho">Rancho</option>
+              <option value="Amatic SC">Amatic SC</option>
+              <option value="Fuzzy Bubbles">Fuzzy Bubbles</option>
+            </optgroup>
+            <optgroup label="Cursive &amp; Script">
+              <option value="Dancing Script">Dancing Script</option>
+              <option value="Great Vibes">Great Vibes</option>
+              <option value="Satisfy">Satisfy</option>
+              <option value="Sacramento">Sacramento</option>
+              <option value="Cedarville Cursive">Cedarville Cursive</option>
+              <option value="Zeyada">Zeyada</option>
+              <option value="La Belle Aurore">La Belle Aurore</option>
+              <option value="Nothing You Could Do">Nothing You Could Do</option>
+              <option value="Homemade Apple" class="font-homemade-apple">Homemade Apple</option>
+              <option value="Reenie Beanie">Reenie Beanie</option>
+              <option value="Just Another Hand" class="font-just-another-hand">Just Another Hand</option>
+              <option value="Nanum Pen Script" class="font-nanum-pen-script">Nanum Pen Script</option>
+              <option value="Nanum Brush Script">Nanum Brush Script</option>
+              <option value="Pangolin" class="font-pangolin">Pangolin</option>
+              <option value="Reey" class="font-reey">Reey</option>
+              <option value="Pacifico">Pacifico</option>
+              <option value="Parisienne">Parisienne</option>
+              <option value="Yellowtail">Yellowtail</option>
+              <option value="Charm">Charm</option>
+              <option value="Aladin">Aladin</option>
             </optgroup>
             <optgroup label="हिंदी / Devanagari">
               <option value="Kalam" class="font-kalam">Kalam — कलम (Handwriting)</option>
@@ -266,6 +312,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
         <div class="sb-body">
           <div class="paper-grid">
             <button class="paper-btn active" data-style="ruled" onclick="setPaper(this)">📏 Ruled</button>
+            <button class="paper-btn" data-style="clean" onclick="setPaper(this)">✨ Clean</button>
             <button class="paper-btn" data-style="plain" onclick="setPaper(this)">⬜ Plain</button>
             <button class="paper-btn" data-style="grid" onclick="setPaper(this)">⊞ Grid</button>
             <button class="paper-btn" data-style="legal" onclick="setPaper(this)">🟡 Legal Pad</button>
@@ -275,6 +322,16 @@ Try pasting a paragraph of lecture notes!"></textarea>
             <button class="paper-btn" data-style="engineering" onclick="setPaper(this)">📐 Engineering</button>
             <button class="paper-btn" data-style="music" onclick="setPaper(this)">🎼 Music Staff</button>
             <button class="paper-btn" data-style="dated" onclick="setPaper(this)">📅 Dated</button>
+          </div>
+
+          <div class="sb-label sb-label-mt">Theme Pack</div>
+          <div class="theme-pack-row">
+            <button class="btn sm" onclick="applyThemePack('default')" aria-label="Default theme">Default</button>
+            <button class="btn sm" onclick="applyThemePack('forest')" aria-label="Forest theme">Forest</button>
+            <button class="btn sm" onclick="applyThemePack('sunset')" aria-label="Sunset theme">Sunset</button>
+            <button class="btn sm" onclick="applyThemePack('ocean')" aria-label="Ocean theme">Ocean</button>
+            <button class="btn sm" onclick="applyThemePack('lavender')" aria-label="Lavender theme">Lavender</button>
+            <button class="btn sm" onclick="applyThemePack('charcoal')" aria-label="Charcoal theme">Charcoal</button>
           </div>
         </div>
       </div>
@@ -293,6 +350,11 @@ Try pasting a paragraph of lecture notes!"></textarea>
             <option value="cornell">Cornell Study Notes</option>
             <option value="meeting">Meeting Notes</option>
           </select>
+          <label class="checkbox-label mt-8">
+            <input type="checkbox" id="margin-labels-toggle" checked title="Show Q/Ans numbers in the left margin" />
+            <span class="checkbox-custom"></span>
+            <span class="checkbox-text">Q &amp; Ans numbers in left margin</span>
+          </label>
         </div>
       </div>
       <!-- ── LAYER MANAGER SECTION ── -->
@@ -326,12 +388,12 @@ Try pasting a paragraph of lecture notes!"></textarea>
             <span id="ink-color-label">#1c2340 — Navy</span>
           </div>
           <div class="ink-presets-row">
-            <button class="btn sm" onclick="setInkPreset('#1c2340','Navy')" title="Navy">🔵</button>
-            <button class="btn sm" onclick="setInkPreset('#1a1a1a','Black')" title="Black">⚫</button>
-            <button class="btn sm" onclick="setInkPreset('#0a3d62','Blue')" title="Blue Ink">💙</button>
-            <button class="btn sm" onclick="setInkPreset('#6d2177','Purple')" title="Purple">🟣</button>
-            <button class="btn sm" onclick="setInkPreset('#8b0000','Red')" title="Red">🔴</button>
-            <button class="btn sm" onclick="setInkPreset('#2d6a4f','Green')" title="Green">🟢</button>
+            <button class="btn sm" onclick="setInkPreset('#1c2340','Navy')" title="Navy" aria-label="Ink color: Navy">🔵</button>
+            <button class="btn sm" onclick="setInkPreset('#1a1a1a','Black')" title="Black" aria-label="Ink color: Black">⚫</button>
+            <button class="btn sm" onclick="setInkPreset('#0a3d62','Blue')" title="Blue Ink" aria-label="Ink color: Blue">💙</button>
+            <button class="btn sm" onclick="setInkPreset('#6d2177','Purple')" title="Purple" aria-label="Ink color: Purple">🟣</button>
+            <button class="btn sm" onclick="setInkPreset('#8b0000','Red')" title="Red" aria-label="Ink color: Red">🔴</button>
+            <button class="btn sm" onclick="setInkPreset('#2d6a4f','Green')" title="Green" aria-label="Ink color: Green">🟢</button>
           </div>
 
           <div class="sb-label sb-label-mt">Ink Bleed <span class="val" id="bleed-val">0.5</span></div>
@@ -339,6 +401,16 @@ Try pasting a paragraph of lecture notes!"></textarea>
 
           <div class="sb-label">Pressure Variation <span class="val" id="pressure-val">0.12</span></div>
           <input type="range" id="pressure-slider" min="0" max="0.3" step="0.01" value="0.12" title="Pressure Variation" />
+
+          <div class="sb-label">Realism / Human Jitter <span class="val" id="realism-val">0.5</span></div>
+          <input type="range" id="realism-slider" min="0" max="1" step="0.05" value="0.5" title="Realism / Human Jitter" />
+
+          <div class="sb-label sb-label-mt">Rare Imperfections</div>
+          <label class="checkbox-label">
+            <input type="checkbox" id="rare-imperfections-toggle" title="Occasional faint retrace strokes, like real handwriting" />
+            <span class="checkbox-custom"></span>
+            <span class="checkbox-text">Enable rare imperfections</span>
+          </label>
 
           <div class="sb-label sb-label-mt">Markdown Multi-Pen</div>
           <label class="checkbox-label">
@@ -442,6 +514,12 @@ Try pasting a paragraph of lecture notes!"></textarea>
           <span class="sb-arrow">▾</span>
         </button>
         <div class="sb-body">
+          <div class="sb-label">PDF Output Size</div>
+          <select id="pdf-size-select" title="PDF output quality and file size">
+            <option value="compact">Compact (smallest, JPEG 75%)</option>
+            <option value="standard" selected>Standard (2×, JPEG 92%)</option>
+            <option value="high">High (2×, lossless PNG)</option>
+          </select>
           <div class="export-grid">
             <!-- Phase 8.1 — PNG -->
             <button class="btn" onclick="exportImage('png')" aria-label="Export as PNG image">🖼 PNG</button>
@@ -484,16 +562,19 @@ Try pasting a paragraph of lecture notes!"></textarea>
           <div class="sb-label">Writing Speed <span class="val" id="spd-val">8</span></div>
           <input type="range" id="speed-slider" min="1" max="30" step="1" value="8" title="Writing Speed" />
           <div class="animation-buttons-row">
-            <button class="btn accent btn-start" onclick="startAnimation()">▶ Start</button>
-            <button class="btn" onclick="stopAnimation()">■ Stop</button>
+            <button class="btn accent btn-start" onclick="startAnimation()" aria-label="Start writing animation">▶ Start</button>
+            <button class="btn" onclick="stopAnimation()" aria-label="Stop writing animation">■ Stop</button>
           </div>
         </div>
       </div>
 
     </aside><!-- /sidebar -->
 
+    <!-- Mobile drawer scrim (upstream 1.6.23) -->
+    <div id="sidebar-backdrop" aria-hidden="true"></div>
+
     <!-- PHASE 2.4 — CANVAS AREA -->
-    <main id="canvas-area">
+    <main id="canvas-area" tabindex="-1">
       <div id="page-container"></div>
     </main>
 
@@ -509,9 +590,9 @@ Try pasting a paragraph of lecture notes!"></textarea>
      PHASE 8.8 — PAGE NAVIGATION BAR
 ════════════════════════════════════════ -->
   <div id="page-nav">
-    <button class="btn sm icon-btn" id="nav-prev" onclick="navigatePage(-1)">◀</button>
+    <button class="btn sm icon-btn" id="nav-prev" onclick="navigatePage(-1)" aria-label="Previous page">◀</button>
     <span id="page-indicator">Page 1 of 1</span>
-    <button class="btn sm icon-btn" id="nav-next" onclick="navigatePage(1)">▶</button>
+    <button class="btn sm icon-btn" id="nav-next" onclick="navigatePage(1)" aria-label="Next page">▶</button>
   </div>
 
   <!-- ════════════════════════════════════════
@@ -521,7 +602,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
     <div class="modal-card">
       <div class="modal-header">
         <h3>✨ HandFonted Studio</h3>
-        <button class="modal-close" onclick="closeHandFontedModal()">✕</button>
+        <button class="modal-close" onclick="closeHandFontedModal()" aria-label="Close HandFonted Studio">✕</button>
       </div>
       
       <div class="modal-tabs">
@@ -675,7 +756,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
     <div class="modal-card modal-card-lg">
       <div class="modal-header">
         <h3>✨ AI Grammar Correction <span id="grammar-lang-badge" class="badge">English</span></h3>
-        <button class="modal-close" onclick="closeGrammarModal()">✕</button>
+        <button class="modal-close" onclick="closeGrammarModal()" aria-label="Close grammar correction">✕</button>
       </div>
       <div class="modal-body modal-body-flex">
         <div class="flex-1">
@@ -699,7 +780,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
     <div class="modal-card">
       <div class="modal-header">
         <h3>🃏 Flashcards</h3>
-        <button class="modal-close" onclick="closeFlashcardsModal()">✕</button>
+        <button class="modal-close" onclick="closeFlashcardsModal()" aria-label="Close flashcards">✕</button>
       </div>
       <div class="modal-body" style="display:flex;flex-direction:column;align-items:center;gap:16px;min-height:260px;">
         <div id="flashcard-counter" style="font-size:13px;color:var(--text-muted);">1 / 1</div>
@@ -720,6 +801,9 @@ Try pasting a paragraph of lecture notes!"></textarea>
 
   <!-- Voice Recording Toast -->
   <div id="voice-toast" class="hidden" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;padding:10px 24px;border-radius:20px;font-size:14px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.2);">🎤 Listening… click again to stop</div>
+
+  <!-- Screen reader live region — receives AI status and export toasts -->
+  <div id="status-announcer" class="sr-only" role="status" aria-live="polite"></div>
 
   <!-- Diagram Engine (layout algorithms + mermaid rendering) -->
   <script src="diagram-engine.js"></script>
@@ -743,7 +827,8 @@ Try pasting a paragraph of lecture notes!"></textarea>
   <script src="collaborative-engine.js"></script>
 
   <!-- TensorFlow.js for Smart Stroke Prediction (Task 14) -->
-  <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"
+    integrity="sha384-xc4sZTUOM2obsQR75Be0zGbt7Gb6mOVFJN4yBm30Xn0YQLDWIY+yrtFmLmIank6w" crossorigin="anonymous"></script>
   <script src="stroke-prediction-engine.js"></script>
 
   <!-- Multi-Layer Canvas Architecture (Task 16) -->
@@ -764,11 +849,23 @@ Try pasting a paragraph of lecture notes!"></textarea>
   <!-- Export Renderers (queue items, cursive connections) -->
   <script src="export-renderers.js"></script>
 
+  <!-- AI Post-Processing (sanitize, resequence QA, offline Smart Arrange) -->
+  <script src="ai-postprocess.js"></script>
+
   <!-- AI Assistant (callClaude, aiAction, GrammarCorrector) -->
   <script src="ai-assistant.js"></script>
 
   <!-- Notebooks (IndexedDB CRUD + sidebar UI) -->
   <script src="notebooks.js"></script>
+
+  <!-- Margin Q/Ans question labels (queue line clustering) -->
+  <script src="margin-labels.js"></script>
+
+  <!-- Flashcards & Study Mode -->
+  <script src="flashcards.js"></script>
+
+  <!-- Voice to Notes (Web Speech API) -->
+  <script src="voice-notes.js"></script>
 
   <!-- Custom Script -->
   <script src="index.js"></script>

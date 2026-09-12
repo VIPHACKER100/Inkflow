@@ -1,6 +1,6 @@
 {
   "name": "inkflow",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "AI Handwritten Notes Generator",
   "main": "index.js",
   "scripts": {
@@ -11,10 +11,11 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint index.js font-compilation.js paper-renderer.js text-layout.js export-renderers.js diagram-engine.js cursive-connector.js template-manager.js markdown-parser.js collaborative-engine.js contextual-jitter-engine.js stroke-prediction-engine.js layer-compositor.js audio-recorder.js script-detector.js server.js",
-    "lint:fix": "eslint --fix index.js font-compilation.js paper-renderer.js text-layout.js export-renderers.js diagram-engine.js cursive-connector.js template-manager.js markdown-parser.js collaborative-engine.js contextual-jitter-engine.js stroke-prediction-engine.js layer-compositor.js audio-recorder.js script-detector.js server.js",
-    "format": "prettier --write index.js font-compilation.js paper-renderer.js text-layout.js export-renderers.js diagram-engine.js cursive-connector.js template-manager.js markdown-parser.js collaborative-engine.js contextual-jitter-engine.js stroke-prediction-engine.js layer-compositor.js audio-recorder.js script-detector.js server.js",
-    "format:check": "prettier --check index.js font-compilation.js paper-renderer.js text-layout.js export-renderers.js diagram-engine.js cursive-connector.js template-manager.js markdown-parser.js collaborative-engine.js contextual-jitter-engine.js stroke-prediction-engine.js layer-compositor.js audio-recorder.js script-detector.js server.js"
+    "check:version": "node scripts/check-version.js",
+    "lint": "eslint index.js font-compilation.js paper-renderer.js text-layout.js export-renderers.js diagram-engine.js cursive-connector.js template-manager.js flashcards.js voice-notes.js ai-postprocess.js margin-labels.js markdown-parser.js collaborative-engine.js contextual-jitter-engine.js stroke-prediction-engine.js layer-compositor.js audio-recorder.js script-detector.js server.js",
+    "lint:fix": "eslint --fix index.js font-compilation.js paper-renderer.js text-layout.js export-renderers.js diagram-engine.js cursive-connector.js template-manager.js flashcards.js voice-notes.js ai-postprocess.js margin-labels.js markdown-parser.js collaborative-engine.js contextual-jitter-engine.js stroke-prediction-engine.js layer-compositor.js audio-recorder.js script-detector.js server.js",
+    "format": "prettier --write index.js font-compilation.js paper-renderer.js text-layout.js export-renderers.js diagram-engine.js cursive-connector.js template-manager.js flashcards.js voice-notes.js ai-postprocess.js margin-labels.js markdown-parser.js collaborative-engine.js contextual-jitter-engine.js stroke-prediction-engine.js layer-compositor.js audio-recorder.js script-detector.js server.js",
+    "format:check": "prettier --check index.js font-compilation.js paper-renderer.js text-layout.js export-renderers.js diagram-engine.js cursive-connector.js template-manager.js flashcards.js voice-notes.js ai-postprocess.js margin-labels.js markdown-parser.js collaborative-engine.js contextual-jitter-engine.js stroke-prediction-engine.js layer-compositor.js audio-recorder.js script-detector.js server.js"
   },
   "repository": {
     "type": "git",
@@ -32,6 +33,7 @@
     "ws": "^8.21.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "eslint": "^10.9.1",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.9.6",

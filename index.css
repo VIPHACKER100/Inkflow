@@ -2364,3 +2364,110 @@ body.study-mode .page { box-shadow: 0 0 0 2px var(--accent); }
 .notebook-item:hover { background: var(--btn-hover); }
 .notebook-title { flex: 1; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .notebook-date { font-size: 11px; color: var(--text-muted); }
+
+/* ── Accessibility ───────────────────────────────────────────────────────── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 10000;
+  background: #6C63FF;
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 0 0 10px 0;
+  font-weight: 500;
+  text-decoration: none;
+}
+.skip-link:focus { left: 0; }
+#canvas-area:focus { outline: none; }
+
+/* Respect users who prefer reduced motion (flashcard flip, transitions, pen cursor) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Theme Packs ─────────────────────────────────────────────────────────── */
+.theme-pack-row { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* ── Mobile UX Overhaul (upstream 1.6.23 / 1.6.24 parity) ────────────────── */
+
+/* Stable viewport height (dvh with vh fallback) */
+body { min-height: 100vh; min-height: 100dvh; }
+
+/* Remove the 300ms double-tap zoom delay on interactive elements */
+button, .btn, a, .paper-btn, .align-btn, .tab-btn, .sheet-tab, input[type="range"] { touch-action: manipulation; }
+
+/* Drawer scrim — only visible while the drawer is open on mobile */
+#sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 89;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+body.sidebar-open #sidebar-backdrop { opacity: 1; }
+
+/* Page/canvas width constraints so the flexbox tree constrains children */
+#page-container, .page-wrapper { width: 100%; max-width: 720px; }
+.canvas-container { display: block; }
+
+/* Safe-area padding on fixed chrome (env() resolves to 0 on desktop) */
+#toolbar { padding-top: env(safe-area-inset-top, 0px); padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
+#sidebar { padding-bottom: env(safe-area-inset-bottom, 0px); }
+#page-nav { margin-bottom: env(safe-area-inset-bottom, 0px); }
+
+@media (max-width: 768px) {
+  /* Drawer backdrop + body scroll lock */
+  #sidebar-backdrop { display: block; }
+  body.sidebar-open { overflow: hidden; }
+
+  /* Prevent iOS Safari zoom-on-focus: drawer inputs stay ≥16px */
+  #sidebar input, #sidebar select, #sidebar textarea { font-size: 16px; }
+
+  /* Compact icon-only toolbar: emoji + tooltip + aria-label carry meaning */
+  .btn-label { display: none; }
+  #page-indicator-toolbar { display: none; }
+
+  /* Canvas fits the viewport; no horizontal scroll, centered */
+  #canvas-area { overflow-x: hidden; align-items: center; }
+  .canvas-container { max-width: calc(100vw - 16px); width: 100%; }
+  .canvas-page { max-width: 100%; }
+
+  /* Edge-to-edge sheets for the two heavy modals (≤480px already full-screen) */
+  #handfonted-modal .modal-card,
+  #flashcards-modal .modal-card {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  #canvas-area { padding: 8px 6px 80px; }
+  .canvas-container { max-width: calc(100vw - 12px); }
+  .logo span { display: none; } /* logo text collapses to "Ink" on the smallest screens */
+}

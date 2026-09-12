@@ -118,3 +118,18 @@ The viewport auto-scrolls to keep the pen cursor visible during animation.
 | **PDF** | pdf.js (CDN-loaded) — page-by-page text extraction with progress bar |
 
 Drag-and-drop is supported on the upload zone.
+
+---
+
+## 1.7.0 Additions
+
+| Control | Where | Values / Behavior |
+| :--- | :--- | :--- |
+| **✨ Clean** paper style | Paper Style grid | Crisp typographic mode: no paper grain, no ink-bleed shadow, no variation (neutral tilt/scale/baseline), drafted glyphs bypassed. Non-clean handwriting fonts auto-switch to **Kalam**. In Standard layout with margin labels on, bare `Answer:` lines are hidden on canvas and represented by the margin **Ans** label. |
+| **Realism / Human Jitter** | Ink Effects | 0.0 – 1.0 (default 0.5). Scales all handwriting variation; layout is seeded from the note text, so re-renders and PDF exports are pixel-identical. Devanagari automatically tightens jitter. |
+| **Rare Imperfections** | Ink Effects | Checkbox. ~1.8% of glyphs render a faint 1px retrace stroke (in render, animation, and exports). |
+| **Q & Ans numbers in left margin** | Page Layout | Checkbox (default on, Standard layout). Draws **Q1…Qn** next to numbered question lines ending with `?` and **Ans** next to bare `Answer:` lines. |
+| **PDF Output Size** | Export | Compact (1×, JPEG 75%) / Standard (2×, JPEG 92%) / High (2×, lossless PNG). Persisted per browser; shown in the export toast. |
+| **Theme Packs** | Paper Style | Six one-click buttons (Default, Forest, Sunset, Ocean, Lavender, Charcoal) applying accent/paper/ink colors. |
+| **Fonts** | Font selector | Full 48-font suite in four groups: Print Handwriting (20), Cursive & Script (20), Devanagari (8), Clean (2). |
+| **Smart Arrange** | AI Features | Now fully **offline** — no API key or provider needed. Reports the number of fixes via toast. |

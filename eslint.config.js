@@ -103,6 +103,7 @@ module.exports = [
         // Module globals
         module: 'readonly',
         require: 'readonly',
+        process: 'readonly',
         exports: 'writable',
         __dirname: 'readonly',
         __filename: 'readonly',
@@ -141,6 +142,9 @@ module.exports = [
         getCharVariation: 'readonly',
         CharacterVariationContext: 'readonly',
         getCharVariationWithContext: 'readonly',
+        hashString: 'readonly',
+        mulberry32: 'readonly',
+        createPRNG: 'readonly',
         renderCursiveConnections: 'readonly',
         CollaborativeEngine: 'readonly',
         screen: 'readonly',

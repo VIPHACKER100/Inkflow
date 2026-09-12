@@ -52,6 +52,7 @@
 
     const configs = {
       ruled: { bg: '#f8f4ea', lineColor: '#c5b9a0', lineOpacity: 0.55, redLine: '#e08080' },
+      clean: { bg: '#faf9f5', lineColor: '#85add4', lineOpacity: 0.65, redLine: '#ff4d6d' },
       plain: { bg: '#faf7f0', lineColor: null },
       grid: { bg: '#f6f2ec', lineColor: '#c0b49a', lineOpacity: 0.35 },
       legal: { bg: '#fef9c3', lineColor: '#c8b820', lineOpacity: 0.45, redLine: '#e07070' },
@@ -69,7 +70,7 @@
     ctx.fillRect(0, 0, w, h);
 
     // Paper grain texture
-    if (style !== 'dark') {
+    if (style !== 'dark' && style !== 'clean') {
       ctx.save();
       ctx.globalAlpha = 0.018;
       let seed = 0;
@@ -88,7 +89,7 @@
       ctx.restore();
     }
 
-    if (style === 'ruled' || style === 'legal') {
+    if (style === 'ruled' || style === 'legal' || style === 'clean') {
       ctx.save();
       ctx.globalAlpha = 0.55;
       ctx.strokeStyle = c.redLine || '#e08080';

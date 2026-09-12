@@ -119,3 +119,14 @@ function debounceRender() {
 - Non-blocking overlay in the bottom-right corner
 - Color-coded by type: info (blue), success (green), warn (yellow), error (red)
 - Auto-dismiss after 3 seconds for non-info types
+
+---
+
+## Mobile & Drawer (1.7.0)
+
+- **Sidebar drawer**: `setSidebarOpen()` owns the state — `aria-expanded` sync on the hamburger, body scroll-lock (`body.sidebar-open`), and a `#sidebar-backdrop` scrim. Closes on scrim tap, canvas tap (capture-phase, so the tap still reaches the page editor), and Escape (deferred while a modal is open).
+- **Compact toolbar** (≤768px): button wordings live in `.btn-label` spans that hide on small screens — emoji glyphs, `title` tooltips, and `aria-label`s carry the meaning; the logo collapses to "Ink" ≤480px.
+- **Responsive canvas**: `getResponsiveCanvasWidth()` computes the display width per breakpoint (≤480px: `vw − 24`, ≤768px: `vw − 32`, desktop: `min(794, 720)`); the resize handler reflows every canvas and its editor overlay.
+- **Stable viewport**: `viewport-fit=cover` + `env(safe-area-inset-*)` padding on toolbar/drawer/pagination; `100dvh` (with `vh` fallback) prevents browser-chrome jumps.
+- **Touch polish**: `touch-action: manipulation` removes the 300ms double-tap delay; drawer inputs are pinned ≥16px so iOS Safari doesn't zoom on focus; HandFonted and Flashcards modals become edge-to-edge sheets ≤768px.
+- **Keyboard**: Escape exits Study Mode when no modal is open; Escape closes the drawer otherwise.

@@ -9,6 +9,8 @@
   function setAiStatus(msg) {
     const el = document.getElementById('ai-status');
     if (el) el.textContent = msg;
+    const live = document.getElementById('status-announcer');
+    if (live) live.textContent = msg;
   }
 
   async function callClaude(prompt, systemPrompt, onChunk) {
@@ -246,11 +248,23 @@ Constraints:
         btns.forEach((b) => (b.disabled = false));
         return;
       }
-      result = await callClaude(
-        currentText,
-        'Reorganize and format the following text to look like beautifully arranged handwritten notes. Add appropriate section headers, bullet points, and clean paragraph breaks. Ensure the flow is logical and aesthetic. Use plain text only, no markdown symbols like asterisks or hashtags.',
-        onChunk
-      );
+      // Smart Arrange is fully offline — a deterministic tidy-up, no API key needed.
+      try {
+        const arranged = window.AIPostProcess.smartArrangeLocal(currentText);
+        textarea.value = arranged.text;
+        S.text = arranged.text;
+        renderText(S.text);
+        autosave();
+        setAiStatus('✓ Smart Arrange (offline) — ' + arranged.fixes + ' fixes');
+        if (typeof window.showExportToast === 'function') {
+          window.showExportToast('Smart Arrange: ' + arranged.fixes + ' fixes', 'success');
+        }
+        setTimeout(() => setAiStatus(''), 3000);
+      } catch (e) {
+        setAiStatus('✗ Smart Arrange failed: ' + e.message);
+      }
+      btns.forEach((b) => (b.disabled = false));
+      return;
     }
 
     if (type === 'grammar') {
@@ -305,7 +319,11 @@ Constraints:
       );
     }
 
-    if (result !== null && type !== 'grammar') {
+    if (result !== null && type !== 'grammar' && type !== 'diagram') {
+      // Post-process every AI result before it reaches the textarea/renderer:
+      // strip markdown leakage, then renumber + dedupe Q:/A: flashcard pairs.
+      result = window.AIPostProcess.sanitizeAiResponse(result);
+      result = window.AIPostProcess.resequenceQA(result);
       textarea.value = result;
       S.text = result;
       renderText(S.text);
@@ -320,10 +338,11 @@ Constraints:
   function acceptGrammarCorrection() {
     const corrected = document.getElementById('grammar-corrected')?.value;
     if (corrected && corrected !== 'Correcting...') {
+      const clean = window.AIPostProcess ? window.AIPostProcess.sanitizeAiResponse(corrected) : corrected;
       const textarea = document.getElementById('text-input');
       if (textarea) {
-        textarea.value = corrected;
-        window.S.text = corrected;
+        textarea.value = clean;
+        window.S.text = clean;
         window.renderText(window.S.text);
         window.autosave();
       }

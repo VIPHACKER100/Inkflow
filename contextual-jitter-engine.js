@@ -101,6 +101,37 @@ class CharacterVariationContext {
 }
 
 /**
+ * FNV-1a 32-bit hash — seeds the PRNG from note text so layout is deterministic
+ * across re-renders, page switches, and PDF exports (upstream v1.6.22).
+ */
+function hashString(str) {
+  let hash = 0x811c9dc5;
+  const s = String(str || '');
+  for (let i = 0; i < s.length; i++) {
+    hash ^= s.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash >>> 0;
+}
+
+/** mulberry32 — tiny fast seeded PRNG returning () => [0,1). */
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Create a seeded PRNG from a numeric seed (pair with hashString). */
+function createPRNG(seed) {
+  return mulberry32(seed >>> 0);
+}
+
+/**
  * Enhanced character variation function with position context
  *
  * Generates randomized per-character variation parameters with position-aware scaling.
@@ -109,13 +140,50 @@ class CharacterVariationContext {
  * @param {number} pressure - Base pressure (0-1)
  * @param {number} fontSize - Font size in pixels
  * @param {CharacterVariationContext} context - Position context (optional)
+ * @param {object} [opts] - Seeded realism path (upstream v1.6.22):
+ *   { prng, realism, isIndic }. When omitted, the legacy unseeded behavior runs.
  * @returns {object} Variation parameters with position-aware scaling applied
  *
  * Requirements: 1.1-1.8
  */
-function getCharVariationWithContext(rotMax, pressure, fontSize, context) {
-  const rand = (min, max) => min + Math.random() * (max - min);
+function getCharVariationWithContext(rotMax, pressure, fontSize, context, opts) {
   const k = (fontSize || 22) / 22; // Scale factor for font size normalization
+
+  if (opts && typeof opts === 'object') {
+    // Seeded realism path: transforms scale with S.realism; Devanagari uses
+    // tighter jitter multipliers (0.3 rot / 0.4 scale) to protect matras and
+    // the shirorekha top line.
+    const prng = typeof opts.prng === 'function' ? opts.prng : Math.random;
+    const r = opts.realism === undefined ? 0.5 : opts.realism;
+    const scriptRotMult = opts.isIndic ? 0.3 : 1.0;
+    const scriptScaleMult = opts.isIndic ? 0.4 : 1.0;
+    const prand = (min, max) => min + prng() * (max - min);
+
+    const maxTilt = Math.max(rotMax, 3.5 * r) * scriptRotMult;
+    const scaleJitter = 0.075 * r * scriptScaleMult;
+
+    const baseVariation = {
+      tiltDeg: prand(-maxTilt, maxTilt),
+      scaleY: 1.0 + prand(-scaleJitter, scaleJitter),
+      scaleX: 1.0 + prand(-scaleJitter, scaleJitter),
+      baselineOff: prand(-0.4, 0.4) * k * r * scriptScaleMult,
+      spacingExtra: prand(-0.4, 0.6) * k,
+      pressureMod: (1 - prng() * pressure * 1.4) * (1 + prand(-0.15, 0.15) * r),
+      opacity: 1.0 - prng() * 0.15 * r,
+    };
+
+    if (context) {
+      const scaling = context.getPositionScaling();
+      baseVariation.pressureMod *= scaling.pressureScale;
+      baseVariation.tiltDeg *= scaling.slantScale;
+      baseVariation.baselineOff -= scaling.fatigueOffset;
+      baseVariation.spacingExtra *= scaling.spacingScale;
+    }
+    return baseVariation;
+  }
+
+  // Legacy path (unchanged, unseeded): preserves the pre-realism behavior.
+  const rand = (min, max) => min + Math.random() * (max - min);
 
   // Base variation (Req 1.8 - preserve existing proportional scaling)
   const baseVariation = {
@@ -166,5 +234,8 @@ if (typeof module !== 'undefined' && module.exports) {
     CharacterVariationContext,
     getCharVariation,
     getCharVariationWithContext,
+    hashString,
+    mulberry32,
+    createPRNG,
   };
 }

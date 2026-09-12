@@ -4,6 +4,39 @@ All notable changes to Inkflow are documented in this file.
 
 ---
 
+## [1.7.0] — 2026-09-13
+
+### ✨ Added
+- **Seeded Realism Engine (upstream 1.6.22 parity)**: `mulberry32` PRNG seeded via an FNV-1a hash of the note text — re-renders, page switches, and PDF exports are now pixel-identical. New **Realism / Human Jitter** slider (0–1, default 0.5) scales all variation; Devanagari script auto-tightens jitter (0.3× rotation / 0.4× scale) to protect matras and the shirorekha line. Per-line baseline drift random walk (clamped ±3.5·r·k). New **Rare Imperfections** toggle: ~1.8% of glyphs render a faint 1px-offset retrace stroke in the live render, the writing animation, and exports.
+- **Clean paper style (upstream 1.4.0 parity)**: new "✨ Clean" paper button — crisp typographic mode (neutral variation, no grain, no ink-bleed shadow, drafted glyphs bypassed). Unsupported handwriting fonts auto-switch to Kalam; bare `Answer:` lines are hidden on canvas in Standard layout and represented by the margin **Ans** label (still editable).
+- **Margin Q/Ans labels (upstream 1.6.8–1.6.17 parity)**: new `margin-labels.js` module clusters the render queue into visual lines and draws **Q1…Qn** next to numbered question lines (space-tolerant matching, trailing `?` required) and **Ans** next to bare `Answer:` lines — right-aligned in the margin, document-wide sequential numbering computed per render, toggle in the Page Layout section (Standard layout only).
+- **PDF Output Size presets (upstream 1.6.20 parity)**: new dropdown in Export — Compact (1×, JPEG 75%), Standard (2×, JPEG 92%, default), High (2×, lossless PNG). Persisted per browser; toast names the active preset.
+- **AI Response Post-Processing (upstream 1.6.23 parity)**: new `ai-postprocess.js` — `sanitizeAiResponse()` strips markdown/HTML leakage before rendering (code fences, inline backticks, bold/italic, raw tags) while preserving Inkflow syntax and `​```diagram`/`​```mermaid` fences; `resequenceQA()` renumbers Q:/A: pairs sequentially from Q1 and silently drops near-duplicate questions (trigram Jaccard ≥ 0.72) with their paired answers. Applied to every AI result and accepted grammar corrections.
+- **Offline Smart Arrange (upstream 1.6.7 parity)**: the 🪄 Smart Arrange button no longer needs an AI provider or API key — a deterministic in-browser tidy-up normalizes bullets, headers, study tags, highlights, Q/A labels and punctuation spacing, inserts structural breaks, and reports the fix count via toast.
+- **Full 48-font handwriting suite**: Google Fonts expanded to 50 families; the font dropdown now mirrors the upstream grouping — Print Handwriting (20), Cursive & Script (20), Devanagari (8), Clean (2).
+- **Mobile UX overhaul (upstream 1.6.23/1.6.24 parity)**: proper sidebar drawer (`setSidebarOpen()`, `#sidebar-backdrop` scrim, body scroll-lock, closes on scrim tap / canvas tap / Escape); compact icon-only toolbar ≤768px; responsive canvas width via `getResponsiveCanvasWidth()` (≤480px: vw−24, ≤768px: vw−32, desktop min(794,720)) with full resize reflow; `viewport-fit=cover` + safe-area padding; `100dvh` stable height; `touch-action: manipulation`; ≥16px drawer inputs (iOS zoom guard); edge-to-edge HandFonted/Flashcards modals on phones.
+- **Accessibility**: ARIA labels on emoji-only buttons (ink presets, Animate/Start/Stop, page nav, modal closes, toolbar), `aria-live` screen-reader announcer wired to AI status and export toasts, skip-to-canvas link, `prefers-reduced-motion` support, canvas page `tabindex` focus.
+- **Theme Packs UI**: 6 one-click theme buttons in the Paper Style section (the packs previously existed but had no launcher).
+- **Supply chain**: SRI `integrity` + `crossorigin` attributes on all 7 CDN resources (hashes computed from the live CDN responses).
+- **Offline fonts**: the Google Fonts stylesheet is precached by the service worker — the full suite is available offline; `.woff2` files cache at runtime.
+
+### 🛠️ Fixed
+- **Critical: `window.S` was never assigned** — `ai-assistant.js` and `notebooks.js` read shared state via `window.S`, which was `undefined`: any real AI action with a valid API key crashed with a TypeError mid-stream. State is now exposed in index.js.
+- **Critical: broken production build** — `npm run build` produced a dist missing all 17 classic `<script>` files (Rollup ignores non-module scripts), so the built site was dead. `vite.config.js` now copies root scripts into dist.
+- **Critical: cursive render crash** — `renderCursive(ctx, pageItems)` was called with 2 arguments against a 3-argument signature; Cursive Mode threw at render time.
+- **Service worker**: removed `/server.js` (a Node file that can never run in the browser) from precache; added `manifest.json`, `audio-recorder.js` and the new modules; cache-name version drift is now enforced by `npm run check:version` (runs in CI).
+- **`setPaper()` missing autosave** (claimed fixed in 1.6.2 but absent from the code).
+- **Voice recognition errors were silent** — friendly toasts now appear for mic-denied / no-microphone / network / no-speech conditions.
+- **ESLint**: the 45-name unused-vars allowlist no longer hides warnings for functions extracted to modules; 0 errors maintained.
+
+### ♻️ Changed
+- **Version bumped** 1.6.0 → 1.7.0 (service-worker cache refreshes automatically for installed users).
+- **CI**: new GitHub Actions workflow — lint + unit tests (Vitest) + version-consistency check + production build with dist sanity check + non-blocking `npm audit` on every pull request.
+- **Modularization continued**: `flashcards.js`, `voice-notes.js`, `ai-postprocess.js` and `margin-labels.js` extracted from index.js; new unit suites for AI post-processing, flashcard extraction, margin labels and the realism engine — **197 tests passing** (up from 130).
+- **Root `README.md` added**, plus `docs/roadmap.md` (update & enhancement plan with progress log) and `docs/feature-gap-analysis.md` (fork-vs-upstream analysis, all items now closed).
+
+---
+
 ## [1.6.0] — 2026-08-30
 
 ### ✨ Added

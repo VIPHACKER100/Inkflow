@@ -13,6 +13,9 @@ const S = {
   animSpeed: 8,
   currentPage: 0,
   noteLayout: 'standard',
+  showMarginLabels: true, // Q/Ans numbers in the left margin (upstream 1.6.8)
+  realism: 0.5, // Organic handwriting jitter intensity 0–1 (upstream 1.6.22)
+  rareImperfections: false, // Rare retrace strokes + margin-space compression
   textAlignment: 'middle', // 'top', 'middle', 'bottom'
   smudgeEffects: false, // Smudge effects toggle
   cursiveMode: false, // Cursive mode toggle (Req 3.1)
@@ -25,6 +28,9 @@ const S = {
     emphasis: { inkColor: '#8b0000', pressure: 0.15, rotationScale: 1.08 },
   },
 };
+// Sibling modules (ai-assistant.js, notebooks.js, flashcards.js, voice-notes.js)
+// read shared state through window.S — a top-level `const` alone does not expose it.
+window.S = S;
 
 /* Canvas pages array */
 let pages = [];
@@ -391,10 +397,42 @@ function applyDark() {
 }
 
 /* ───────────────────────────────────────────
-   PHASE 2.7 — HAMBURGER (MOBILE)
+   PHASE 2.7 — HAMBURGER & MOBILE DRAWER (upstream 1.6.23 parity)
 ─────────────────────────────────────────── */
+function setSidebarOpen(open) {
+  const sidebar = document.getElementById('sidebar');
+  const hamburger = document.getElementById('hamburger');
+  document.body.classList.toggle('sidebar-open', open);
+  if (sidebar) sidebar.classList.toggle('open', open);
+  if (hamburger) hamburger.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+
+function isSidebarOpen() {
+  return document.getElementById('sidebar')?.classList.contains('open') || false;
+}
+
 document.getElementById('hamburger')?.addEventListener('click', () => {
-  document.getElementById('sidebar')?.classList.toggle('open');
+  setSidebarOpen(!isSidebarOpen());
+});
+
+// Scrim tap closes the drawer
+document.getElementById('sidebar-backdrop')?.addEventListener('click', () => setSidebarOpen(false));
+
+// A tap on the canvas closes the drawer (capture phase, so the tap still reaches
+// the page editor underneath)
+document.getElementById('canvas-area')?.addEventListener(
+  'pointerdown',
+  () => {
+    if (isSidebarOpen()) setSidebarOpen(false);
+  },
+  true
+);
+
+// Escape closes the drawer when no modal is open (modal Escape is handled separately)
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (document.querySelector('.modal-overlay:not(.hidden)')) return;
+  if (isSidebarOpen()) setSidebarOpen(false);
 });
 
 /* ───────────────────────────────────────────
@@ -435,6 +473,16 @@ if (layoutSelect) {
     S.noteLayout = layoutSelect.value;
     autosave();
     debounceRender();
+  });
+}
+
+const pdfSizeSelect = document.getElementById('pdf-size-select');
+if (pdfSizeSelect) {
+  pdfSizeSelect.value = localStorage.getItem('inkflow-pdf-size') || 'standard';
+  pdfSizeSelect.addEventListener('change', () => {
+    localStorage.setItem('inkflow-pdf-size', pdfSizeSelect.value);
+    const preset = window.ExportRenderers?.PDF_SIZE_PRESETS?.[pdfSizeSelect.value];
+    if (preset) showExportToast('PDF output size: ' + preset.label, 'info');
   });
 }
 
@@ -539,6 +587,7 @@ bindSlider('margin-slider', 'mg-val', 'margin', parseInt);
 bindSlider('rotation-slider', 'rot-val', 'rotationMax', parseFloat);
 bindSlider('bleed-slider', 'bleed-val', 'bleed', parseFloat);
 bindSlider('pressure-slider', 'pressure-val', 'pressure', parseFloat);
+bindSlider('realism-slider', 'realism-val', 'realism', parseFloat);
 bindSlider('speed-slider', 'spd-val', 'animSpeed', parseInt);
 
 /* Phase 5.6 — Ink color picker */
@@ -627,6 +676,24 @@ if (hinglishToggle) {
   hinglishToggle.addEventListener('change', onHinglishToggle);
 }
 
+const marginLabelsToggle = document.getElementById('margin-labels-toggle');
+if (marginLabelsToggle) {
+  marginLabelsToggle.addEventListener('change', () => {
+    S.showMarginLabels = marginLabelsToggle.checked;
+    autosave();
+    debounceRender();
+  });
+}
+
+const rareImperfectionsToggle = document.getElementById('rare-imperfections-toggle');
+if (rareImperfectionsToggle) {
+  rareImperfectionsToggle.addEventListener('change', () => {
+    S.rareImperfections = rareImperfectionsToggle.checked;
+    autosave();
+    debounceRender();
+  });
+}
+
 const markdownPenInputMap = {
   heading: 'pen-color-heading',
   body: 'pen-color-body',
@@ -675,10 +742,31 @@ if (cursiveModeToggle) {
 /* ───────────────────────────────────────────
    PHASE 5.7 — PAPER STYLE BUTTONS
 ─────────────────────────────────────────── */
+// Fonts permitted in the crisp 'clean' paper style (upstream v1.4.0):
+// clean/non-handwriting + Devanagari set. Other fonts auto-switch to Kalam.
+const CLEAN_FONTS = [
+  'Kalam',
+  'Roboto',
+  'Arial',
+  'Delius',
+  'Noto Sans Devanagari',
+  'Noto Serif Devanagari',
+  'Hind',
+  'Tiro Devanagari Hindi',
+  'Baloo 2',
+  'Martel',
+];
+
 function setPaper(btn) {
   document.querySelectorAll('.paper-btn').forEach((b) => b.classList.remove('active'));
   btn.classList.add('active');
   S.paperStyle = btn.dataset.style;
+  if (S.paperStyle === 'clean' && !CLEAN_FONTS.includes(S.font)) {
+    S.font = 'Kalam';
+    const fontSelect = document.getElementById('font-select');
+    if (fontSelect) fontSelect.value = S.font;
+  }
+  autosave();
   debounceRender();
 }
 
@@ -705,6 +793,15 @@ function setTextAlignment(alignment) {
 /* ───────────────────────────────────────────
    PHASE 4.1 — CREATE CANVAS PAGE
 ─────────────────────────────────────────── */
+// Responsive CSS display width so the canvas never overflows narrow phones
+// (the JS coordinate system stays PAGE_W×PAGE_H; only the CSS display scales).
+function getResponsiveCanvasWidth() {
+  const vw = window.innerWidth || document.documentElement.clientWidth || PAGE_W;
+  if (vw <= 480) return Math.min(PAGE_W, vw - 24);
+  if (vw <= 768) return Math.min(PAGE_W, vw - 32);
+  return Math.min(PAGE_W, 720);
+}
+
 function createPage(pageNum) {
   const wrapper = document.createElement('div');
   wrapper.className = 'page-wrapper';
@@ -721,8 +818,9 @@ function createPage(pageNum) {
   canvas.width = PAGE_W;
   canvas.height = PAGE_H;
   canvas.id = 'page-' + pageNum;
-  canvas.style.width = Math.min(PAGE_W, 720) + 'px';
-  canvas.style.height = Math.min(PAGE_H, (720 * PAGE_H) / PAGE_W) + 'px';
+  const displayWidth = getResponsiveCanvasWidth();
+  canvas.style.width = displayWidth + 'px';
+  canvas.style.height = (displayWidth * PAGE_H) / PAGE_W + 'px';
 
   const editor = document.createElement('div');
   editor.className = 'page-editor';
@@ -821,6 +919,10 @@ function getGlobalTextFromEditors() {
 
 window.addEventListener('resize', () => {
   pages.forEach((c, idx) => {
+    // Reflow canvas display size first, then recompute editor overlays against it
+    const displayWidth = getResponsiveCanvasWidth();
+    c.style.width = displayWidth + 'px';
+    c.style.height = (displayWidth * PAGE_H) / PAGE_W + 'px';
     const editor = document.getElementById('editor-' + (idx + 1));
     if (editor) {
       updateEditorStyles(editor, c);
@@ -849,6 +951,24 @@ function clearText() {
   autosave();
 }
 
+// Draw precomputed Q/Ans margin labels for one page (upstream v1.6.8–1.6.17
+// geometry: 0.78× font (min 13px), right-aligned 24px clear of the margin rule,
+// baseline raised 0.15× above the line's handwriting).
+function drawMarginQuestionLabels(ctx, pageIdx) {
+  if (!S.showMarginLabels || S.noteLayout !== 'standard') return;
+  const labels = window.marginLabelsCache instanceof Map ? window.marginLabelsCache.get(pageIdx) : null;
+  if (!labels || labels.length === 0) return;
+  ctx.save();
+  ctx.fillStyle = S.inkColor;
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'alphabetic';
+  ctx.font = '600 ' + Math.max(13, S.fontSize * 0.78) + 'px ' + (S.font || 'Caveat');
+  for (const entry of labels) {
+    ctx.fillText(entry.label, S.margin - 24, entry.y - S.fontSize * 0.15);
+  }
+  ctx.restore();
+}
+
 function redrawPageCanvas(pageNum) {
   const canvas = pages[pageNum - 1];
   if (!canvas) return;
@@ -861,6 +981,7 @@ function redrawPageCanvas(pageNum) {
     const items = queue.filter((item) => item.pageIdx === pageNum - 1);
     window.ExportRenderers.renderQueueItems(ctx, canvas, items);
   }
+  drawMarginQuestionLabels(ctx, pageNum - 1);
 }
 
 // ponytail: aliases for extracted text-layout.js module
@@ -990,6 +1111,16 @@ function layoutTextTemplated(text) {
 
   const variationContext = new CharacterVariationContext();
 
+  // Seeded realism (upstream v1.6.22): same text → same PRNG seed, so layout is
+  // pixel-identical across re-renders, page switches, and PDF exports.
+  const prng = createPRNG(hashString(text));
+  let lineDrift = 0;
+  const realismK = S.fontSize / 22;
+  // Clean style (upstream v1.4.0): crisp typographic mode — no variation at all.
+  const cleanNeutral = S.paperStyle === 'clean';
+  const cleanStandard = cleanNeutral && S.noteLayout === 'standard' && S.showMarginLabels;
+  const NEUTRAL_V = { tiltDeg: 0, scaleX: 1, scaleY: 1, baselineOff: 0, spacingExtra: 0, pressureMod: 1, opacity: 1 };
+
   const margin = S.margin;
   const template = window.templateManager
     ? window.templateManager.resolveTemplate(S.noteLayout, PAGE_W, PAGE_H, margin)
@@ -1007,11 +1138,16 @@ function layoutTextTemplated(text) {
   let pageIdx = 0;
   let charIndex = 0;
   let lineCharIndex = 0;
+  // Upstream v1.6.16 (clean standard): was the last consumed ruled row empty?
+  // Document start / fresh page count as "blank" so a question at the very top
+  // of a page never gets an extra empty row above it.
+  let prevRowBlank = true;
 
   function advanceLineOrZone() {
     x = activeZone.x;
     y += lineH;
     lineCharIndex = 0;
+    lineDrift = 0;
     variationContext.resetAtLineBreak();
     if (y + lineH > activeZone.y + activeZone.height) {
       if (activeZone.nextZone) {
@@ -1021,6 +1157,7 @@ function layoutTextTemplated(text) {
         currentPageText = '';
         pageIdx++;
         activeZone = zones[0];
+        prevRowBlank = true; // new page: no previous row yet
       }
       x = activeZone.x;
       y = activeZone.y + S.fontSize + lineH;
@@ -1061,6 +1198,7 @@ function layoutTextTemplated(text) {
       y += dHeight + lineH;
       x = activeZone.x;
       lineCharIndex = 0;
+      prevRowBlank = false; // diagram rows carry ink
       continue;
     }
 
@@ -1126,7 +1264,12 @@ function layoutTextTemplated(text) {
           let lx = n.x - ctx.measureText(word).width / 2;
           const chars = getGraphemes(word);
           chars.forEach((ch, _ci) => {
-            const v = getCharVariation(S.rotationMax * 0.5, S.pressure, S.fontSize);
+            const v = cleanNeutral
+              ? NEUTRAL_V
+              : getCharVariationWithContext(S.rotationMax * 0.5, S.pressure, S.fontSize, null, {
+                  prng: prng,
+                  realism: S.realism,
+                });
             const cw = ctx.measureText(ch).width + v.spacingExtra;
             queue.push({
               ch,
@@ -1151,6 +1294,7 @@ function layoutTextTemplated(text) {
       currentPageText += block.raw + '\n';
       x = activeZone.x;
       lineCharIndex = 0;
+      prevRowBlank = false; // diagram rows carry ink
       continue;
     }
 
@@ -1172,7 +1316,29 @@ function layoutTextTemplated(text) {
       }
 
       const lineText = lines[lineIdx];
-      if (!lineText) continue;
+      if (!lineText) {
+        // Blank source line: the advance above already consumed one empty ruled
+        // row, so the question-spacing tracker just records the row as blank.
+        prevRowBlank = true;
+        continue;
+      }
+      // Clean mode (upstream v1.6.11/1.6.13): bare "Answer:" lines are hidden on
+      // canvas — items still emit (with hidden:true) so the margin Ans label and
+      // the page-editor overlays stay aligned.
+      const lineHidden = cleanStandard && window.MarginLabels.isAnswerLine(lineText);
+      const lineBold = cleanStandard && window.MarginLabels.isQuestionLine(lineText);
+      // Clean mode (upstream v1.6.16): one empty ruled row before each question
+      // block — skipped at page tops and when the previous row is already blank
+      // (source blank line, hidden Answer row, or a previously inserted row).
+      // The row advances y AND appends '\n' to the page text so the editor
+      // overlays stay 1:1 aligned and the blank row round-trips as an ordinary
+      // blank source line (which then suppresses re-insertion).
+      if (lineBold && !prevRowBlank) {
+        advanceLineOrZone();
+        currentPageText += '\n';
+        prevRowBlank = true;
+      }
+      let lineDrewInk = false; // any visible char landed on this row?
 
       const segments = getStyledLineSegments(lineText);
       for (let si = 0; si < segments.length; si++) {
@@ -1218,15 +1384,23 @@ function layoutTextTemplated(text) {
                 lineCharIndex === 0,
                 lineCharIndex === lineLength - 1
               );
-              const v = getCharVariationWithContext(
-                run.isIndic ? penRotation * 0.3 : penRotation,
-                penPressure,
-                S.fontSize,
-                variationContext
-              );
-              const wobble = Math.sin(lineCharIndex * 0.04) * 0.4 * (S.fontSize / 22);
+              const v = cleanNeutral
+                ? NEUTRAL_V
+                : getCharVariationWithContext(
+                    penRotation,
+                    penPressure,
+                    S.fontSize,
+                    variationContext,
+                    { prng: prng, realism: S.realism, isIndic: true }
+                  );
+              const wobble = cleanNeutral ? 0 : Math.sin(lineCharIndex * 0.04) * 0.4 * (S.fontSize / 22);
               const alignOffset = window.PaperRenderer.getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
-              const cy = y + v.baselineOff * 0.4 + wobble + alignOffset;
+              let clampedDrift = 0;
+              if (!cleanNeutral) {
+                lineDrift += (prng() - 0.48) * 0.45 * S.realism * realismK;
+                clampedDrift = Math.max(-3.5 * S.realism * realismK, Math.min(3.5 * S.realism * realismK, lineDrift));
+              }
+              const cy = y + v.baselineOff * 0.4 + wobble + alignOffset + clampedDrift;
 
               queue.push({
                 ch: run.text,
@@ -1235,11 +1409,14 @@ function layoutTextTemplated(text) {
                 v,
                 pageIdx,
                 isIndic: true,
+                hidden: lineHidden,
+                bold: lineBold,
                 fontStack,
                 inkColor,
                 penKey: penProfile.key,
                 charWidth: ctx.measureText(run.text).width + v.spacingExtra,
               });
+              if (!lineHidden) lineDrewInk = true;
 
               ctx.font = `${S.fontSize}px ${fontStack}`;
               x += ctx.measureText(run.text).width + v.spacingExtra;
@@ -1257,12 +1434,15 @@ function layoutTextTemplated(text) {
               const lineLength = Math.max(1, lineText.length);
               variationContext.updateForCharacter(lineCharIndex, lineLength, isWordStart, isWordEnd);
 
-              const v = getCharVariationWithContext(
-                run.isIndic ? penRotation * 0.3 : penRotation,
-                penPressure,
-                S.fontSize,
-                variationContext
-              );
+              const v = cleanNeutral
+                ? NEUTRAL_V
+                : getCharVariationWithContext(
+                    penRotation,
+                    penPressure,
+                    S.fontSize,
+                    variationContext,
+                    { prng: prng, realism: S.realism, isIndic: false }
+                  );
               ctx.font = `${S.fontSize}px ${fontStack}`;
               const charWidth = ctx.measureText(ch).width + v.spacingExtra;
 
@@ -1270,9 +1450,14 @@ function layoutTextTemplated(text) {
                 advanceLineOrZone();
               }
 
-              const wobble = Math.sin(lineCharIndex * 0.04) * 0.8 * (S.fontSize / 22);
+              const wobble = cleanNeutral ? 0 : Math.sin(lineCharIndex * 0.04) * 0.8 * (S.fontSize / 22);
               const alignOffset = window.PaperRenderer.getAlignmentOffset(S.textAlignment, S.fontSize, S.lineHeight);
-              const cy = y + v.baselineOff + wobble + alignOffset;
+              let clampedDrift = 0;
+              if (!cleanNeutral) {
+                lineDrift += (prng() - 0.48) * 0.45 * S.realism * realismK;
+                clampedDrift = Math.max(-3.5 * S.realism * realismK, Math.min(3.5 * S.realism * realismK, lineDrift));
+              }
+              const cy = y + v.baselineOff + wobble + alignOffset + clampedDrift;
 
               queue.push({
                 ch,
@@ -1281,11 +1466,15 @@ function layoutTextTemplated(text) {
                 v,
                 pageIdx,
                 isIndic: false,
+                isRetrace: !cleanNeutral && S.rareImperfections && prng() < 0.018,
+                hidden: lineHidden,
+                bold: lineBold,
                 fontStack,
                 inkColor,
                 penKey: penProfile.key,
                 charWidth: ctx.measureText(ch).width + v.spacingExtra,
               });
+              if (!lineHidden) lineDrewInk = true;
 
               x += ctx.measureText(ch).width + v.spacingExtra;
               charIndex++;
@@ -1295,6 +1484,7 @@ function layoutTextTemplated(text) {
           });
         }
       }
+      prevRowBlank = !lineDrewInk; // whitespace-only / hidden rows count as blank
     }
   }
 
@@ -1376,6 +1566,10 @@ function renderText(text) {
 
   // Group queue by page and save globally for lazy rendering
   window.currentRenderQueue = queue;
+  window.marginLabelsCache =
+    S.showMarginLabels && S.noteLayout === 'standard' && window.MarginLabels
+      ? window.MarginLabels.computeMarginLabels(queue, { fontSize: S.fontSize, lineHeight: S.lineHeight })
+      : new Map();
   window.currentRcCache = new Map();
 
   pages.forEach((c, idx) => {
@@ -1426,10 +1620,11 @@ window.renderSpecificPage = function (pageIdx, forceRedraw) {
 
   const renderCursive = window.ExportRenderers?.renderCursiveConnectionsOn;
   if (S.cursiveMode && cursiveConnector && typeof renderCursive === 'function') {
-    renderCursive(ctx, pageItems);
+    renderCursive(ctx, canvas, pageItems);
   }
 
   pageItems.forEach((item) => {
+    if (item.hidden) return; // clean mode: bare "Answer:" row (margin Ans label only)
     if (item.type === 'mermaid') {
       const diag = getDiagramImage(item.content);
       if (diag.ready && diag.img && !diag.error) {
@@ -1480,7 +1675,7 @@ window.renderSpecificPage = function (pageIdx, forceRedraw) {
     ctx.rotate((v.tiltDeg * (item.isIndic ? 0.3 : 1) * Math.PI) / 180);
     ctx.scale(v.scaleX, v.scaleY);
 
-    if (draftedGlyphs[item.ch]) {
+    if (draftedGlyphs[item.ch] && S.paperStyle !== 'clean') {
       const glyphImg = getCachedGlyphImage(item.ch, draftedGlyphs[item.ch]);
       if (glyphImg) {
         ctx.globalAlpha = item.isPrediction ? 0.3 : v.opacity;
@@ -1488,16 +1683,16 @@ window.renderSpecificPage = function (pageIdx, forceRedraw) {
         ctx.drawImage(glyphImg, -drawSz / 2, -drawSz / 2, drawSz, drawSz);
       } else {
         const pxSize = S.fontSize * v.pressureMod;
-        ctx.font = `${Math.max(10, pxSize)}px ${item.fontStack}`;
+        ctx.font = `${item.bold ? '600 ' : ''}${Math.max(10, pxSize)}px ${item.fontStack}`;
         ctx.globalAlpha = item.isPrediction ? 0.3 : v.opacity;
         ctx.fillStyle = itemInkColor;
         ctx.fillText(item.ch, 0, 0);
       }
     } else {
       const pxSize = S.fontSize * v.pressureMod;
-      ctx.font = `${Math.max(10, pxSize)}px ${item.fontStack}`;
+      ctx.font = `${item.bold ? '600 ' : ''}${Math.max(10, pxSize)}px ${item.fontStack}`;
       ctx.globalAlpha = item.isPrediction ? 0.3 : v.opacity;
-      if (S.bleed > 0.05) {
+      if (S.bleed > 0.05 && S.paperStyle !== 'clean') {
         ctx.shadowColor = itemInkColor;
         ctx.shadowBlur = S.bleed * 1.4;
       } else {
@@ -1505,11 +1700,18 @@ window.renderSpecificPage = function (pageIdx, forceRedraw) {
       }
       ctx.fillStyle = itemInkColor;
       ctx.fillText(item.ch, 0, 0);
+      if (item.isRetrace) {
+        // Rare imperfection (upstream v1.6.22): faint 1px-offset retrace stroke
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = v.opacity * 0.35;
+        ctx.fillText(item.ch, 1, 1);
+      }
     }
     ctx.restore();
   });
 
-  // Draw template decorations on top of content
+  // Margin Q/Ans labels first, then template decorations on top of content
+  drawMarginQuestionLabels(ctx, pageIdx);
   window.PaperRenderer.drawLayoutDecorations(ctx, S.noteLayout);
 
   // Update layer UI if needed
@@ -1751,6 +1953,7 @@ function startAnimation() {
   let idx = 0;
   const penEl = document.getElementById('pen-cursor');
   penEl.style.display = 'block';
+  const animLabeledPages = new Set(); // draw each page's margin labels once, when the pen reaches it
 
   function step() {
     if (!isAnimating || idx >= queue.length) {
@@ -1765,6 +1968,12 @@ function startAnimation() {
       const canvas = pages[item.pageIdx] || pages[pages.length - 1];
       if (!canvas) continue;
       const ctx = canvas.getContext('2d');
+
+      if (!animLabeledPages.has(item.pageIdx)) {
+        animLabeledPages.add(item.pageIdx);
+        drawMarginQuestionLabels(ctx, item.pageIdx);
+      }
+      if (item.hidden) continue;
 
       if (item.type === 'mermaid') {
         const diag = getDiagramImage(item.content);
@@ -1795,14 +2004,18 @@ function startAnimation() {
       ctx.rotate((v.tiltDeg * (item.isIndic ? 0.3 : 1) * Math.PI) / 180);
       ctx.scale(v.scaleX, v.scaleY);
       const pxSize = S.fontSize * v.pressureMod;
-      ctx.font = `${Math.max(10, pxSize)}px ${item.fontStack}`;
+      ctx.font = `${item.bold ? '600 ' : ''}${Math.max(10, pxSize)}px ${item.fontStack}`;
       ctx.globalAlpha = v.opacity;
-      if (S.bleed > 0.05) {
+      if (S.bleed > 0.05 && S.paperStyle !== 'clean') {
         ctx.shadowColor = S.inkColor;
         ctx.shadowBlur = S.bleed * 1.4;
       }
       ctx.fillStyle = S.inkColor;
       ctx.fillText(item.ch, 0, 0);
+      if (item.isRetrace) {
+        ctx.globalAlpha = v.opacity * 0.35;
+        ctx.fillText(item.ch, 1, 1);
+      }
       ctx.restore();
 
       // Move pen cursor to current char screen position
@@ -2168,12 +2381,19 @@ async function exportPDF() {
       compress: true,
     });
 
+    // Output size preset (upstream v1.6.20): Compact 1× JPEG 75%,
+    // Standard 2× JPEG 92%, High 2× lossless PNG. Persisted separately.
+    const presetName = localStorage.getItem('inkflow-pdf-size') || 'standard';
+    const presets = (window.ExportRenderers && window.ExportRenderers.PDF_SIZE_PRESETS) || {};
+    const preset = presets[presetName] || presets.standard || { label: 'Standard', scale: 1, format: 'image/jpeg', quality: 0.93, jspdfFormat: 'JPEG', compression: 'FAST' };
+
     for (let i = 0; i < pages.length; i++) {
-      showExportToast(`Building PDF (Page ${i + 1}/${pages.length})…`, 'info');
+      showExportToast(`Building PDF (Page ${i + 1}/${pages.length}) — ${preset.label}…`, 'info');
       await new Promise((r) => setTimeout(r, 60));
       if (i > 0) doc.addPage();
-      const imgData = pages[i].toDataURL('image/jpeg', 0.93);
-      doc.addImage(imgData, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+      const src = preset.scale > 1 ? window.ExportRenderers._upscaleCanvas(pages[i], preset.scale) : pages[i];
+      const imgData = src.toDataURL(preset.format, preset.quality);
+      doc.addImage(imgData, preset.jspdfFormat, 0, 0, 210, 297, undefined, preset.compression);
     }
 
     doc.save('inkflow-notes.pdf');
@@ -2257,7 +2477,17 @@ function triggerDownload(url, filename) {
 }
 
 let exportToastTimer = null;
+function announceToScreenReader(message) {
+  const live = document.getElementById('status-announcer');
+  if (!live) return;
+  live.textContent = '';
+  requestAnimationFrame(() => {
+    live.textContent = message;
+  });
+}
+
 function showExportToast(msg, type = 'info') {
+  announceToScreenReader(msg);
   let toast = document.getElementById('export-toast');
   if (!toast) {
     toast = document.createElement('div');
@@ -2414,6 +2644,9 @@ function autosave() {
       pressure: S.pressure,
       paperStyle: S.paperStyle,
       noteLayout: S.noteLayout,
+  showMarginLabels: S.showMarginLabels,
+  realism: S.realism,
+  rareImperfections: S.rareImperfections,
       smudgeEffects: S.smudgeEffects,
       cursiveMode: S.cursiveMode,
       hinglishAutoSwitch: S.hinglishAutoSwitch,
@@ -2509,6 +2742,23 @@ async function restoreState() {
         ...S.markdownPenProfiles,
         ...state.markdownPenProfiles,
       };
+    }
+    if (state.showMarginLabels !== undefined) {
+      S.showMarginLabels = !!state.showMarginLabels;
+      const marginLabelsToggle = document.getElementById('margin-labels-toggle');
+      if (marginLabelsToggle) marginLabelsToggle.checked = S.showMarginLabels;
+    }
+    if (state.realism !== undefined) {
+      S.realism = state.realism;
+      const realismSlider = document.getElementById('realism-slider');
+      if (realismSlider) realismSlider.value = S.realism;
+      const realismVal = document.getElementById('realism-val');
+      if (realismVal) realismVal.textContent = S.realism;
+    }
+    if (state.rareImperfections !== undefined) {
+      S.rareImperfections = !!state.rareImperfections;
+      const rareImperfectionsToggle = document.getElementById('rare-imperfections-toggle');
+      if (rareImperfectionsToggle) rareImperfectionsToggle.checked = S.rareImperfections;
     }
     syncMarkdownPenControls();
     syncHinglishControls();
@@ -2836,6 +3086,9 @@ function resetToDefaults() {
     pressure: 0.12,
     paperStyle: 'ruled',
     textAlignment: 'middle',
+    showMarginLabels: true,
+    realism: 0.5,
+    rareImperfections: false,
   };
 
   // Apply state
@@ -2852,6 +3105,7 @@ function resetToDefaults() {
     ['rotation-slider', 'rot-val', 'rotationMax'],
     ['bleed-slider', 'bleed-val', 'bleed'],
     ['pressure-slider', 'pressure-val', 'pressure'],
+    ['realism-slider', 'realism-val', 'realism'],
   ];
 
   sliderMap.forEach(([id, valId, key]) => {
@@ -2888,6 +3142,14 @@ function resetToDefaults() {
   document.querySelectorAll('.paper-btn').forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.style === defaults.paperStyle);
   });
+
+  // Sync the margin labels checkbox
+  const marginLabelsToggle = document.getElementById('margin-labels-toggle');
+  if (marginLabelsToggle) marginLabelsToggle.checked = defaults.showMarginLabels;
+
+  // Sync the rare imperfections checkbox
+  const rareToggle = document.getElementById('rare-imperfections-toggle');
+  if (rareToggle) rareToggle.checked = defaults.rareImperfections;
 
   // Save & Render
   autosave();
@@ -4099,156 +4361,6 @@ function flattenAllLayers() {
 function requestPageRender(pageIdx) {
   // Simple re-render wrapper
   window.renderSpecificPage(pageIdx, true);
-}
-
-/* ═════════════════════════════════════════
-   STUDY MODE + FLASHCARDS + VOICE + THEMES
-═══════════════════════════════════════ */
-
-let studyModeActive = false;
-let flashcards = [];
-let currentFlashcardIdx = 0;
-let flashcardFlipped = false;
-
-function toggleStudyMode() {
-  studyModeActive = !studyModeActive;
-  document.body.classList.toggle('study-mode', studyModeActive);
-  if (studyModeActive) {
-    loadFlashcardsFromText();
-    if (flashcards.length > 0) {
-      openFlashcardsModal();
-    } else {
-      alert('No flashcards found. Use Q: and A: format in your text:\n\nQ: What is photosynthesis?\nA: The process by which plants convert light to energy.');
-    }
-  } else {
-    closeFlashcardsModal();
-  }
-}
-
-function loadFlashcardsFromText() {
-  flashcards = [];
-  currentFlashcardIdx = 0;
-  flashcardFlipped = false;
-  const text = S.text || '';
-  const { flashcards: parsed } = window.TextLayout.parseRichSyntax(text);
-  if (parsed && parsed.length > 0) {
-    flashcards = parsed;
-  }
-  // Also extract from Q:/A: patterns if parseRichSyntax didn't catch them
-  if (flashcards.length === 0) {
-    const lines = text.split('\n');
-    let currentQ = null;
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (/^Q[:.]\s/.test(trimmed)) {
-        currentQ = trimmed.replace(/^Q[:.]\s*/, '');
-      } else if (/^A[:.]\s/.test(trimmed) && currentQ) {
-        flashcards.push({ question: currentQ, answer: trimmed.replace(/^A[:.]\s*/, '') });
-        currentQ = null;
-      }
-    }
-  }
-}
-
-function openFlashcardsModal() {
-  if (flashcards.length === 0) return;
-  document.getElementById('flashcards-modal').classList.remove('hidden');
-  currentFlashcardIdx = 0;
-  renderFlashcard();
-}
-
-function closeFlashcardsModal() {
-  document.getElementById('flashcards-modal').classList.add('hidden');
-}
-
-function renderFlashcard() {
-  if (flashcards.length === 0) return;
-  const fc = flashcards[currentFlashcardIdx];
-  document.getElementById('flashcard-counter').textContent = `${currentFlashcardIdx + 1} / ${flashcards.length}`;
-  document.getElementById('flashcard-front').textContent = fc.question;
-  document.getElementById('flashcard-back').textContent = fc.answer;
-  const inner = document.getElementById('flashcard-inner');
-  inner.style.transform = flashcardFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)';
-  document.getElementById('flashcard-hint').textContent = flashcardFlipped ? 'Click to see question' : 'Click to flip';
-}
-
-function flipFlashcard() {
-  flashcardFlipped = !flashcardFlipped;
-  renderFlashcard();
-}
-
-function nextFlashcard() {
-  if (flashcards.length === 0) return;
-  flashcardFlipped = false;
-  currentFlashcardIdx = (currentFlashcardIdx + 1) % flashcards.length;
-  renderFlashcard();
-}
-
-function prevFlashcard() {
-  if (flashcards.length === 0) return;
-  flashcardFlipped = false;
-  currentFlashcardIdx = (currentFlashcardIdx - 1 + flashcards.length) % flashcards.length;
-  renderFlashcard();
-}
-
-/* ── Voice to Notes ─────────────────────────────────────────────────────── */
-
-let voiceRecognition = null;
-let voiceRecording = false;
-
-function startVoiceRecording() {
-  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-    alert('Voice recognition not supported in this browser. Try Chrome.');
-    return;
-  }
-  if (voiceRecording && voiceRecognition) {
-    voiceRecognition.stop();
-    voiceRecording = false;
-    document.getElementById('voice-toast').classList.add('hidden');
-    document.getElementById('btn-voice').classList.remove('active');
-    return;
-  }
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  voiceRecognition = new SpeechRecognition();
-  voiceRecognition.continuous = true;
-  voiceRecognition.interimResults = true;
-  voiceRecognition.lang = 'en-US';
-  voiceRecognition.onresult = (event) => {
-    let finalTranscript = '';
-    let interimTranscript = '';
-    for (let i = event.resultIndex; i < event.results.length; i++) {
-      if (event.results[i].isFinal) {
-        finalTranscript += event.results[i][0].transcript;
-      } else {
-        interimTranscript += event.results[i][0].transcript;
-      }
-    }
-    if (finalTranscript) {
-      const textarea = document.getElementById('text-input');
-      if (textarea) {
-        const current = textarea.value;
-        const newText = current ? current + '\n' + finalTranscript : finalTranscript;
-        textarea.value = newText;
-        S.text = newText;
-        renderText(S.text);
-        autosave();
-      }
-    }
-  };
-  voiceRecognition.onerror = () => {
-    voiceRecording = false;
-    document.getElementById('voice-toast').classList.add('hidden');
-    document.getElementById('btn-voice').classList.remove('active');
-  };
-  voiceRecognition.onend = () => {
-    voiceRecording = false;
-    document.getElementById('voice-toast').classList.add('hidden');
-    document.getElementById('btn-voice').classList.remove('active');
-  };
-  voiceRecognition.start();
-  voiceRecording = true;
-  document.getElementById('voice-toast').classList.remove('hidden');
-  document.getElementById('btn-voice').classList.add('active');
 }
 
 /* ── Theme Packs ────────────────────────────────────────────────────────── */
