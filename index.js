@@ -393,33 +393,66 @@ darkToggle?.addEventListener('click', () => {
 
 function applyDark() {
   document.documentElement.classList.toggle('dark', isDark);
-  if (darkIcon) darkIcon.textContent = isDark ? '??' : '??';
+  if (darkIcon) {
+    darkIcon.textContent = isDark ? '🌙' : '☀️';
+  }
+  if (darkToggle) {
+    darkToggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+  }
 }
 
 /* ───────────────────────────────────────────
-   PHASE 2.7 — HAMBURGER & MOBILE DRAWER (upstream 1.6.23 parity)
+   PHASE 2.7 — HAMBURGER & SIDEBAR COLLAPSE
+   Desktop: toggles sidebar-collapsed body class + --sidebar-w CSS var.
+   Mobile:  toggles sidebar drawer open/close (unchanged behaviour).
 ─────────────────────────────────────────── */
+const SIDEBAR_W = 300; // must match CSS grid-template-columns 300px
+
+/** Update --sidebar-w on :root so dot-bg, page-nav, toast all follow */
+function updateSidebarWidthVar() {
+  const isMobile = window.matchMedia('(max-width: 768px)').matches;
+  const isCollapsed = document.body.classList.contains('sidebar-collapsed');
+  const w = (isMobile || isCollapsed) ? 0 : SIDEBAR_W;
+  document.documentElement.style.setProperty('--sidebar-w', `${w}px`);
+}
+
+/** Mobile drawer open/close */
 function setSidebarOpen(open) {
   const sidebar = document.getElementById('sidebar');
   const hamburger = document.getElementById('hamburger');
   document.body.classList.toggle('sidebar-open', open);
   if (sidebar) sidebar.classList.toggle('open', open);
   if (hamburger) hamburger.setAttribute('aria-expanded', open ? 'true' : 'false');
+  updateSidebarWidthVar();
 }
 
 function isSidebarOpen() {
   return document.getElementById('sidebar')?.classList.contains('open') || false;
 }
 
+/** Desktop sidebar collapse */
+function toggleSidebarCollapse() {
+  document.body.classList.toggle('sidebar-collapsed');
+  const isCollapsed = document.body.classList.contains('sidebar-collapsed');
+  const hamburger = document.getElementById('hamburger');
+  if (hamburger) hamburger.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+  updateSidebarWidthVar();
+}
+
 document.getElementById('hamburger')?.addEventListener('click', () => {
-  setSidebarOpen(!isSidebarOpen());
+  if (window.matchMedia('(max-width: 768px)').matches) {
+    // Mobile: open/close drawer
+    setSidebarOpen(!isSidebarOpen());
+  } else {
+    // Desktop: collapse/expand sidebar
+    toggleSidebarCollapse();
+  }
 });
 
-// Scrim tap closes the drawer
+// Scrim tap closes the drawer (mobile only)
 document.getElementById('sidebar-backdrop')?.addEventListener('click', () => setSidebarOpen(false));
 
-// A tap on the canvas closes the drawer (capture phase, so the tap still reaches
-// the page editor underneath)
+// A tap on the canvas closes the drawer on mobile (capture phase)
 document.getElementById('canvas-area')?.addEventListener(
   'pointerdown',
   () => {
@@ -428,12 +461,17 @@ document.getElementById('canvas-area')?.addEventListener(
   true
 );
 
-// Escape closes the drawer when no modal is open (modal Escape is handled separately)
+// Escape closes the drawer when no modal is open
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
   if (document.querySelector('.modal-overlay:not(.hidden)')) return;
   if (isSidebarOpen()) setSidebarOpen(false);
 });
+
+// Keep CSS var in sync when viewport changes between mobile/desktop breakpoints
+window.matchMedia('(max-width: 768px)').addEventListener('change', updateSidebarWidthVar);
+// Set correct value on load (sidebar starts expanded on desktop)
+updateSidebarWidthVar();
 
 /* ───────────────────────────────────────────
    PHASE 2.3 — SIDEBAR SECTION TOGGLE
@@ -482,7 +520,9 @@ if (pdfSizeSelect) {
   pdfSizeSelect.addEventListener('change', () => {
     localStorage.setItem('inkflow-pdf-size', pdfSizeSelect.value);
     const preset = window.ExportRenderers?.PDF_SIZE_PRESETS?.[pdfSizeSelect.value];
-    if (preset) showExportToast('PDF output size: ' + preset.label, 'info');
+    if (preset && typeof window.showExportToast === 'function') {
+      window.showExportToast('PDF output size: ' + preset.label, 'info');
+    }
   });
 }
 
@@ -2237,7 +2277,7 @@ const acceptGrammarCorrection = (...a) => window.AIAssistant.acceptGrammarCorrec
 
 // Export pipelines moved to export-manager.js (loaded before index.js);
 // its top-level functions (exportImage, exportPDF, showExportToast, …) are globals.
-const showToast = showExportToast;
+const showToast = typeof showExportToast !== 'undefined' ? showExportToast : (msg, type) => window.showExportToast?.(msg, type);
 
 /* ───────────────────────────────────────────
    PHASE 8.6–8.7 — AUTOSAVE & STATE RESTORE

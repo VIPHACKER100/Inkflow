@@ -94,10 +94,10 @@ The handwriting engine will render each character with natural variation, baseli
 
 Try pasting a paragraph of lecture notes!"></textarea>
           <div class="action-buttons-row">
-            <button class="btn accent btn-render" onclick="triggerRender()">✦ Render</button>
+            <button class="btn accent btn-render" onclick="triggerRender()" aria-label="Render handwriting onto canvas">✦ Render</button>
             <button class="btn" onclick="clearText()" title="Clear text" aria-label="Clear text">✕</button>
             <div class="dropdown">
-              <button class="btn" title="Insert Diagram template">📊 Diagram ▾</button>
+              <button class="btn" title="Insert Diagram template" aria-label="Insert Diagram template">📊 Diagram ▾</button>
               <div class="dropdown-content">
                 <a href="#" onclick="insertDiagramTemplate('flowchart')">Flowchart</a>
                 <a href="#" onclick="insertDiagramTemplate('cycle')">Cycle</a>
@@ -209,7 +209,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
           <input type="file" id="font-upload" accept=".ttf,.otf" title="Upload Custom Font" />
 
           <!-- Create Own Font Button -->
-          <button class="btn sm primary" id="btn-handfonted-studio">
+          <button class="btn sm primary" id="btn-handfonted-studio" aria-label="Create your own custom handwriting font">
             ✨ Create Your Own Font
           </button>
 
@@ -239,7 +239,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
           <!-- Vertical Alignment Control -->
           <div class="sb-label">Text Alignment <span class="val" id="align-val">Middle</span></div>
           <div class="alignment-selector">
-            <button class="align-btn" data-align="top" onclick="setTextAlignment('top')" title="Text touches upper line">
+            <button class="align-btn" data-align="top" onclick="setTextAlignment('top')" title="Text touches upper line" aria-label="Text alignment: Upper">
               <div class="align-preview">
                 <div class="align-line"></div>
                 <div class="align-text align-top">Aa</div>
@@ -247,7 +247,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
               </div>
               <span>Upper</span>
             </button>
-            <button class="align-btn active" data-align="middle" onclick="setTextAlignment('middle')" title="Text centered between lines">
+            <button class="align-btn active" data-align="middle" onclick="setTextAlignment('middle')" title="Text centered between lines" aria-label="Text alignment: Middle">
               <div class="align-preview">
                 <div class="align-line"></div>
                 <div class="align-text align-middle">Aa</div>
@@ -255,7 +255,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
               </div>
               <span>Middle</span>
             </button>
-            <button class="align-btn" data-align="bottom" onclick="setTextAlignment('bottom')" title="Text sits on lower line">
+            <button class="align-btn" data-align="bottom" onclick="setTextAlignment('bottom')" title="Text sits on lower line" aria-label="Text alignment: Lower">
               <div class="align-preview">
                 <div class="align-line"></div>
                 <div class="align-text align-bottom">Aa</div>
@@ -273,7 +273,7 @@ Try pasting a paragraph of lecture notes!"></textarea>
           </label>
 
           <!-- Reset Defaults Button -->
-          <button class="btn sm" id="btn-reset-defaults" onclick="resetToDefaults()">
+          <button class="btn sm" id="btn-reset-defaults" onclick="resetToDefaults()" aria-label="Reset all parameters to default values">
             <i class="fa-solid fa-rotate-left"></i> &nbsp;Reset Defaults
           </button>
         </div>
@@ -311,17 +311,17 @@ Try pasting a paragraph of lecture notes!"></textarea>
         </button>
         <div class="sb-body">
           <div class="paper-grid">
-            <button class="paper-btn active" data-style="ruled" onclick="setPaper(this)">📏 Ruled</button>
-            <button class="paper-btn" data-style="clean" onclick="setPaper(this)">✨ Clean</button>
-            <button class="paper-btn" data-style="plain" onclick="setPaper(this)">⬜ Plain</button>
-            <button class="paper-btn" data-style="grid" onclick="setPaper(this)">⊞ Grid</button>
-            <button class="paper-btn" data-style="legal" onclick="setPaper(this)">🟡 Legal Pad</button>
-            <button class="paper-btn" data-style="vintage" onclick="setPaper(this)">📜 Vintage</button>
-            <button class="paper-btn" data-style="dark" onclick="setPaper(this)">🌙 Dark</button>
-            <button class="paper-btn" data-style="dot_grid" onclick="setPaper(this)">🟢 Dot Grid</button>
-            <button class="paper-btn" data-style="engineering" onclick="setPaper(this)">📐 Engineering</button>
-            <button class="paper-btn" data-style="music" onclick="setPaper(this)">🎼 Music Staff</button>
-            <button class="paper-btn" data-style="dated" onclick="setPaper(this)">📅 Dated</button>
+            <button class="paper-btn active" data-style="ruled" onclick="setPaper(this)" aria-label="Paper style: Ruled">📏 Ruled</button>
+            <button class="paper-btn" data-style="clean" onclick="setPaper(this)" aria-label="Paper style: Clean">✨ Clean</button>
+            <button class="paper-btn" data-style="plain" onclick="setPaper(this)" aria-label="Paper style: Plain">⬜ Plain</button>
+            <button class="paper-btn" data-style="grid" onclick="setPaper(this)" aria-label="Paper style: Grid">⊞ Grid</button>
+            <button class="paper-btn" data-style="legal" onclick="setPaper(this)" aria-label="Paper style: Legal Pad">🟡 Legal Pad</button>
+            <button class="paper-btn" data-style="vintage" onclick="setPaper(this)" aria-label="Paper style: Vintage">📜 Vintage</button>
+            <button class="paper-btn" data-style="dark" onclick="setPaper(this)" aria-label="Paper style: Dark">🌙 Dark</button>
+            <button class="paper-btn" data-style="dot_grid" onclick="setPaper(this)" aria-label="Paper style: Dot Grid">🟢 Dot Grid</button>
+            <button class="paper-btn" data-style="engineering" onclick="setPaper(this)" aria-label="Paper style: Engineering">📐 Engineering</button>
+            <button class="paper-btn" data-style="music" onclick="setPaper(this)" aria-label="Paper style: Music Staff">🎼 Music Staff</button>
+            <button class="paper-btn" data-style="dated" onclick="setPaper(this)" aria-label="Paper style: Dated">📅 Dated</button>
           </div>
 
           <div class="sb-label sb-label-mt">Theme Pack</div>
@@ -368,8 +368,8 @@ Try pasting a paragraph of lecture notes!"></textarea>
             <!-- Dynamically populated by updateLayerUI() -->
           </div>
           <div class="layer-controls-row">
-            <button class="btn sm" onclick="addNewLayer()" title="Add Layer">➕ Add</button>
-            <button class="btn sm" onclick="flattenAllLayers()" title="Flatten All">⬇️ Flatten</button>
+            <button class="btn sm" onclick="addNewLayer()" title="Add Layer" aria-label="Add new layer">➕ Add</button>
+            <button class="btn sm" onclick="flattenAllLayers()" title="Flatten All" aria-label="Flatten all layers">⬇️ Flatten</button>
           </div>
         </div>
       </div>
@@ -541,12 +541,12 @@ Try pasting a paragraph of lecture notes!"></textarea>
 
 
       <!-- ── NOTEBOOKS SECTION ── -->
-      <div class="sb-section" id="sec-notebooks">
+      <div class="sb-section collapsed" id="sec-notebooks">
         <button class="sb-section-header" onclick="toggleSection('sec-notebooks')" aria-expanded="false" aria-controls="sec-notebooks">
           📓 &nbsp;Notebooks
           <span class="sb-arrow">▾</span>
         </button>
-        <div class="sb-body" style="display:none;">
+        <div class="sb-body">
           <button class="btn sm primary" onclick="NotebooksUI.saveCurrentNotebook()" style="width:100%;margin-bottom:8px;">💾 Save Current</button>
           <div id="notebooks-list"></div>
         </div>
@@ -594,6 +594,11 @@ Try pasting a paragraph of lecture notes!"></textarea>
     <span id="page-indicator">Page 1 of 1</span>
     <button class="btn sm icon-btn" id="nav-next" onclick="navigatePage(1)" aria-label="Next page">▶</button>
   </div>
+
+  <!-- Study Mode Floating Exit Button -->
+  <button id="exit-study-btn" class="exit-study-btn hidden" onclick="toggleStudyMode()" title="Exit Study Mode (or press Esc)" aria-label="Exit Study Mode">
+    🚪 Exit Study Mode
+  </button>
 
   <!-- ════════════════════════════════════════
      HANDFONTED STUDIO — OWN FONT CREATOR
@@ -777,23 +782,23 @@ Try pasting a paragraph of lecture notes!"></textarea>
 
   <!-- Flashcards Modal -->
   <div id="flashcards-modal" class="modal-overlay hidden">
-    <div class="modal-card">
+    <div class="modal-card modal-card-study">
       <div class="modal-header">
-        <h3>🃏 Flashcards</h3>
+        <h3>🃏 Flashcards Review</h3>
         <button class="modal-close" onclick="closeFlashcardsModal()" aria-label="Close flashcards">✕</button>
       </div>
-      <div class="modal-body" style="display:flex;flex-direction:column;align-items:center;gap:16px;min-height:260px;">
-        <div id="flashcard-counter" style="font-size:13px;color:var(--text-muted);">1 / 1</div>
-        <div id="flashcard-card" onclick="flipFlashcard()" style="width:100%;max-width:440px;min-height:180px;perspective:800px;cursor:pointer;">
-          <div id="flashcard-inner" style="position:relative;width:100%;min-height:180px;transition:transform 0.5s;transform-style:preserve-3d;">
-            <div id="flashcard-front" class="flashcard-face flashcard-front" style="position:absolute;width:100%;min-height:180px;display:flex;align-items:center;justify-content:center;padding:24px;font-size:18px;background:var(--card-bg);border:2px solid var(--accent);border-radius:12px;text-align:center;"></div>
-            <div id="flashcard-back" class="flashcard-face flashcard-back" style="position:absolute;width:100%;min-height:180px;display:flex;align-items:center;justify-content:center;padding:24px;font-size:18px;background:var(--accent);color:#fff;border-radius:12px;text-align:center;transform:rotateY(180deg);"></div>
+      <div class="modal-body flashcards-body">
+        <div id="flashcard-counter" class="flashcard-counter">1 / 1</div>
+        <div id="flashcard-card" class="flashcard-card" onclick="flipFlashcard()" role="button" tabindex="0" aria-label="Flashcard, click or press space to flip">
+          <div id="flashcard-inner" class="flashcard-inner">
+            <div id="flashcard-front" class="flashcard-face flashcard-front"></div>
+            <div id="flashcard-back" class="flashcard-face flashcard-back"></div>
           </div>
         </div>
-        <div id="flashcard-hint" style="font-size:12px;color:var(--text-muted);">Click card to flip</div>
-        <div style="display:flex;gap:12px;">
-          <button class="btn" onclick="prevFlashcard()">← Prev</button>
-          <button class="btn primary" onclick="nextFlashcard()">Next →</button>
+        <div id="flashcard-hint" class="flashcard-hint">Click card to flip (or Space / Enter)</div>
+        <div class="flashcard-nav-row">
+          <button class="btn" onclick="prevFlashcard()" aria-label="Previous card">← Prev</button>
+          <button class="btn primary" onclick="nextFlashcard()" aria-label="Next card">Next →</button>
         </div>
       </div>
     </div>

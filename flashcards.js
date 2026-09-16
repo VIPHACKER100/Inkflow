@@ -103,6 +103,26 @@
   }
 
   if (typeof window !== 'undefined') {
+    // Keyboard navigation inside Flashcards modal
+    document.addEventListener('keydown', (e) => {
+      const modal = document.getElementById('flashcards-modal');
+      if (!modal || modal.classList.contains('hidden')) return;
+
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        nextFlashcard();
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        prevFlashcard();
+      } else if (e.key === ' ' || e.key === 'Enter') {
+        if (document.activeElement && document.activeElement.tagName === 'BUTTON' && document.activeElement.id !== 'flashcard-card') {
+          return;
+        }
+        e.preventDefault();
+        flipFlashcard();
+      }
+    });
+
     // Escape exits Study Mode when no modal is open (the app-wide Escape handler
     // in index.js closes open modals first — defer to it while this modal shows).
     document.addEventListener('keydown', (e) => {

@@ -120,6 +120,7 @@ module.exports = [
         PaperRenderer: 'readonly',
         TextLayout: 'readonly',
         ExportRenderers: 'readonly',
+        showExportToast: 'readonly',
         templateManager: 'readonly',
         layerCompositor: 'readonly',
         collaborativeEngine: 'readonly',
