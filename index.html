@@ -364,11 +364,28 @@ Try pasting a paragraph of lecture notes!"></textarea>
           <span class="sb-arrow">▾</span>
         </button>
         <div class="sb-body">
+          <div class="layer-header-bar">
+            <span id="layer-page-label" class="layer-page-label">Page 1</span>
+            <div class="layer-quick-tools">
+              <button class="btn sm icon-btn" onclick="moveActiveLayer('up')" title="Move Layer Up (Higher Z-Index)" aria-label="Move Layer Up">▲</button>
+              <button class="btn sm icon-btn" onclick="moveActiveLayer('down')" title="Move Layer Down (Lower Z-Index)" aria-label="Move Layer Down">▼</button>
+              <button class="btn sm icon-btn" onclick="duplicateActiveLayer()" title="Duplicate Selected Layer" aria-label="Duplicate Selected Layer">📑</button>
+              <button class="btn sm icon-btn" onclick="clearActiveLayer()" title="Clear Active Layer Content" aria-label="Clear Active Layer Content">🧹</button>
+            </div>
+          </div>
           <div id="layer-list" class="layer-list">
             <!-- Dynamically populated by updateLayerUI() -->
           </div>
           <div class="layer-controls-row">
-            <button class="btn sm" onclick="addNewLayer()" title="Add Layer" aria-label="Add new layer">➕ Add</button>
+            <div class="dropdown flex-1" id="layer-add-dropdown">
+              <button class="btn sm primary" id="btn-add-layer-dropdown" style="width:100%" onclick="toggleLayerAddDropdown(event)" title="Add new layer">➕ Add Layer ▾</button>
+              <div class="dropdown-content" id="layer-dropdown-menu">
+                <a href="#" onclick="addNewLayerPreset('standard'); closeLayerAddDropdown(); return false;">Standard Layer</a>
+                <a href="#" onclick="addNewLayerPreset('highlighter'); closeLayerAddDropdown(); return false;">🖍️ Highlighter (Multiply 75%)</a>
+                <a href="#" onclick="addNewLayerPreset('draft'); closeLayerAddDropdown(); return false;">📐 Draft Sketch (50%)</a>
+                <a href="#" onclick="addNewLayerPreset('watermark'); closeLayerAddDropdown(); return false;">💧 Watermark (Overlay 25%)</a>
+              </div>
+            </div>
             <button class="btn sm" onclick="flattenAllLayers()" title="Flatten All" aria-label="Flatten all layers">⬇️ Flatten</button>
           </div>
         </div>

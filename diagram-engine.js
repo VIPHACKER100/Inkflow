@@ -11,12 +11,18 @@ const DIAGRAM_CACHE_MAX = 100;
 
 function layoutCycle(nodes, radius, center) {
   const angleStep = (2 * Math.PI) / nodes.length;
-  return nodes.map((node, i) => ({
-    ...node,
-    x: center.x + radius * Math.cos(i * angleStep - Math.PI / 2),
-    y: center.y + radius * Math.sin(i * angleStep - Math.PI / 2),
-    shape: node.shape || 'circle',
-  }));
+  return nodes.map((node, i) => {
+    const label = node.label || '';
+    const approxW = Math.max(90, Math.min(135, label.length * 8.5 + 24));
+    return {
+      ...node,
+      x: center.x + radius * Math.cos(i * angleStep - Math.PI / 2),
+      y: center.y + radius * Math.sin(i * angleStep - Math.PI / 2),
+      shape: node.shape || 'circle',
+      w: node.w || approxW,
+      h: node.h || approxW,
+    };
+  });
 }
 
 function layoutFlowchart(nodes, edges, startX, startY, width) {
@@ -181,10 +187,130 @@ function parseDiagramJSON(content) {
   }
 }
 
+/**
+ * Computes the intersection point between a shape's perimeter and a ray from node center
+ * towards (targetX, targetY).
+ * Adds padding so connectors lift cleanly off the shape boundary like hand drawing.
+ */
+function getNodePerimeterPoint(node, targetX, targetY, padding = 6) {
+  const dx = targetX - node.x;
+  const dy = targetY - node.y;
+  const dist = Math.hypot(dx, dy);
+  if (dist === 0) return { x: node.x, y: node.y, angle: 0 };
+  const ux = dx / dist;
+  const uy = dy / dist;
+  const angle = Math.atan2(dy, dx);
+  const shape = node.shape || 'circle';
+
+  let offset = 0;
+  if (shape === 'circle') {
+    const radius = Math.max(node.w || 100, node.h || 100) / 2;
+    offset = radius + padding;
+  } else if (shape === 'diamond') {
+    const hw = (node.w || 100) / 2;
+    const hh = (node.h || 60) / 2;
+    const denom = Math.abs(ux) / hw + Math.abs(uy) / hh;
+    offset = 1 / (denom || 1) + padding;
+  } else {
+    // box, rect, rounded, pill
+    const hw = (node.w || 100) / 2;
+    const hh = (node.h || 40) / 2;
+    const scaleX = Math.abs(ux) > 0.0001 ? hw / Math.abs(ux) : Infinity;
+    const scaleY = Math.abs(uy) > 0.0001 ? hh / Math.abs(uy) : Infinity;
+    offset = Math.min(scaleX, scaleY) + padding;
+  }
+
+  return {
+    x: node.x + ux * offset,
+    y: node.y + uy * offset,
+    angle,
+  };
+}
+
+/**
+ * Calculates connecting edges with perimeter clipping and natural organic curves for cycles.
+ * Never cuts through node borders or text!
+ */
+function calculateDiagramEdges(data, positionedNodes, activeZoneX, y, activeZoneWidth, dHeight) {
+  const edges = data.edges && data.edges.length > 0 ? data.edges : [];
+
+  // If cycle diagram has no edges declared, synthesize circular flow n[i] -> n[(i+1)%len]
+  let edgeList = edges;
+  if (data.type === 'cycle' && edgeList.length === 0 && positionedNodes.length > 1) {
+    edgeList = positionedNodes.map((n, i) => ({
+      from: n.id,
+      to: positionedNodes[(i + 1) % positionedNodes.length].id,
+    }));
+  }
+
+  const cx = activeZoneX + activeZoneWidth / 2;
+  const cy = y + dHeight / 2;
+
+  const resultEdges = [];
+  edgeList.forEach((e) => {
+    const fromNode = positionedNodes.find((n) => n.id === e.from);
+    const toNode = positionedNodes.find((n) => n.id === e.to);
+    if (!fromNode || !toNode) return;
+
+    if (data.type === 'cycle') {
+      // Natural curved arrow for cycle diagrams
+      const rawFrom = getNodePerimeterPoint(fromNode, toNode.x, toNode.y, 6);
+      const rawTo = getNodePerimeterPoint(toNode, fromNode.x, fromNode.y, 6);
+
+      const midX = (rawFrom.x + rawTo.x) / 2;
+      const midY = (rawFrom.y + rawTo.y) / 2;
+
+      // Vector from cycle center to midpoint of chord
+      const vcx = midX - cx;
+      const vcy = midY - cy;
+      const vDist = Math.hypot(vcx, vcy);
+
+      let control;
+      if (vDist > 1) {
+        const uOutX = vcx / vDist;
+        const uOutY = vcy / vDist;
+        // Bulge outward along the orbit so the arrow forms a smooth circular arc
+        const cycleRadius = Math.hypot(fromNode.x - cx, fromNode.y - cy);
+        const bulge = Math.max(16, (cycleRadius - vDist) * 1.35);
+        control = {
+          x: midX + uOutX * bulge,
+          y: midY + uOutY * bulge,
+        };
+      } else {
+        control = { x: midX, y: midY };
+      }
+
+      // Re-anchor start and end towards the control point for seamless curve entry/exit
+      const fromPt = getNodePerimeterPoint(fromNode, control.x, control.y, 6);
+      const toPt = getNodePerimeterPoint(toNode, control.x, control.y, 6);
+
+      resultEdges.push({
+        from: fromPt,
+        to: toPt,
+        control,
+        isCurved: true,
+        label: e.label || '',
+      });
+    } else {
+      // Flowchart / hierarchy / general: clean perimeter-to-perimeter connector
+      const fromPt = getNodePerimeterPoint(fromNode, toNode.x, toNode.y, 6);
+      const toPt = getNodePerimeterPoint(toNode, fromNode.x, fromNode.y, 6);
+
+      resultEdges.push({
+        from: fromPt,
+        to: toPt,
+        isCurved: false,
+        label: e.label || '',
+      });
+    }
+  });
+
+  return resultEdges;
+}
+
 function positionDiagramNodes(data, activeZoneX, y, activeZoneWidth, dHeight) {
   const cx = activeZoneX + activeZoneWidth / 2;
   const cy = y + dHeight / 2;
-  const r = Math.min(activeZoneWidth, dHeight) / 2 - 60;
 
   if (data.type === 'flowchart') {
     return layoutFlowchart(data.nodes, data.edges || [], activeZoneX, y, activeZoneWidth);
@@ -200,7 +326,18 @@ function positionDiagramNodes(data, activeZoneX, y, activeZoneWidth, dHeight) {
       h: layerH * 0.7,
     }));
   }
-  return layoutCycle(data.nodes, r, { x: cx, y: cy });
+
+  // Cycle diagram
+  const nodes = data.nodes || [];
+  const maxLabelLen = Math.max(...nodes.map((n) => (n.label ? n.label.length : 1)), 1);
+  const approxNodeRadius = Math.max(45, Math.min(65, (maxLabelLen * 8.5 + 24) / 2));
+  const maxOrbit = Math.min(
+    (activeZoneWidth - approxNodeRadius * 2 - 20) / 2,
+    (dHeight - approxNodeRadius * 2 - 20) / 2
+  );
+  const r = Math.max(approxNodeRadius + 30, Math.min(maxOrbit, Math.min(activeZoneWidth, dHeight) / 2 - 45));
+
+  return layoutCycle(nodes, r, { x: cx, y: cy });
 }
 
 // Export for Node.js/test environments
@@ -212,6 +349,8 @@ if (typeof module !== 'undefined' && module.exports) {
     getDiagramImage,
     parseDiagramJSON,
     positionDiagramNodes,
+    getNodePerimeterPoint,
+    calculateDiagramEdges,
     diagramCache,
   };
 }
@@ -225,6 +364,8 @@ if (typeof window !== 'undefined') {
     getDiagramImage,
     parseDiagramJSON,
     positionDiagramNodes,
+    getNodePerimeterPoint,
+    calculateDiagramEdges,
     diagramCache,
   };
 }

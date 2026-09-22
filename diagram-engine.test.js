@@ -5,6 +5,8 @@ import {
   layoutHierarchy,
   parseDiagramJSON,
   positionDiagramNodes,
+  getNodePerimeterPoint,
+  calculateDiagramEdges,
 } from './diagram-engine.js';
 
 describe('DiagramEngine', () => {
@@ -139,6 +141,51 @@ describe('DiagramEngine', () => {
       const pyrPos = positionDiagramNodes({ type: 'pyramid', nodes: posNodes }, 0, 0, 600, 300);
       expect(pyrPos).toHaveLength(3);
       expect(pyrPos[0].x).toBe(pyrPos[1].x);
+    });
+  });
+
+  describe('getNodePerimeterPoint', () => {
+    it('computes circle perimeter point with padding', () => {
+      const node = { x: 100, y: 100, shape: 'circle', w: 100, h: 100 };
+      // Target directly to the right
+      const pt = getNodePerimeterPoint(node, 300, 100, 6);
+      expect(pt.x).toBeCloseTo(100 + 50 + 6);
+      expect(pt.y).toBeCloseTo(100);
+    });
+
+    it('computes box perimeter point with padding', () => {
+      const node = { x: 100, y: 100, shape: 'box', w: 100, h: 40 };
+      // Target directly above
+      const pt = getNodePerimeterPoint(node, 100, 0, 5);
+      expect(pt.x).toBeCloseTo(100);
+      expect(pt.y).toBeCloseTo(100 - 20 - 5);
+    });
+  });
+
+  describe('calculateDiagramEdges', () => {
+    it('generates curved cycle edges that avoid node centers', () => {
+      const nodes = [
+        { id: 'n1', x: 200, y: 100, w: 100, h: 100, shape: 'circle', label: 'Top' },
+        { id: 'n2', x: 300, y: 200, w: 100, h: 100, shape: 'circle', label: 'Right' },
+      ];
+      const data = {
+        type: 'cycle',
+        nodes,
+        edges: [{ from: 'n1', to: 'n2' }],
+      };
+      const edges = calculateDiagramEdges(data, nodes, 0, 0, 400, 400);
+      expect(edges).toHaveLength(1);
+      const edge = edges[0];
+      expect(edge.isCurved).toBe(true);
+      expect(edge.control).toBeDefined();
+
+      // Start point must be outside n1's radius
+      const distFromCenter1 = Math.hypot(edge.from.x - nodes[0].x, edge.from.y - nodes[0].y);
+      expect(distFromCenter1).toBeGreaterThanOrEqual(50);
+
+      // End point must be outside n2's radius
+      const distFromCenter2 = Math.hypot(edge.to.x - nodes[1].x, edge.to.y - nodes[1].y);
+      expect(distFromCenter2).toBeGreaterThanOrEqual(50);
     });
   });
 });

@@ -111,6 +111,47 @@ class LayerCompositor {
   }
 
   /**
+   * Move a layer up one position (higher z-index).
+   */
+  moveLayerUp(pageIdx, layerId) {
+    const stack = this.getStack(pageIdx);
+    return stack.moveUp(layerId);
+  }
+
+  /**
+   * Move a layer down one position (lower z-index, stops above locked background).
+   */
+  moveLayerDown(pageIdx, layerId) {
+    const stack = this.getStack(pageIdx);
+    return stack.moveDown(layerId);
+  }
+
+  /**
+   * Duplicate a layer and its canvas contents.
+   */
+  duplicateLayer(pageIdx, layerId) {
+    const stack = this.getStack(pageIdx);
+    const dup = stack.duplicate(layerId, this._nextLayerId++);
+    return dup;
+  }
+
+  /**
+   * Clear content of a specific layer.
+   */
+  clearLayer(pageIdx, layerId) {
+    const stack = this.getStack(pageIdx);
+    return stack.clear(layerId);
+  }
+
+  /**
+   * Helper to find a layer by its name (e.g. 'Background', 'Content').
+   */
+  getLayerByName(pageIdx, name) {
+    const stack = this.getStack(pageIdx);
+    return stack.layers.find((l) => l.name === name) || null;
+  }
+
+  /**
    * Get the offscreen canvas context for a specific layer on a page.
    * This is where drawing commands should target.
    */
@@ -256,6 +297,52 @@ class LayerStack {
     const clamped = Math.max(0, Math.min(newIndex, this.layers.length - 1));
     const [layer] = this.layers.splice(oldIdx, 1);
     this.layers.splice(clamped, 0, layer);
+    return true;
+  }
+
+  moveUp(layerId) {
+    const idx = this.layers.findIndex((l) => l.id === layerId);
+    if (idx === -1 || idx === this.layers.length - 1) return false;
+    return this.reorder(layerId, idx + 1);
+  }
+
+  moveDown(layerId) {
+    const idx = this.layers.findIndex((l) => l.id === layerId);
+    if (idx <= 0) return false;
+    // Do not move below locked Background (index 0) if Background is locked
+    if (idx === 1 && this.layers[0].locked) return false;
+    return this.reorder(layerId, idx - 1);
+  }
+
+  duplicate(layerId, newId) {
+    const src = this.getLayer(layerId);
+    if (!src) return null;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = this.width;
+    canvas.height = this.height;
+    canvas.getContext('2d').drawImage(src.canvas, 0, 0);
+
+    const dup = {
+      id: newId,
+      name: `${src.name} Copy`,
+      canvas,
+      visible: src.visible,
+      opacity: src.opacity,
+      blendMode: src.blendMode,
+      locked: false,
+    };
+
+    const srcIdx = this.layers.findIndex((l) => l.id === layerId);
+    this.layers.splice(srcIdx + 1, 0, dup);
+    return dup;
+  }
+
+  clear(layerId) {
+    const layer = this.getLayer(layerId);
+    if (!layer || layer.locked) return false;
+    const ctx = layer.canvas.getContext('2d');
+    ctx.clearRect(0, 0, this.width, this.height);
     return true;
   }
 

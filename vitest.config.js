@@ -11,7 +11,6 @@ export default defineConfig({
       'sw.js',
       'vite.config.js',
       'cursive-connector.test.js',
-      'diagram-engine.test.js',
       'doubt-solver.test.js',
       'solution-streaming.test.js',
     ],

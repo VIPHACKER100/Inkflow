@@ -85,6 +85,22 @@ function runTests() {
   assert(stack.layers[1].id === l3.id, 'Layer reordered to index 1');
   assert(stack.layers[2].name === 'Content', 'Content layer moved to index 2');
 
+  // Test moveLayerUp and moveLayerDown
+  comp.moveLayerUp(0, l3.id);
+  assert(stack.layers[2].id === l3.id, 'moveLayerUp moved l3 to index 2');
+  comp.moveLayerDown(0, l3.id);
+  assert(stack.layers[1].id === l3.id, 'moveLayerDown moved l3 back to index 1');
+
+  // Test duplicateLayer
+  const dup = comp.duplicateLayer(0, l3.id);
+  assert(dup !== null, 'duplicateLayer created clone');
+  assert(dup.name === 'Top Layer Copy', 'Cloned layer has Copy name');
+  assert(dup.blendMode === l3.blendMode, 'Cloned layer preserved blendMode');
+
+  // Test clearLayer
+  const cleared = comp.clearLayer(0, l3.id);
+  assert(cleared === true, 'clearLayer succeeded');
+
   console.log(`\nTests finished: ${passed} passed, ${failed} failed.`);
   if (failed > 0) process.exit(1);
 }

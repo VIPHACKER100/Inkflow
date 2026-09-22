@@ -146,19 +146,34 @@ function getDiagramImage(content) {
 
 // ponytail: layoutFlowchart and layoutHierarchy are in diagram-engine.js
 
-function drawArrowhead(ctx, rc, x, y, angle, size, color, roughness) {
-  const p1 = { x: x, y: y };
+function drawArrowhead(ctx, rc, x, y, angle, size = 14, color = S.inkColor, roughness = 1.4) {
+  const barbAngle = Math.PI / 6.5; // ~27 degrees natural pen barb
+  const p1 = { x, y };
   const p2 = {
-    x: x - size * Math.cos(angle - Math.PI / 6),
-    y: y - size * Math.sin(angle - Math.PI / 6),
+    x: x - size * Math.cos(angle - barbAngle),
+    y: y - size * Math.sin(angle - barbAngle),
   };
   const p3 = {
-    x: x - size * Math.cos(angle + Math.PI / 6),
-    y: y - size * Math.sin(angle + Math.PI / 6),
+    x: x - size * Math.cos(angle + barbAngle),
+    y: y - size * Math.sin(angle + barbAngle),
   };
 
-  rc.line(p1.x, p1.y, p2.x, p2.y, { stroke: color, roughness: roughness });
-  rc.line(p1.x, p1.y, p3.x, p3.y, { stroke: color, roughness: roughness });
+  if (rc) {
+    rc.line(p1.x, p1.y, p2.x, p2.y, { stroke: color, strokeWidth: 1.6, roughness });
+    rc.line(p1.x, p1.y, p3.x, p3.y, { stroke: color, strokeWidth: 1.6, roughness });
+  } else {
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.6;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(p2.x, p2.y);
+    ctx.lineTo(p1.x, p1.y);
+    ctx.lineTo(p3.x, p3.y);
+    ctx.stroke();
+    ctx.restore();
+  }
 }
 
 // ponytail: shared shape/edge renderer — deduplicates renderSpecificPage and startAnimation
@@ -168,6 +183,10 @@ function drawShapeOrEdge(ctx, canvas, item, options, rcCache) {
     rc = rough.canvas(canvas);
     if (rcCache) rcCache.set(item.pageIdx, rc);
   }
+
+  const strokeColor = options.stroke || S.inkColor;
+  const strokeW = options.strokeWidth || 1.5;
+  const shapeRoughness = options.roughness || 1.4;
 
   if (item.type === 'shape') {
     if (rc) {
@@ -195,8 +214,8 @@ function drawShapeOrEdge(ctx, canvas, item, options, rcCache) {
         rc.rectangle(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h, options);
       }
     } else {
-      ctx.strokeStyle = S.inkColor;
-      ctx.lineWidth = 1.2;
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = strokeW;
       ctx.beginPath();
       if (item.shape === 'circle') {
         ctx.arc(item.x, item.y, Math.max(item.w, item.h) / 2, 0, Math.PI * 2);
@@ -225,31 +244,59 @@ function drawShapeOrEdge(ctx, canvas, item, options, rcCache) {
       ctx.stroke();
     }
   } else if (item.type === 'edge') {
-    if (rc) {
-      rc.line(item.from.x, item.from.y, item.to.x, item.to.y, options);
-      const angle = Math.atan2(item.to.y - item.from.y, item.to.x - item.from.x);
-      drawArrowhead(ctx, rc, item.to.x, item.to.y, angle, 12, S.inkColor, options.roughness);
+    if (item.isCurved && item.control) {
+      // Natural hand-drawn curved arrow for cycles
+      if (rc) {
+        const pathD = `M ${item.from.x.toFixed(1)} ${item.from.y.toFixed(1)} Q ${item.control.x.toFixed(1)} ${item.control.y.toFixed(1)} ${item.to.x.toFixed(1)} ${item.to.y.toFixed(1)}`;
+        rc.path(pathD, { ...options, stroke: strokeColor, strokeWidth: strokeW, roughness: shapeRoughness });
+        const angle = Math.atan2(item.to.y - item.control.y, item.to.x - item.control.x);
+        drawArrowhead(ctx, rc, item.to.x, item.to.y, angle, 14, strokeColor, shapeRoughness);
+      } else {
+        ctx.save();
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = strokeW;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(item.from.x, item.from.y);
+        ctx.quadraticCurveTo(item.control.x, item.control.y, item.to.x, item.to.y);
+        ctx.stroke();
+        const angle = Math.atan2(item.to.y - item.control.y, item.to.x - item.control.x);
+        drawArrowhead(ctx, null, item.to.x, item.to.y, angle, 14, strokeColor, shapeRoughness);
+        ctx.restore();
+      }
     } else {
-      ctx.strokeStyle = S.inkColor;
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      ctx.moveTo(item.from.x, item.from.y);
-      ctx.lineTo(item.to.x, item.to.y);
-      ctx.stroke();
-      const angle = Math.atan2(item.to.y - item.from.y, item.to.x - item.from.x);
-      ctx.beginPath();
-      ctx.moveTo(item.to.x, item.to.y);
-      ctx.lineTo(item.to.x - 10 * Math.cos(angle - 0.5), item.to.y - 10 * Math.sin(angle - 0.5));
-      ctx.moveTo(item.to.x, item.to.y);
-      ctx.lineTo(item.to.x - 10 * Math.cos(angle + 0.5), item.to.y - 10 * Math.sin(angle + 0.5));
-      ctx.stroke();
+      // Perimeter-clipped straight arrow
+      if (rc) {
+        rc.line(item.from.x, item.from.y, item.to.x, item.to.y, { ...options, stroke: strokeColor, strokeWidth: strokeW, roughness: shapeRoughness });
+        const angle = Math.atan2(item.to.y - item.from.y, item.to.x - item.from.x);
+        drawArrowhead(ctx, rc, item.to.x, item.to.y, angle, 14, strokeColor, shapeRoughness);
+      } else {
+        ctx.save();
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = strokeW;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(item.from.x, item.from.y);
+        ctx.lineTo(item.to.x, item.to.y);
+        ctx.stroke();
+        const angle = Math.atan2(item.to.y - item.from.y, item.to.x - item.from.x);
+        drawArrowhead(ctx, null, item.to.x, item.to.y, angle, 14, strokeColor, shapeRoughness);
+        ctx.restore();
+      }
     }
+
     if (item.label) {
-      const mx = (item.from.x + item.to.x) / 2;
-      const my = (item.from.y + item.to.y) / 2;
+      let mx, my;
+      if (item.isCurved && item.control) {
+        mx = 0.25 * item.from.x + 0.5 * item.control.x + 0.25 * item.to.x;
+        my = 0.25 * item.from.y + 0.5 * item.control.y + 0.25 * item.to.y;
+      } else {
+        mx = (item.from.x + item.to.x) / 2;
+        my = (item.from.y + item.to.y) / 2;
+      }
       ctx.save();
       ctx.font = `${Math.max(10, S.fontSize * 0.7)}px ${S.font}`;
-      ctx.fillStyle = S.inkColor;
+      ctx.fillStyle = strokeColor;
       ctx.globalAlpha = 0.85;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -257,7 +304,7 @@ function drawShapeOrEdge(ctx, canvas, item, options, rcCache) {
       const isDark = S.paperStyle === 'dark';
       ctx.fillStyle = isDark ? 'rgba(26,26,46,0.85)' : 'rgba(247,243,234,0.85)';
       ctx.fillRect(mx - tw / 2 - 3, my - S.fontSize * 0.4, tw + 6, S.fontSize * 0.9);
-      ctx.fillStyle = S.inkColor;
+      ctx.fillStyle = strokeColor;
       ctx.fillText(item.label, mx, my);
       ctx.restore();
     }
@@ -1253,7 +1300,7 @@ function layoutTextTemplated(text) {
       }
 
       const dWidth = activeZone.width;
-      const dHeight = data.nodes.length > 5 ? 400 : 300;
+      const dHeight = data.nodes.length > 5 ? 420 : (data.type === 'cycle' ? 360 : 320);
 
       if (y + dHeight > activeZone.y + activeZone.height) {
         advanceLineOrZone();
@@ -1274,20 +1321,23 @@ function layoutTextTemplated(text) {
           x: n.x,
           y: n.y,
           w: n.w || 100,
-          h: n.h || 40,
+          h: n.h || (data.type === 'cycle' ? (n.w || 100) : 40),
           pageIdx,
         });
       });
 
-      // Push individual edge items with labels
-      (data.edges || []).forEach((e) => {
-        const fromNode = positionedNodes.find((n) => n.id === e.from);
-        const toNode = positionedNodes.find((n) => n.id === e.to);
-        if (!fromNode || !toNode) return;
+      // Calculate perimeter-clipped, curved hand-drawn edges that never intersect shapes or text
+      const calculatedEdges = (typeof DiagramEngine !== 'undefined' && DiagramEngine.calculateDiagramEdges)
+        ? DiagramEngine.calculateDiagramEdges(data, positionedNodes, activeZone.x, y, dWidth, dHeight)
+        : [];
+
+      calculatedEdges.forEach((e) => {
         queue.push({
           type: 'edge',
-          from: { x: fromNode.x, y: fromNode.y },
-          to: { x: toNode.x, y: toNode.y },
+          from: e.from,
+          to: e.to,
+          control: e.control,
+          isCurved: e.isCurved,
           label: e.label || '',
           pageIdx,
         });
@@ -1295,18 +1345,40 @@ function layoutTextTemplated(text) {
 
       positionedNodes.forEach((n) => {
         if (!n.label) return;
-        const words = n.label.split(' ');
-        let ly = n.y - 5;
-        const labelLineHeight = S.fontSize * 1.2;
-        ctx.font = `${S.fontSize}px ${S.font}`;
+        const nodeW = n.w || (data.type === 'cycle' ? 100 : 100);
 
-        words.forEach((word) => {
-          let lx = n.x - ctx.measureText(word).width / 2;
-          const chars = getGraphemes(word);
-          chars.forEach((ch, _ci) => {
+        // Intelligent font sizing for diagram labels so long text stays beautifully inside node
+        const maxCharInWord = Math.max(...n.label.split(/\s+/).map((w) => w.length), 1);
+        const availableW = (n.shape === 'circle' ? nodeW * 0.76 : nodeW - 20);
+        const autoFontSize = Math.min(S.fontSize, Math.max(14, Math.floor(availableW / (maxCharInWord * 0.58))));
+        ctx.font = `${autoFontSize}px ${S.font}`;
+
+        // Wrap label into multiple lines if needed
+        const rawWords = n.label.split(/\s+/);
+        const lines = [];
+        let curLine = '';
+        rawWords.forEach((word) => {
+          const testLine = curLine ? curLine + ' ' + word : word;
+          if (curLine && ctx.measureText(testLine).width > availableW) {
+            lines.push(curLine);
+            curLine = word;
+          } else {
+            curLine = testLine;
+          }
+        });
+        if (curLine) lines.push(curLine);
+
+        const labelLineHeight = autoFontSize * 1.15;
+        const totalBlockH = (lines.length - 1) * labelLineHeight;
+        let ly = n.y - totalBlockH / 2 + autoFontSize * 0.32;
+
+        lines.forEach((line) => {
+          let lx = n.x - ctx.measureText(line).width / 2;
+          const chars = getGraphemes(line);
+          chars.forEach((ch) => {
             const v = cleanNeutral
               ? NEUTRAL_V
-              : getCharVariationWithContext(S.rotationMax * 0.5, S.pressure, S.fontSize, null, {
+              : getCharVariationWithContext(S.rotationMax * 0.5, S.pressure, autoFontSize, null, {
                   prng: prng,
                   realism: S.realism,
                 });
@@ -1323,6 +1395,7 @@ function layoutTextTemplated(text) {
               inkColor: S.inkColor,
               penKey: 'body',
               charWidth: cw,
+              customSize: autoFontSize,
             });
             lx += cw;
           });
@@ -1635,32 +1708,52 @@ window.renderSpecificPage = function (pageIdx, forceRedraw) {
   if (canvas.dataset.rendered === 'true' && !forceRedraw) return;
   canvas.dataset.rendered = 'true';
 
-  // Always draw directly to the main canvas for reliability
   const ctx = canvas.getContext('2d');
-  window.PaperRenderer.drawPaperBackground(ctx, S.paperStyle);
-  window.PaperRenderer.renderSmudgeEffects(ctx, pageIdx);
+  const comp = window.layerCompositor;
 
-  // Also update layer compositor background layer if available (for layer UI)
-  if (window.layerCompositor) {
+  let drawCtx = ctx;
+  let drawCanvas = canvas;
+  let isLayerCompositing = false;
+
+  if (comp) {
     try {
-      window.layerCompositor.clearPage(pageIdx);
-      const bgStack = window.layerCompositor.getStack(pageIdx);
-      const bgLayer = bgStack.layers.find((l) => l.name === 'Background');
-      if (bgLayer) {
+      const stack = comp.getStack(pageIdx);
+      const bgLayer = stack.layers.find((l) => l.name === 'Background');
+      const contentLayer = stack.layers.find((l) => l.name === 'Content');
+
+      if (bgLayer && contentLayer) {
+        // Draw background onto the Background layer
         const bgCtx = bgLayer.canvas.getContext('2d');
+        bgCtx.clearRect(0, 0, comp.width, comp.height);
         window.PaperRenderer.drawPaperBackground(bgCtx, S.paperStyle);
         window.PaperRenderer.renderSmudgeEffects(bgCtx, pageIdx);
+
+        // Draw note contents onto the Content layer
+        const contentCtx = contentLayer.canvas.getContext('2d');
+        contentCtx.clearRect(0, 0, comp.width, comp.height);
+
+        drawCtx = contentCtx;
+        drawCanvas = contentLayer.canvas;
+        isLayerCompositing = true;
       }
-    } catch {
-      /* ignore compositor errors */
+    } catch (e) {
+      console.warn('Layer setup failed, falling back to direct canvas render', e);
+      drawCtx = ctx;
+      drawCanvas = canvas;
+      isLayerCompositing = false;
     }
+  }
+
+  if (!isLayerCompositing) {
+    window.PaperRenderer.drawPaperBackground(ctx, S.paperStyle);
+    window.PaperRenderer.renderSmudgeEffects(ctx, pageIdx);
   }
 
   const pageItems = (window.currentRenderQueue || []).filter((item) => item.pageIdx === pageIdx);
 
   const renderCursive = window.ExportRenderers?.renderCursiveConnectionsOn;
   if (S.cursiveMode && cursiveConnector && typeof renderCursive === 'function') {
-    renderCursive(ctx, canvas, pageItems);
+    renderCursive(drawCtx, drawCanvas, pageItems);
   }
 
   pageItems.forEach((item) => {
@@ -1668,91 +1761,97 @@ window.renderSpecificPage = function (pageIdx, forceRedraw) {
     if (item.type === 'mermaid') {
       const diag = getDiagramImage(item.content);
       if (diag.ready && diag.img && !diag.error) {
-        ctx.save();
-        ctx.translate(item.x, item.y);
+        drawCtx.save();
+        drawCtx.translate(item.x, item.y);
         // ponytail: seeded rotation so diagrams don't jitter on re-render
         let hash = 0;
         for (let ci = 0; ci < item.content.length; ci++) {
           hash = ((hash << 5) - hash + item.content.charCodeAt(ci)) | 0;
         }
-        ctx.rotate(((((hash % 40) - 20) / 100) * Math.PI) / 180);
-        ctx.globalAlpha = 0.9;
-        ctx.drawImage(diag.img, 0, 0, item.w, item.h);
-        ctx.restore();
+        drawCtx.rotate(((((hash % 40) - 20) / 100) * Math.PI) / 180);
+        drawCtx.globalAlpha = 0.9;
+        drawCtx.drawImage(diag.img, 0, 0, item.w, item.h);
+        drawCtx.restore();
       } else if (diag.error) {
-        ctx.fillStyle = '#ff0000';
-        ctx.font = '12px Courier New';
-        ctx.fillText('[Mermaid Error]', item.x, item.y + 20);
+        drawCtx.fillStyle = '#ff0000';
+        drawCtx.font = '12px Courier New';
+        drawCtx.fillText('[Mermaid Error]', item.x, item.y + 20);
       } else {
-        ctx.save();
-        ctx.strokeStyle = S.inkColor;
-        ctx.globalAlpha = 0.3;
-        ctx.setLineDash([5, 5]);
-        ctx.strokeRect(item.x, item.y, item.w, item.h);
-        ctx.font = 'italic 12px sans-serif';
-        ctx.fillStyle = S.inkColor;
-        ctx.fillText('Rendering Mermaid...', item.x + 10, item.y + 20);
-        ctx.restore();
+        drawCtx.save();
+        drawCtx.strokeStyle = S.inkColor;
+        drawCtx.globalAlpha = 0.3;
+        drawCtx.setLineDash([5, 5]);
+        drawCtx.strokeRect(item.x, item.y, item.w, item.h);
+        drawCtx.font = 'italic 12px sans-serif';
+        drawCtx.fillStyle = S.inkColor;
+        drawCtx.fillText('Rendering Mermaid...', item.x + 10, item.y + 20);
+        drawCtx.restore();
       }
       return;
     }
 
     if (item.type === 'shape' || item.type === 'edge') {
-      drawShapeOrEdge(ctx, canvas, item, {
-        roughness: S.pressure * 4,
+      drawShapeOrEdge(drawCtx, drawCanvas, item, {
+        roughness: 1.4 + (S.realism || 0.5) * 0.5,
         stroke: S.inkColor,
-        strokeWidth: 1.2,
-        bowing: S.rotationMax * 2,
+        strokeWidth: 1.5,
+        bowing: 1.2 + (S.rotationMax || 1) * 0.2,
       }, window.currentRcCache);
       return;
     }
 
     const v = item.v;
     const itemInkColor = item.inkColor || S.inkColor;
+    const baseFontSize = item.customSize || S.fontSize;
 
-    ctx.save();
-    ctx.translate(item.x, item.y);
-    ctx.rotate((v.tiltDeg * (item.isIndic ? 0.3 : 1) * Math.PI) / 180);
-    ctx.scale(v.scaleX, v.scaleY);
+    drawCtx.save();
+    drawCtx.translate(item.x, item.y);
+    drawCtx.rotate((v.tiltDeg * (item.isIndic ? 0.3 : 1) * Math.PI) / 180);
+    drawCtx.scale(v.scaleX, v.scaleY);
 
     if (draftedGlyphs[item.ch] && S.paperStyle !== 'clean') {
       const glyphImg = getCachedGlyphImage(item.ch, draftedGlyphs[item.ch]);
       if (glyphImg) {
-        ctx.globalAlpha = item.isPrediction ? 0.3 : v.opacity;
-        const drawSz = S.fontSize * 1.35;
-        ctx.drawImage(glyphImg, -drawSz / 2, -drawSz / 2, drawSz, drawSz);
+        drawCtx.globalAlpha = item.isPrediction ? 0.3 : v.opacity;
+        const drawSz = baseFontSize * 1.35;
+        drawCtx.drawImage(glyphImg, -drawSz / 2, -drawSz / 2, drawSz, drawSz);
       } else {
-        const pxSize = S.fontSize * v.pressureMod;
-        ctx.font = `${item.bold ? '600 ' : ''}${Math.max(10, pxSize)}px ${item.fontStack}`;
-        ctx.globalAlpha = item.isPrediction ? 0.3 : v.opacity;
-        ctx.fillStyle = itemInkColor;
-        ctx.fillText(item.ch, 0, 0);
+        const pxSize = baseFontSize * v.pressureMod;
+        drawCtx.font = `${item.bold ? '600 ' : ''}${Math.max(10, pxSize)}px ${item.fontStack}`;
+        drawCtx.globalAlpha = item.isPrediction ? 0.3 : v.opacity;
+        drawCtx.fillStyle = itemInkColor;
+        drawCtx.fillText(item.ch, 0, 0);
       }
     } else {
-      const pxSize = S.fontSize * v.pressureMod;
-      ctx.font = `${item.bold ? '600 ' : ''}${Math.max(10, pxSize)}px ${item.fontStack}`;
-      ctx.globalAlpha = item.isPrediction ? 0.3 : v.opacity;
+      const pxSize = baseFontSize * v.pressureMod;
+      drawCtx.font = `${item.bold ? '600 ' : ''}${Math.max(10, pxSize)}px ${item.fontStack}`;
+      drawCtx.globalAlpha = item.isPrediction ? 0.3 : v.opacity;
       if (S.bleed > 0.05 && S.paperStyle !== 'clean') {
-        ctx.shadowColor = itemInkColor;
-        ctx.shadowBlur = S.bleed * 1.4;
+        drawCtx.shadowColor = itemInkColor;
+        drawCtx.shadowBlur = S.bleed * 1.4;
       } else {
-        ctx.shadowBlur = 0;
+        drawCtx.shadowBlur = 0;
       }
-      ctx.fillStyle = itemInkColor;
-      ctx.fillText(item.ch, 0, 0);
+      drawCtx.fillStyle = itemInkColor;
+      drawCtx.fillText(item.ch, 0, 0);
       if (item.isRetrace) {
         // Rare imperfection (upstream v1.6.22): faint 1px-offset retrace stroke
-        ctx.shadowBlur = 0;
-        ctx.globalAlpha = v.opacity * 0.35;
-        ctx.fillText(item.ch, 1, 1);
+        drawCtx.shadowBlur = 0;
+        drawCtx.globalAlpha = v.opacity * 0.35;
+        drawCtx.fillText(item.ch, 1, 1);
       }
     }
-    ctx.restore();
+    drawCtx.restore();
   });
 
   // Margin Q/Ans labels first, then template decorations on top of content
-  drawMarginQuestionLabels(ctx, pageIdx);
-  window.PaperRenderer.drawLayoutDecorations(ctx, S.noteLayout);
+  drawMarginQuestionLabels(drawCtx, pageIdx);
+  window.PaperRenderer.drawLayoutDecorations(drawCtx, S.noteLayout);
+
+  // If using layer compositor, composite all layers (Background, Content, and any custom layers) onto visible canvas!
+  if (isLayerCompositing && comp) {
+    comp.composite(pageIdx, ctx);
+  }
 
   // Update layer UI if needed
   if (window.layerCompositor && typeof updateLayerUI === 'function' && pageIdx === currentLayerPage) {
@@ -2030,20 +2129,21 @@ function startAnimation() {
 
       if (item.type === 'shape' || item.type === 'edge') {
         drawShapeOrEdge(ctx, canvas, item, {
-          roughness: S.pressure * 4,
+          roughness: 1.4 + (S.realism || 0.5) * 0.5,
           stroke: S.inkColor,
-          strokeWidth: 1.2,
-          bowing: S.rotationMax * 2,
+          strokeWidth: 1.5,
+          bowing: 1.2 + (S.rotationMax || 1) * 0.2,
         }, null);
         continue;
       }
 
       const v = item.v;
+      const baseFontSize = item.customSize || S.fontSize;
       ctx.save();
       ctx.translate(item.x, item.y);
       ctx.rotate((v.tiltDeg * (item.isIndic ? 0.3 : 1) * Math.PI) / 180);
       ctx.scale(v.scaleX, v.scaleY);
-      const pxSize = S.fontSize * v.pressureMod;
+      const pxSize = baseFontSize * v.pressureMod;
       ctx.font = `${item.bold ? '600 ' : ''}${Math.max(10, pxSize)}px ${item.fontStack}`;
       ctx.globalAlpha = v.opacity;
       if (S.bleed > 0.05 && S.paperStyle !== 'clean') {
@@ -2603,6 +2703,9 @@ function updatePageNav() {
   document.getElementById('page-indicator-toolbar').textContent = text;
   document.getElementById('nav-prev').disabled = S.currentPage <= 0;
   document.getElementById('nav-next').disabled = S.currentPage >= pages.length - 1;
+  if (typeof updateLayerUI === 'function') {
+    updateLayerUI(S.currentPage);
+  }
 }
 
 function navigatePage(dir) {
@@ -4005,70 +4108,221 @@ async function exportCustomFontTTF() {
    PHASE 16 - LAYER MANAGER UI
 ════════════════════════════════════════ */
 let currentLayerPage = 0; // The page whose layers are being viewed/edited in the UI
+let activeLayerId = null;
 
-function updateLayerUI(pageIdx = 0) {
+function getActiveLayerId(pageIdx) {
+  if (!window.layerCompositor) return null;
+  const layers = window.layerCompositor.getLayers(pageIdx);
+  if (!layers || layers.length === 0) return null;
+  if (activeLayerId != null && layers.some((l) => l.id === activeLayerId)) {
+    return activeLayerId;
+  }
+  // Default to Content layer, or the topmost layer
+  const contentLayer = layers.find((l) => l.name === 'Content');
+  activeLayerId = contentLayer ? contentLayer.id : layers[layers.length - 1].id;
+  return activeLayerId;
+}
+
+function updateLayerUI(pageIdx = (typeof S !== 'undefined' ? S.currentPage : 0)) {
   if (!window.layerCompositor) return;
   currentLayerPage = pageIdx;
+
+  // Update header page label
+  const pageLabel = document.getElementById('layer-page-label');
+  if (pageLabel) {
+    pageLabel.textContent = `Page ${pageIdx + 1}`;
+  }
+
   const layers = window.layerCompositor.getLayers(pageIdx);
   const container = document.getElementById('layer-list');
   if (!container) return;
 
   container.innerHTML = '';
-  // Render in reverse order (top layer first)
+  const currentActiveId = getActiveLayerId(pageIdx);
+
+  // Render in reverse order (top layer first in UI stack)
   for (let i = layers.length - 1; i >= 0; i--) {
     const layer = layers[i];
+    const isCurActive = layer.id === currentActiveId;
+
     const el = document.createElement('div');
-    el.className = 'layer-item' + (layer.locked ? ' locked' : '');
+    el.className = 'layer-item' + (layer.locked ? ' locked' : '') + (isCurActive ? ' active' : '');
+    el.dataset.layerId = layer.id;
+
+    // Selection on click
+    el.onclick = () => {
+      activeLayerId = layer.id;
+      updateLayerUI(pageIdx);
+    };
+
+    // HTML5 Drag and drop for reordering (only if not locked)
+    if (!layer.locked) {
+      el.draggable = true;
+      el.ondragstart = (e) => {
+        e.dataTransfer.setData('text/plain', String(layer.id));
+        e.dataTransfer.effectAllowed = 'move';
+        el.classList.add('dragging');
+      };
+      el.ondragend = () => {
+        el.classList.remove('dragging');
+      };
+      el.ondragover = (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        el.classList.add('drag-over');
+      };
+      el.ondragleave = () => {
+        el.classList.remove('drag-over');
+      };
+      el.ondrop = (e) => {
+        e.preventDefault();
+        el.classList.remove('drag-over');
+        const draggedId = parseInt(e.dataTransfer.getData('text/plain'), 10);
+        if (draggedId && draggedId !== layer.id) {
+          const targetIdx = layers.findIndex((l) => l.id === layer.id);
+          if (targetIdx !== -1) {
+            window.layerCompositor.reorderLayers(pageIdx, draggedId, targetIdx);
+            requestPageRender(pageIdx);
+            updateLayerUI(pageIdx);
+          }
+        }
+      };
+    }
+
+    // --- MAIN ROW ---
+    const mainRow = document.createElement('div');
+    mainRow.className = 'layer-main-row';
 
     // Drag handle
     const drag = document.createElement('div');
     drag.className = 'layer-drag';
     drag.textContent = '≡';
-    drag.title = 'Drag to reorder';
+    drag.title = layer.locked ? 'Locked layer' : 'Drag to reorder';
 
     // Visibility toggle
     const vis = document.createElement('div');
     vis.className = 'layer-vis';
     vis.textContent = layer.visible ? '👁️' : '🚫';
-    vis.title = 'Toggle visibility';
-    vis.onclick = () => {
+    vis.title = layer.visible ? 'Hide layer' : 'Show layer';
+    vis.onclick = (e) => {
+      e.stopPropagation();
       window.layerCompositor.setLayerProperty(pageIdx, layer.id, 'visible', !layer.visible);
       requestPageRender(pageIdx);
       updateLayerUI(pageIdx);
     };
 
-    // Name
-    const name = document.createElement('div');
-    name.className = 'layer-name';
-    name.textContent = layer.name;
-    name.title = layer.name;
-    name.onclick = () => {
+    // Name container with badge
+    const nameWrap = document.createElement('div');
+    nameWrap.className = 'layer-name-wrap';
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'layer-name';
+    nameEl.textContent = layer.name;
+    nameEl.title = layer.locked ? `${layer.name} (locked)` : 'Click to rename';
+    nameEl.onclick = (e) => {
+      e.stopPropagation();
       if (layer.locked) return;
       const newName = prompt('Rename layer:', layer.name);
-      if (newName) {
-        window.layerCompositor.setLayerProperty(pageIdx, layer.id, 'name', newName);
+      if (newName && newName.trim()) {
+        window.layerCompositor.setLayerProperty(pageIdx, layer.id, 'name', newName.trim());
         updateLayerUI(pageIdx);
       }
     };
+    nameWrap.appendChild(nameEl);
 
-    // Opacity
-    const op = document.createElement('input');
-    op.type = 'range';
-    op.className = 'layer-opacity';
-    op.min = 0;
-    op.max = 1;
-    op.step = 0.05;
-    op.value = layer.opacity;
-    op.title = 'Opacity';
-    op.oninput = (e) => {
-      window.layerCompositor.setLayerProperty(pageIdx, layer.id, 'opacity', parseFloat(e.target.value));
+    // Optional badge
+    if (layer.locked) {
+      const badge = document.createElement('span');
+      badge.className = 'layer-badge locked';
+      badge.textContent = 'LOCKED';
+      nameWrap.appendChild(badge);
+    } else if (layer.name === 'Content') {
+      const badge = document.createElement('span');
+      badge.className = 'layer-badge';
+      badge.textContent = 'MAIN';
+      nameWrap.appendChild(badge);
+    }
+
+    // Actions (Delete button)
+    const actions = document.createElement('div');
+    actions.className = 'layer-item-actions';
+    if (!layer.locked) {
+      const del = document.createElement('div');
+      del.className = 'layer-delete';
+      del.textContent = '✖';
+      del.title = 'Delete layer';
+      del.onclick = (e) => {
+        e.stopPropagation();
+        if (confirm(`Delete layer "${layer.name}"?`)) {
+          window.layerCompositor.deleteLayer(pageIdx, layer.id);
+          if (activeLayerId === layer.id) activeLayerId = null;
+          requestPageRender(pageIdx);
+          updateLayerUI(pageIdx);
+        }
+      };
+      actions.appendChild(del);
+    }
+
+    mainRow.appendChild(drag);
+    mainRow.appendChild(vis);
+    mainRow.appendChild(nameWrap);
+    mainRow.appendChild(actions);
+
+    // --- SUB ROW / PROPERTIES (Dedicated lines: Opacity and Blend Mode) ---
+    const subRow = document.createElement('div');
+    subRow.className = 'layer-props layer-sub-row';
+
+    // Opacity Line
+    const opLine = document.createElement('div');
+    opLine.className = 'layer-prop-line';
+
+    const opLabel = document.createElement('span');
+    opLabel.className = 'layer-prop-label';
+    opLabel.textContent = 'Opacity';
+
+    const opWrap = document.createElement('div');
+    opWrap.className = 'layer-opacity-wrap';
+
+    const opSlider = document.createElement('input');
+    opSlider.type = 'range';
+    opSlider.className = 'layer-opacity';
+    opSlider.min = '0';
+    opSlider.max = '1';
+    opSlider.step = '0.05';
+    opSlider.value = String(layer.opacity);
+    opSlider.title = `Opacity: ${Math.round(layer.opacity * 100)}%`;
+    opSlider.onclick = (e) => e.stopPropagation();
+
+    const opVal = document.createElement('span');
+    opVal.className = 'layer-opacity-val';
+    opVal.textContent = `${Math.round(layer.opacity * 100)}%`;
+
+    opSlider.oninput = (e) => {
+      e.stopPropagation();
+      const val = parseFloat(e.target.value);
+      window.layerCompositor.setLayerProperty(pageIdx, layer.id, 'opacity', val);
+      opVal.textContent = `${Math.round(val * 100)}%`;
+      opSlider.title = `Opacity: ${Math.round(val * 100)}%`;
       requestPageRender(pageIdx);
     };
 
-    // Blend mode
+    opWrap.appendChild(opSlider);
+    opWrap.appendChild(opVal);
+    opLine.appendChild(opLabel);
+    opLine.appendChild(opWrap);
+
+    // Blend Mode Line
+    const blendLine = document.createElement('div');
+    blendLine.className = 'layer-prop-line';
+
+    const blendLabel = document.createElement('span');
+    blendLabel.className = 'layer-prop-label';
+    blendLabel.textContent = 'Blend';
+
     const blend = document.createElement('select');
     blend.className = 'layer-blend';
     blend.title = 'Blend Mode';
+    blend.onclick = (e) => e.stopPropagation();
     const modes = window.layerCompositor.BLEND_MODES;
     modes.forEach((m) => {
       const opt = document.createElement('option');
@@ -4081,53 +4335,134 @@ function updateLayerUI(pageIdx = 0) {
       blend.appendChild(opt);
     });
     blend.onchange = (e) => {
+      e.stopPropagation();
       window.layerCompositor.setLayerProperty(pageIdx, layer.id, 'blendMode', e.target.value);
       requestPageRender(pageIdx);
     };
 
-    // Delete
-    const del = document.createElement('div');
-    del.className = 'layer-delete';
-    del.textContent = '✖';
-    del.title = 'Delete layer';
-    del.onclick = () => {
-      if (window.layerCompositor.deleteLayer(pageIdx, layer.id)) {
-        requestPageRender(pageIdx);
-        updateLayerUI(pageIdx);
-      }
-    };
+    blendLine.appendChild(blendLabel);
+    blendLine.appendChild(blend);
 
-    el.appendChild(drag);
-    el.appendChild(vis);
-    el.appendChild(name);
-    el.appendChild(op);
-    el.appendChild(blend);
-    el.appendChild(del);
+    subRow.appendChild(opLine);
+    subRow.appendChild(blendLine);
 
+    el.appendChild(mainRow);
+    el.appendChild(subRow);
     container.appendChild(el);
   }
 }
 
-function addNewLayer() {
+function addNewLayerPreset(preset = 'standard') {
   if (!window.layerCompositor) return;
-  window.layerCompositor.createLayer(currentLayerPage, 'New Layer');
-  updateLayerUI(currentLayerPage);
+  const pageIdx = currentLayerPage;
+  const layers = window.layerCompositor.getLayers(pageIdx);
+  let name = `Layer ${layers.length}`;
+  let options = { opacity: 1, blendMode: 'source-over' };
+
+  if (preset === 'highlighter') {
+    const hlCount = layers.filter((l) => l.name.startsWith('Highlighter')).length + 1;
+    name = `Highlighter ${hlCount}`;
+    options = { opacity: 0.75, blendMode: 'multiply' };
+  } else if (preset === 'draft') {
+    const draftCount = layers.filter((l) => l.name.startsWith('Draft')).length + 1;
+    name = `Draft Sketch ${draftCount}`;
+    options = { opacity: 0.5, blendMode: 'source-over' };
+  } else if (preset === 'watermark') {
+    const wmCount = layers.filter((l) => l.name.startsWith('Watermark')).length + 1;
+    name = `Watermark ${wmCount}`;
+    options = { opacity: 0.25, blendMode: 'overlay' };
+  }
+
+  const created = window.layerCompositor.createLayer(pageIdx, name, options);
+  if (created) {
+    activeLayerId = created.id;
+  }
+  requestPageRender(pageIdx);
+  updateLayerUI(pageIdx);
+}
+
+function addNewLayer() {
+  addNewLayerPreset('standard');
+}
+
+function moveActiveLayer(dir) {
+  if (!window.layerCompositor || activeLayerId == null) return;
+  const pageIdx = currentLayerPage;
+  let ok = false;
+  if (dir === 'up') {
+    ok = window.layerCompositor.moveLayerUp(pageIdx, activeLayerId);
+  } else if (dir === 'down') {
+    ok = window.layerCompositor.moveLayerDown(pageIdx, activeLayerId);
+  }
+  if (ok) {
+    requestPageRender(pageIdx);
+    updateLayerUI(pageIdx);
+  }
+}
+
+function duplicateActiveLayer() {
+  if (!window.layerCompositor || activeLayerId == null) return;
+  const pageIdx = currentLayerPage;
+  const dup = window.layerCompositor.duplicateLayer(pageIdx, activeLayerId);
+  if (dup) {
+    activeLayerId = dup.id;
+    requestPageRender(pageIdx);
+    updateLayerUI(pageIdx);
+  }
+}
+
+function clearActiveLayer() {
+  if (!window.layerCompositor || activeLayerId == null) return;
+  const pageIdx = currentLayerPage;
+  const stack = window.layerCompositor.getStack(pageIdx);
+  const layer = stack.getLayer(activeLayerId);
+  if (!layer) return;
+  if (layer.locked) {
+    alert('Cannot clear locked layer.');
+    return;
+  }
+  if (confirm(`Clear all drawings on layer "${layer.name}"?`)) {
+    window.layerCompositor.clearLayer(pageIdx, activeLayerId);
+    requestPageRender(pageIdx);
+    updateLayerUI(pageIdx);
+  }
 }
 
 function flattenAllLayers() {
-  if (!window.layerCompositor || !confirm('Are you sure you want to flatten all layers on this page?')) return;
-  const pageIdx = S.currentPage;
-  const canvas = pages[pageIdx];
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  // Flatten: draw all layers onto the main canvas, then remove layers
+  if (!window.layerCompositor) return;
+  const pageIdx = currentLayerPage;
   const layers = window.layerCompositor.getLayers(pageIdx);
-  if (layers && layers.length > 1) {
-    layers.forEach((layer) => {
-      if (layer.canvas) ctx.drawImage(layer.canvas, 0, 0);
-    });
-    window.layerCompositor.clearPage(pageIdx);
+  if (!layers || layers.length <= 1) {
+    alert('Only one layer exists. Nothing to flatten.');
+    return;
   }
+  if (!confirm(`Flatten all ${layers.length} layers on Page ${pageIdx + 1}? This combines everything into the Content layer.`)) return;
+
+  const contentLayer = window.layerCompositor.getLayerByName(pageIdx, 'Content');
+  const bgLayer = window.layerCompositor.getLayerByName(pageIdx, 'Background');
+  const targetLayer = contentLayer || layers[0];
+  const targetCtx = targetLayer.canvas.getContext('2d');
+
+  // Draw all non-target, non-background visible layers onto the target layer
+  for (const layer of layers) {
+    if (layer === targetLayer || layer === bgLayer) continue;
+    if (layer.visible && layer.canvas) {
+      targetCtx.save();
+      targetCtx.globalAlpha = layer.opacity;
+      targetCtx.globalCompositeOperation = layer.blendMode;
+      targetCtx.drawImage(layer.canvas, 0, 0);
+      targetCtx.restore();
+    }
+  }
+
+  // Delete the merged extra layers
+  const toDelete = layers.filter((l) => l !== targetLayer && l !== bgLayer && !l.locked);
+  for (const l of toDelete) {
+    window.layerCompositor.deleteLayer(pageIdx, l.id);
+  }
+
+  activeLayerId = targetLayer.id;
+  requestPageRender(pageIdx);
   updateLayerUI(pageIdx);
 }
 
@@ -4135,6 +4470,15 @@ function requestPageRender(pageIdx) {
   // Simple re-render wrapper
   window.renderSpecificPage(pageIdx, true);
 }
+
+// Global exports for inline HTML handlers
+window.updateLayerUI = updateLayerUI;
+window.addNewLayer = addNewLayer;
+window.addNewLayerPreset = addNewLayerPreset;
+window.moveActiveLayer = moveActiveLayer;
+window.duplicateActiveLayer = duplicateActiveLayer;
+window.clearActiveLayer = clearActiveLayer;
+window.flattenAllLayers = flattenAllLayers;
 
 /* ── Theme Packs ────────────────────────────────────────────────────────── */
 
